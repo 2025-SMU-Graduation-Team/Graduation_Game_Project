@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <None Include="..\..\Unreal2DPractice.uproject" />
+    <Filter Include="Source">
+      <UniqueIdentifier>{F31BBDD1-B3E8-3BCC-9652-680E16935819}</UniqueIdentifier>
+    </Filter>
+    <None Include="..\..\Source\Unreal2DPractice.Target.cs">
+      <Filter>Source</Filter>
+    </None>
+    <None Include="..\..\Source\Unreal2DPracticeEditor.Target.cs">
+      <Filter>Source</Filter>
+    </None>
+    <None Include="..\..\.vsconfig" />
+    <Filter Include="Config">
+      <UniqueIdentifier>{FA535FFB-25E1-3D20-B416-52F9BE21E06E}</UniqueIdentifier>
+    </Filter>
+    <None Include="..\..\Config\DefaultEditor.ini">
+      <Filter>Config</Filter>
+    </None>
+    <None Include="..\..\Config\DefaultEngine.ini">
+      <Filter>Config</Filter>
+    </None>
+    <None Include="..\..\Config\DefaultGame.ini">
+      <Filter>Config</Filter>
+    </None>
+    <None Include="..\..\Config\DefaultInput.ini">
+      <Filter>Config</Filter>
+    </None>
+    <Filter Include="Source\Unreal2DPractice">
+      <UniqueIdentifier>{1E3DAA7F-7AAC-3284-A8EA-319FDD2768BB}</UniqueIdentifier>
+    </Filter>
+    <ClCompile Include="..\..\Source\Unreal2DPractice\MyGameModeBase.cpp">
+      <Filter>Source\Unreal2DPractice</Filter>
+    </ClCompile>
+    <ClInclude Include="..\..\Source\Unreal2DPractice\MyGameModeBase.h">
+      <Filter>Source\Unreal2DPractice</Filter>
+    </ClInclude>
+    <ClCompile Include="..\..\Source\Unreal2DPractice\MyPaperCharacter.cpp">
+      <Filter>Source\Unreal2DPractice</Filter>
+    </ClCompile>
+    <ClInclude Include="..\..\Source\Unreal2DPractice\MyPaperCharacter.h">
+      <Filter>Source\Unreal2DPractice</Filter>
+    </ClInclude>
+    <None Include="..\..\Source\Unreal2DPractice\Unreal2DPractice.Build.cs">
+      <Filter>Source\Unreal2DPractice</Filter>
+    </None>
+    <ClCompile Include="..\..\Source\Unreal2DPractice\Unreal2DPractice.cpp">
+      <Filter>Source\Unreal2DPractice</Filter>
+    </ClCompile>
+    <ClInclude Include="..\..\Source\Unreal2DPractice\Unreal2DPractice.h">
+      <Filter>Source\Unreal2DPractice</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

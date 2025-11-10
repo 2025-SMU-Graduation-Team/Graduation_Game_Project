@@ -1,0 +1,11 @@
+{
+	"RemapUnityFiles": 
+	{
+		"Module.Unreal2DPractice.gen.cpp.obj": [
+			"APlayerCharacter.gen.cpp.obj",
+			"MyGameModeBase.gen.cpp.obj",
+			"MyPaperCharacter.gen.cpp.obj",
+			"Unreal2DPractice.init.gen.cpp.obj"
+		]
+	}
+}

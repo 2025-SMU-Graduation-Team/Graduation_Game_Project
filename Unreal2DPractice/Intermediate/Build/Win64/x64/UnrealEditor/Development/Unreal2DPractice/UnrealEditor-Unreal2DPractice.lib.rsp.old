@@ -1,0 +1,17 @@
+/NOLOGO
+/errorReport:prompt
+/MACHINE:x64
+/SUBSYSTEM:WINDOWS
+/DEF
+/NAME:"UnrealEditor-Unreal2DPractice.dll"
+/IGNORE:4221
+/NODEFAULTLIB
+"C:/Users/user/Documents/Unreal Projects/Unreal2DPractice/Intermediate/Build/Win64/x64/Unreal2DPracticeEditor/Development/UnrealEd/SharedPCH.UnrealEd.Project.ValApi.ValExpApi.Cpp20.h.obj"
+"C:/Users/user/Documents/Unreal Projects/Unreal2DPractice/Intermediate/Build/Win64/x64/UnrealEditor/Development/Unreal2DPractice/Module.Unreal2DPractice.gen.cpp.obj"
+"C:/Users/user/Documents/Unreal Projects/Unreal2DPractice/Intermediate/Build/Win64/x64/UnrealEditor/Development/Unreal2DPractice/APlayerCharacter.cpp.obj"
+"C:/Users/user/Documents/Unreal Projects/Unreal2DPractice/Intermediate/Build/Win64/x64/UnrealEditor/Development/Unreal2DPractice/MyGameModeBase.cpp.obj"
+"C:/Users/user/Documents/Unreal Projects/Unreal2DPractice/Intermediate/Build/Win64/x64/UnrealEditor/Development/Unreal2DPractice/MyPaperCharacter.cpp.obj"
+"C:/Users/user/Documents/Unreal Projects/Unreal2DPractice/Intermediate/Build/Win64/x64/UnrealEditor/Development/Unreal2DPractice/Unreal2DPractice.cpp.obj"
+"C:/Users/user/Documents/Unreal Projects/Unreal2DPractice/Intermediate/Build/Win64/x64/UnrealEditor/Development/Unreal2DPractice/PerModuleInline.gen.cpp.obj"
+"C:/Users/user/Documents/Unreal Projects/Unreal2DPractice/Intermediate/Build/Win64/x64/UnrealEditor/Development/Unreal2DPractice/Default.rc2.res"
+/OUT:"C:/Users/user/Documents/Unreal Projects/Unreal2DPractice/Intermediate/Build/Win64/x64/UnrealEditor/Development/Unreal2DPractice/UnrealEditor-Unreal2DPractice.lib"

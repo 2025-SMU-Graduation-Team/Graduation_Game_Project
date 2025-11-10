@@ -1,0 +1,14 @@
+{
+	"Targets": [
+		{
+			"Name": "Unreal2DPractice",
+			"Path": "..\\Source\\Unreal2DPractice.Target.cs",
+			"Type": "Game"
+		},
+		{
+			"Name": "Unreal2DPracticeEditor",
+			"Path": "..\\Source\\Unreal2DPracticeEditor.Target.cs",
+			"Type": "Editor"
+		}
+	]
+}

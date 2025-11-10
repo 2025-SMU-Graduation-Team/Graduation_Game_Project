@@ -1,0 +1,8 @@
+{
+	"SourceFiles": [
+		"C:\\Users\\user\\Documents\\Unreal Projects\\Unreal2DPractice\\Source\\Unreal2DPractice\\Unreal2DPractice.Build.cs",
+		"C:\\Users\\user\\Documents\\Unreal Projects\\Unreal2DPractice\\Source\\Unreal2DPractice.Target.cs",
+		"C:\\Users\\user\\Documents\\Unreal Projects\\Unreal2DPractice\\Source\\Unreal2DPracticeEditor.Target.cs"
+	],
+	"EngineVersion": "5.6.1"
+}
