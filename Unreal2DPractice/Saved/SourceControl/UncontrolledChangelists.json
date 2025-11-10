@@ -5,6 +5,9 @@
 			"guid": "00000000000000000000000000000000",
 			"description": "Default Uncontrolled Changelist",
 			"files": [
+				"C:/Program Files/Epic Games/UE_5.6/Engine/Plugins/2D/Paper2D/Content/MaskedUnlitSpriteMaterial.uasset",
+				"C:/Users/user/Documents/GitHub/Graduation_Game_Project/Unreal2DPractice/Content/LeeSejin.umap",
+				"C:/Users/user/Documents/GitHub/Graduation_Game_Project/Unreal2DPractice/Content/LeeSejin0.umap",
 				"C:/Users/user/Documents/Unreal Projects/Unreal2DPractice/Content/Player/Animations/IA_Jump.uasset",
 				"C:/Users/user/Documents/Unreal Projects/Unreal2DPractice/Content/Player/Animations/PlayerWalk.uasset",
 				"C:/Users/user/Documents/Unreal Projects/Unreal2DPractice/Content/Player/Animations/IA_Move.uasset",
@@ -14,7 +17,6 @@
 				"C:/Users/user/Documents/Unreal Projects/Unreal2DPractice/Content/Map/Backgroud4Floor.uasset",
 				"C:/Users/user/Documents/Unreal Projects/Unreal2DPractice/Content/Map/Backgroud4Floor_Mat.uasset",
 				"C:/Users/user/Documents/Unreal Projects/Unreal2DPractice/Content/Map/Backgroud4Wall_Mat.uasset",
-				"C:/Program Files/Epic Games/UE_5.6/Engine/Plugins/2D/Paper2D/Content/MaskedUnlitSpriteMaterial.uasset",
 				"C:/Users/user/Documents/Unreal Projects/Unreal2DPractice/Content/Map/Backgroud4.uasset",
 				"C:/Users/user/Documents/Unreal Projects/Unreal2DPractice/Content/Map/Backgroud4Wall.uasset",
 				"C:/Users/user/Documents/Unreal Projects/Unreal2DPractice/Content/Player/Sprites/Die/player-die.uasset",
