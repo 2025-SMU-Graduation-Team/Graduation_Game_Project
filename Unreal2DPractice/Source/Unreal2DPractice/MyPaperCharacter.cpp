@@ -39,6 +39,7 @@ void AMyPaperCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		EnhancedInput->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AMyPaperCharacter::Move);
 		EnhancedInput->BindAction(JumpAction, ETriggerEvent::Started, this, &AMyPaperCharacter::StartJump);
 		EnhancedInput->BindAction(JumpAction, ETriggerEvent::Completed, this, &AMyPaperCharacter::StopJump);
+		EnhancedInput->BindAction(InteractAction, ETriggerEvent::Triggered, this, &AMyPaperCharacter::InteractE);
 	}
 }
 
@@ -64,6 +65,14 @@ void AMyPaperCharacter::StartJump(const FInputActionValue& Value)
 void AMyPaperCharacter::StopJump(const FInputActionValue& Value)
 {
 	StopJumping();
+}
+
+void AMyPaperCharacter::InteractE(const FInputActionValue& Value) 
+{
+	if (CurrentDoor)
+	{
+		CurrentDoor->Interact();
+	}
 }
 
 void AMyPaperCharacter::UpdateCharacterDirection(float AxisValue)

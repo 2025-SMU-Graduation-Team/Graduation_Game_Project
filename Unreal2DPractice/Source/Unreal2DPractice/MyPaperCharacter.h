@@ -6,6 +6,7 @@
 #include "PaperCharacter.h"
 #include "InputAction.h"
 #include "InputMappingContext.h"
+#include "DoorInteractionActor.h"
 #include "MyPaperCharacter.generated.h"
 
 /**
@@ -34,7 +35,13 @@ public:
 	TObjectPtr<UInputAction> JumpAction;
 
 	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<UInputAction> InteractAction;
+
+	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UInputMappingContext> InputMappingContext;
+
+	UPROPERTY()
+	class ADoorInteractionActor* CurrentDoor;
 
 	UFUNCTION()
 	void Move(const FInputActionValue& Value);
@@ -44,6 +51,9 @@ public:
 
 	UFUNCTION()
 	void StopJump(const FInputActionValue& Value);
+
+	UFUNCTION()
+	void InteractE(const FInputActionValue& Value);
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Animation")
