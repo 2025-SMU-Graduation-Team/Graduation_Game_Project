@@ -3,50 +3,27 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
+#include "InteractableActor.h"
 #include "DoorInteractionActor.generated.h"
 
 class UBoxComponent;
 
 UCLASS()
-class UNREAL2DPRACTICE_API ADoorInteractionActor : public AActor
+class UNREAL2DPRACTICE_API ADoorInteractionActor : public AInteractableActor
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
 	ADoorInteractionActor();
-	void Interact();
 
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	virtual void Interact() override;
 
-	UFUNCTION()
-	void OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
-		const FHitResult& SweepResult);
+public:
+	UPROPERTY(EditAnywhere, Category = "Door")
+	FName TargetLevelName;
 
-	UFUNCTION()
-	void OnOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-
-	bool bPlayerInRange;
-
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Door")
-	FName TargetLevelName = TEXT("ControlRoom");
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Door")
+	UPROPERTY(EditAnywhere, Category = "Door")
 	FVector TargetTeleportLocation;
-
-private:
-	UPROPERTY(VisibleAnywhere)
-	UBoxComponent* TriggerBox;
-
-	UPROPERTY()
-	ACharacter* CachedPlayer;
 };

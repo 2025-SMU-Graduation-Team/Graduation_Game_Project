@@ -19,4 +19,5 @@ public:
 	
 protected:
 	virtual void BeginPlay() override;
+	void OnLevelLoaded(ULevel* LoadedLevel, UWorld* World);
 };

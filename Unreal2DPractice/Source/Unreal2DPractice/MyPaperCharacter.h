@@ -7,6 +7,7 @@
 #include "InputAction.h"
 #include "InputMappingContext.h"
 #include "DoorInteractionActor.h"
+#include "InteractableActor.h"
 #include "MyPaperCharacter.generated.h"
 
 /**
@@ -40,9 +41,6 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UInputMappingContext> InputMappingContext;
 
-	UPROPERTY()
-	class ADoorInteractionActor* CurrentDoor;
-
 	UFUNCTION()
 	void Move(const FInputActionValue& Value);
 
@@ -54,6 +52,9 @@ public:
 
 	UFUNCTION()
 	void InteractE(const FInputActionValue& Value);
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	AInteractableActor* CurrentInteractable;
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Animation")
