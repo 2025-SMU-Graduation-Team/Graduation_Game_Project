@@ -6,6 +6,8 @@
 #include "EnhancedInputSubsystems.h"
 #include "PaperFlipbookComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Interactable.h"
+#include "Components/CapsuleComponent.h"
 
 AMyPaperCharacter::AMyPaperCharacter()
 {
@@ -21,11 +23,23 @@ void AMyPaperCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &AMyPaperCharacter::OnOverlapBegin);
+	GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &AMyPaperCharacter::OnOverlapEnd);
+
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
 		if(UEnhancedInputLocalPlayerSubsystem* SubSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
 		{
 			SubSystem->AddMappingContext(InputMappingContext, 0);
+		}
+
+		if (InventoryWidgetClass)
+		{
+			InventoryWidget = CreateWidget<UItemInventoryWidget>(PC, InventoryWidgetClass);
+			if (InventoryWidget)
+			{
+				InventoryWidget->AddToViewport();
+			}
 		}
 	}
 }
@@ -39,6 +53,7 @@ void AMyPaperCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		EnhancedInput->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AMyPaperCharacter::Move);
 		EnhancedInput->BindAction(JumpAction, ETriggerEvent::Started, this, &AMyPaperCharacter::StartJump);
 		EnhancedInput->BindAction(JumpAction, ETriggerEvent::Completed, this, &AMyPaperCharacter::StopJump);
+		EnhancedInput->BindAction(InteractAction, ETriggerEvent::Started, this, &AMyPaperCharacter::Interact);
 	}
 }
 
@@ -80,6 +95,8 @@ void AMyPaperCharacter::UpdateCharacterDirection(float AxisValue)
 
 void AMyPaperCharacter::UpdateAnimation()
 {
+	if (bIsDead) return;
+
 	UPaperFlipbook* DesiredAnimation = IdleAnimation;
 	if (GetCharacterMovement()->IsFalling())
 	{
@@ -93,5 +110,114 @@ void AMyPaperCharacter::UpdateAnimation()
 	if (GetSprite()->GetFlipbook() != DesiredAnimation)
 	{
 		GetSprite()->SetFlipbook(DesiredAnimation);
+	}
+}
+
+void AMyPaperCharacter::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Overlap Begin with %s"), *OtherActor->GetName());
+	if (OtherActor->GetClass()->ImplementsInterface(UInteractable::StaticClass()))
+	{
+		CurrentInteractable = OtherActor;
+	}
+}
+
+void AMyPaperCharacter::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	if (OtherActor == CurrentInteractable)
+	{
+		CurrentInteractable = nullptr;
+	}
+}
+
+void AMyPaperCharacter::PlayDeath()
+{
+	bIsDead = true;
+
+	/*APlayerController* PC = Cast<APlayerController>(GetController());
+	if (PC)
+	{
+		PC->DisableInput(PC);
+	}*/
+
+	if (DieAnimation)
+	{
+		GetSprite()->SetFlipbook(DieAnimation);
+	}
+
+	/*GetCharacterMovement()->DisableMovement();
+
+
+	FTimerHandle DeathTimer;
+	GetWorld()->GetTimerManager().SetTimer(
+		DeathTimer,
+		this,
+		&AMyPaperCharacter::K2_DestroyActor,
+		1.2f,    
+		false
+	);*/
+}
+
+void AMyPaperCharacter::RequestItemPickup(AItemActor* Item)
+{
+	if (!Item) return;
+
+	PendingItem = Item;
+
+	if (InventoryWidget)
+	{
+		InventoryWidget->ShowConfirmPopup(Item->ItemIcon);
+	}
+}
+
+void AMyPaperCharacter::ConfirmPickupYes()
+{
+	if (!PendingItem) return;
+
+	AddItem(PendingItem->ItemIcon);
+	PendingItem->Destroy();
+	PendingItem = nullptr;
+
+	if (InventoryWidget)
+	{
+		InventoryWidget->HideConfirmPopup();
+	}
+}
+
+void AMyPaperCharacter::ConfirmPickupNo()
+{
+	PendingItem = nullptr;
+
+	if (InventoryWidget)
+	{
+		InventoryWidget->HideConfirmPopup();
+	}
+}
+
+void AMyPaperCharacter::AddItem(UTexture2D* Item)
+{
+	if (Item == nullptr) return;
+
+	InventoryItems.Add(Item);
+	UE_LOG(LogTemp, Log, TEXT("Add Item"));
+	UpdateInventoryUI();
+}
+
+void AMyPaperCharacter::UpdateInventoryUI()
+{
+	if (InventoryWidget)
+	{
+		UE_LOG(LogTemp, Log, TEXT("UpdateInventoryUI"));
+		InventoryWidget->UpdateInventory(InventoryItems);
+	}
+}
+
+void AMyPaperCharacter::Interact()
+{
+	if (CurrentInteractable && CurrentInteractable->GetClass()->ImplementsInterface(UInteractable::StaticClass()))
+	{
+		IInteractable::Execute_Interact(CurrentInteractable);
 	}
 }

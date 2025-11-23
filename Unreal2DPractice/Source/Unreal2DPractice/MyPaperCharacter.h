@@ -6,6 +6,9 @@
 #include "PaperCharacter.h"
 #include "InputAction.h"
 #include "InputMappingContext.h"
+#include "EItemType.h"
+#include "ItemActor.h"
+#include "ItemInventoryWidget.h"
 #include "MyPaperCharacter.generated.h"
 
 /**
@@ -27,6 +30,7 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	// Animation
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UInputAction> MoveAction;
 
@@ -34,8 +38,12 @@ public:
 	TObjectPtr<UInputAction> JumpAction;
 
 	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<UInputAction> InteractAction;
+
+	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UInputMappingContext> InputMappingContext;
 
+	// State Function
 	UFUNCTION()
 	void Move(const FInputActionValue& Value);
 
@@ -44,6 +52,30 @@ public:
 
 	UFUNCTION()
 	void StopJump(const FInputActionValue& Value);
+
+	UFUNCTION()
+	void PlayDeath();
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool bIsDead = false;
+
+	// Inventory
+	UPROPERTY(EditDefaultsOnly, Category="UI")
+	TSubclassOf<UItemInventoryWidget> InventoryWidgetClass;
+
+	UPROPERTY()
+	UItemInventoryWidget* InventoryWidget;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
+	TArray<UTexture2D*> InventoryItems;
+
+	void RequestItemPickup(class AItemActor* Item);
+
+	UFUNCTION(BlueprintCallable)
+	void ConfirmPickupYes();
+
+	UFUNCTION(BlueprintCallable)
+	void ConfirmPickupNo();
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Animation")
@@ -55,6 +87,28 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Animation")
 	class UPaperFlipbook* JumpAnimation;
 
+	UPROPERTY(EditAnywhere, Category = "Animation")
+	class UPaperFlipbook* DieAnimation;
+
 	void UpdateAnimation();
 	void UpdateCharacterDirection(float AxisValue);
+
+	UPROPERTY()
+	AActor* CurrentInteractable;
+
+	void Interact();
+	void AddItem(UTexture2D* Item);
+	void UpdateInventoryUI();
+
+	UPROPERTY()
+	class AItemActor* PendingItem;
+
+	UFUNCTION()
+	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
+		bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 };
