@@ -14,13 +14,8 @@ void AWidgetInteractionActor::Interact()
 {
 	if (!PC || !WidgetClass) return;
 
-	UE_LOG(LogTemp, Log, TEXT("AWidgetInteractionActor is interacted"));
-
-
 	if (CurrentPanel && CurrentPanel->IsInViewport())
 	{
-		UE_LOG(LogTemp, Log, TEXT("Panel is opened. Closing the panel"));
-
 		CurrentPanel->RemoveFromParent();
 		CurrentPanel = nullptr;
 
@@ -33,7 +28,6 @@ void AWidgetInteractionActor::Interact()
 	CurrentPanel = CreateWidget<UUserWidget>(PC, WidgetClass);
 	if (CurrentPanel)
 	{
-		UE_LOG(LogTemp, Log, TEXT("Panel is closed. Openning the panel"));
 		CurrentPanel->AddToViewport();
 
 		PC->bShowMouseCursor = true;

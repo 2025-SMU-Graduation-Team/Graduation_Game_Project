@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
+#include "DelayedTask.h"
 #include "SubLevelTaskManager.generated.h"
 
 /**
@@ -17,13 +18,22 @@ class UNREAL2DPRACTICE_API USubLevelTaskManager : public UObject
 public:
 	static USubLevelTaskManager* Get(UWorld* World);
 
-	void RequestTask(FName ObjectID);
+	void RequestTask(const FDelayedTask& Task);
 	void OnSubLevelEntered();
-	void ScheduleTask(FName ObjectID, float Delay);
+	void ScheduleTask(const FDelayedTask& Task);
+	void PerformTask(FDelayedTask Task);
+
+	virtual UWorld* GetWorld() const override { return WorldContext; }
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<FDelayedTask> PendingTasks;
 
 private:
 	static USubLevelTaskManager* Instance;
-	void PerformTask(FName ObjectID);
+
 	UPROPERTY()
-	TArray<FName> PendingTasks;
+	UWorld* WorldContext = nullptr;
+
+	UPROPERTY()
+	TMap<FName, FTimerHandle> ActiveTimerHandles;
 };

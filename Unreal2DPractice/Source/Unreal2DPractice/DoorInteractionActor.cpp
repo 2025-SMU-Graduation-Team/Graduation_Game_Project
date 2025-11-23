@@ -11,12 +11,19 @@ ADoorInteractionActor::ADoorInteractionActor()
 
 void ADoorInteractionActor::Interact()
 {
-    UE_LOG(LogTemp, Log, TEXT("Door Interacted!"));
-
-    UGameplayStatics::LoadStreamLevel(this, TargetLevelName, true, true, FLatentActionInfo());
-
-    if (CachedPlayer)
+    if (TargetLevelName == "SongChaegang")
     {
-        CachedPlayer->SetActorLocation(TargetTeleportLocation);
+        if (CachedPlayer)
+        {
+            CachedPlayer->SetActorLocation(TargetTeleportLocation);
+        }
+    }
+    else
+    {
+        UGameplayStatics::LoadStreamLevel(this, TargetLevelName, true, false, FLatentActionInfo());
+        if (CachedPlayer)
+        {
+            CachedPlayer->SetActorLocation(TargetTeleportLocation);
+        }
     }
 }

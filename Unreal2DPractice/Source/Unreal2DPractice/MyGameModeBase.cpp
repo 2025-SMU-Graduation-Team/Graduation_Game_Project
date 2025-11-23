@@ -16,7 +16,9 @@ void AMyGameModeBase::BeginPlay()
 {
     Super::BeginPlay();
 
-    UWorld* World = GetWorld();
+    FWorldDelegates::LevelAddedToWorld.AddUObject(
+        this, &AMyGameModeBase::OnLevelLoaded);
+
 
     APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
     AMyPaperCharacter* ExistingPlayer =
@@ -31,8 +33,18 @@ void AMyGameModeBase::BeginPlay()
 
 void AMyGameModeBase::OnLevelLoaded(ULevel* LoadedLevel, UWorld* World)
 {
-    if (LoadedLevel->GetOuter()->GetName() == "Subway")
+    if (LoadedLevel && LoadedLevel->GetOuter() && LoadedLevel->GetOuter()->GetName() == "Subway")
     {
-        USubLevelTaskManager::Get(World)->OnSubLevelEntered();
+
+        if (!LoadedLevel || !World) return;
+
+        FString LevelName = LoadedLevel->GetOutermost()->GetName();
+        UE_LOG(LogTemp, Warning, TEXT("Level Added: %s"), *LevelName);
+
+        if (LevelName.Contains(TEXT("Subway")))
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Subway Loaded Detected!"));
+            USubLevelTaskManager::Get(World)->OnSubLevelEntered();
+        }
     }
 }

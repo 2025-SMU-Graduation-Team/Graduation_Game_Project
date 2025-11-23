@@ -13,65 +13,76 @@ USubLevelTaskManager* USubLevelTaskManager::Get(UWorld* World)
 {
 	if (!Instance)
 	{
-		Instance = NewObject<USubLevelTaskManager>();
-		Instance->AddToRoot();
+		if (!World)
+		{
+			UE_LOG(LogTemp, Error, TEXT("SubLevelTaskManager::Get called with null World!"));
+			return nullptr;
+		}
+
+		Instance = NewObject<USubLevelTaskManager>(World);
+		Instance->WorldContext = World;
+		UE_LOG(LogTemp, Log, TEXT("SubLevelTaskManager created for World: %s"), *World->GetName());
 	}
+	else if (Instance->WorldContext != World && World)
+	{
+		Instance->WorldContext = World;
+		UE_LOG(LogTemp, Log, TEXT("SubLevelTaskManager world context updated to: %s"), *World->GetName());
+	}
+
 	return Instance;
 }
 
-void USubLevelTaskManager::RequestTask(FName ObjectID)
+void USubLevelTaskManager::RequestTask(const FDelayedTask& Task)
 {
-	PendingTasks.Add(ObjectID);
-	UE_LOG(LogTemp, Log, TEXT("Task Requested: %s"), *ObjectID.ToString());
+	PendingTasks.Add(Task);
+	UE_LOG(LogTemp, Log, TEXT("Task Requested: %s"), *Task.TargetActor->GetActorLabel());
 }
 
 void USubLevelTaskManager::OnSubLevelEntered()
 {
-	for (FName Task : PendingTasks)
+	UE_LOG(LogTemp, Log, TEXT("OnSubLevelEntered - scheduling %d tasks"), PendingTasks.Num());
+
+	for (const FDelayedTask& Task : PendingTasks)
 	{
-		ScheduleTask(Task, 2.0f);
+		ScheduleTask(Task);
 	}
 
 	PendingTasks.Empty();
 }
 
-void USubLevelTaskManager::ScheduleTask(FName ObjectID, float Delay)
+void USubLevelTaskManager::ScheduleTask(const FDelayedTask& Task)
 {
-	if (UWorld* World = GEngine->GetWorldFromContextObjectChecked(this))
+	UWorld* World = GetWorld();
+	if (!World || !Task.TargetActor)
 	{
-		FTimerHandle Handle;
-
-		World->GetTimerManager().SetTimer(
-			Handle,
-			FTimerDelegate::CreateUObject(this, &USubLevelTaskManager::PerformTask, ObjectID),
-			Delay,
-			false
-		);
-
-		UE_LOG(LogTemp, Log, TEXT("Scheduled Task: %s (Delay: %.1f)"), *ObjectID.ToString(), Delay);
+		UE_LOG(LogTemp, Error, TEXT("ScheduleTask: Invalid Task or actor"));
+		return;
 	}
+
+
+	FTimerDelegate Delegate = FTimerDelegate::CreateUObject(
+		this, &USubLevelTaskManager::PerformTask, Task);
+
+	FTimerHandle Handle;
+	World->GetTimerManager().SetTimer(Handle, Delegate, Task.Delay, false);
+
+	UE_LOG(LogTemp, Log, TEXT("Scheduled Task for %s (Delay: %.1f)"),
+		*Task.TargetActor->GetActorLabel(), Task.Delay);
 }
 
-void USubLevelTaskManager::PerformTask(FName ObjectID)
+void USubLevelTaskManager::PerformTask(FDelayedTask Task)
 {
-	if (UWorld* World = GEngine->GetWorldFromContextObjectChecked(this))
+	if (!Task.TargetActor)
 	{
-		for (TActorIterator<AActor> It(World); It; ++It)
-		{
-			AActor* Actor = *It;
-
-			if (Actor->GetFName() == ObjectID)
-			{
-				UE_LOG(LogTemp, Log, TEXT("PerformTask Executing on %s"), *ObjectID.ToString());
-
-				FVector NewLoc = Actor->GetActorLocation() + FVector(200, 0, 0);
-				Actor->SetActorLocation(NewLoc);
-
-				return;
-			}
-		}
-
-		UE_LOG(LogTemp, Warning, TEXT("PerformTask: Actor %s not found"), *ObjectID.ToString());
+		UE_LOG(LogTemp, Error, TEXT("PerformTask: TargetActor is null"));
+		return;
 	}
+
+	// 원하는 방식 선택: Transform 그대로 이동 vs 상대 이동
+	FVector FinalLoc = Task.TargetActor->GetActorLocation() + Task.TargetTransform.GetLocation();
+
+	Task.TargetActor->SetActorLocation(FinalLoc);
+
+	UE_LOG(LogTemp, Log, TEXT("PerformTask Executed on %s"), *Task.TargetActor->GetActorLabel());
 }
 
