@@ -58,6 +58,9 @@ public:
 	void StopJump(const FInputActionValue& Value);
 
 	UFUNCTION()
+	void Interact(const FInputActionValue& Value);
+
+	UFUNCTION()
 	void PlayDeath();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
@@ -81,9 +84,6 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ConfirmPickupNo();
 
-	UFUNCTION()
-	void InteractE(const FInputActionValue& Value);
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	AInteractableActor* CurrentInteractable;
 
@@ -103,22 +103,9 @@ private:
 	void UpdateAnimation();
 	void UpdateCharacterDirection(float AxisValue);
 
-	UPROPERTY()
-	AActor* CurrentInteractable;
-
-	void Interact();
 	void AddItem(UTexture2D* Item);
 	void UpdateInventoryUI();
 
 	UPROPERTY()
 	class AItemActor* PendingItem;
-
-	UFUNCTION()
-	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
-		bool bFromSweep, const FHitResult& SweepResult);
-
-	UFUNCTION()
-	void OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 };

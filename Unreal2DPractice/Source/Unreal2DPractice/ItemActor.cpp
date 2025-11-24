@@ -15,7 +15,7 @@ AItemActor::AItemActor()
 
 }
 
-void AItemActor::Interact_Implementation()
+void AItemActor::Interact()
 {
     UE_LOG(LogTemp, Warning, TEXT("Item Interacted: %s"), *ItemName.ToString());
 
@@ -34,7 +34,7 @@ void AItemActor::Interact_Implementation()
 
     //if (ItemType == EItemType::Wallet)
     //{
-    //    UE_LOG(LogTemp, Warning, TEXT("Wallet picked ¡æ Convert to Card"));
+    //    UE_LOG(LogTemp, Warning, TEXT("Wallet picked ï¿½ï¿½ Convert to Card"));
 
     //    Player->AddItem(ItemIcon);
     //    Destroy();
