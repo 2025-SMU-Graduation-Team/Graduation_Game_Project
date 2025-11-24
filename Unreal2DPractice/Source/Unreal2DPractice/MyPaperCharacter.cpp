@@ -23,9 +23,6 @@ void AMyPaperCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &AMyPaperCharacter::OnOverlapBegin);
-	GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &AMyPaperCharacter::OnOverlapEnd);
-
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
 		if(UEnhancedInputLocalPlayerSubsystem* SubSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
@@ -81,7 +78,7 @@ void AMyPaperCharacter::StopJump(const FInputActionValue& Value)
 	StopJumping();
 }
 
-void AMyPaperCharacter::InteractE(const FInputActionValue& Value) 
+void AMyPaperCharacter::Interact(const FInputActionValue& Value) 
 {
 	if (CurrentInteractable)
 	{
@@ -118,25 +115,6 @@ void AMyPaperCharacter::UpdateAnimation()
 	if (GetSprite()->GetFlipbook() != DesiredAnimation)
 	{
 		GetSprite()->SetFlipbook(DesiredAnimation);
-	}
-}
-
-void AMyPaperCharacter::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-	UE_LOG(LogTemp, Warning, TEXT("Overlap Begin with %s"), *OtherActor->GetName());
-	if (OtherActor->GetClass()->ImplementsInterface(UInteractable::StaticClass()))
-	{
-		CurrentInteractable = OtherActor;
-	}
-}
-
-void AMyPaperCharacter::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
-	if (OtherActor == CurrentInteractable)
-	{
-		CurrentInteractable = nullptr;
 	}
 }
 
@@ -219,13 +197,5 @@ void AMyPaperCharacter::UpdateInventoryUI()
 	{
 		UE_LOG(LogTemp, Log, TEXT("UpdateInventoryUI"));
 		InventoryWidget->UpdateInventory(InventoryItems);
-	}
-}
-
-void AMyPaperCharacter::Interact()
-{
-	if (CurrentInteractable && CurrentInteractable->GetClass()->ImplementsInterface(UInteractable::StaticClass()))
-	{
-		IInteractable::Execute_Interact(CurrentInteractable);
 	}
 }

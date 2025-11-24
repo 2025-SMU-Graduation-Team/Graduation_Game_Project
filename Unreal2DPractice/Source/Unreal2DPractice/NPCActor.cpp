@@ -52,7 +52,7 @@ void ANPCActor::BeginPlay()
     TextBlock->SetText(DialogueText);
 }
 
-void ANPCActor::Interact_Implementation()
+void ANPCActor::Interact()
 {
     TalkWidgetComponent->SetVisibility(true);
     UUserWidget* Widget = TalkWidgetComponent->GetUserWidgetObject();
