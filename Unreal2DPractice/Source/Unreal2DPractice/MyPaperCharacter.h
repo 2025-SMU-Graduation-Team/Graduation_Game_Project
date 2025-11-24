@@ -9,6 +9,10 @@
 #include "EItemType.h"
 #include "ItemActor.h"
 #include "ItemInventoryWidget.h"
+
+#include "DoorInteractionActor.h"
+#include "InteractableActor.h"
+
 #include "MyPaperCharacter.generated.h"
 
 /**
@@ -76,6 +80,12 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void ConfirmPickupNo();
+
+	UFUNCTION()
+	void InteractE(const FInputActionValue& Value);
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	AInteractableActor* CurrentInteractable;
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Animation")

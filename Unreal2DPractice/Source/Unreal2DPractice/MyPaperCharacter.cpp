@@ -11,7 +11,7 @@
 
 AMyPaperCharacter::AMyPaperCharacter()
 {
-	PrimaryActorTick.bCanEverTick = true; // Active Tick Function
+	PrimaryActorTick.bCanEverTick = true;
 
 	GetCharacterMovement()->GravityScale = 2.0f;
 	GetCharacterMovement()->AirControl = 0.8f;
@@ -79,6 +79,14 @@ void AMyPaperCharacter::StartJump(const FInputActionValue& Value)
 void AMyPaperCharacter::StopJump(const FInputActionValue& Value)
 {
 	StopJumping();
+}
+
+void AMyPaperCharacter::InteractE(const FInputActionValue& Value) 
+{
+	if (CurrentInteractable)
+	{
+		CurrentInteractable->Interact();
+	}
 }
 
 void AMyPaperCharacter::UpdateCharacterDirection(float AxisValue)
