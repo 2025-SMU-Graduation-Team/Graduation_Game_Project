@@ -11,7 +11,7 @@ AItemActor::AItemActor()
     PrimaryActorTick.bCanEverTick = false;
 
     Sprite = CreateDefaultSubobject<UPaperSpriteComponent>(TEXT("Sprite"));
-    RootComponent = Sprite;
+    Sprite->SetupAttachment(RootComponent);
 
 }
 
@@ -19,7 +19,7 @@ void AItemActor::Interact()
 {
     UE_LOG(LogTemp, Warning, TEXT("Item Interacted: %s"), *ItemName.ToString());
 
-    AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(UGameplayStatics::GetActorOfClass(GetWorld(), AMyPaperCharacter::StaticClass()));
+    AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(CachedPlayer);
     if (!Player) return;
 
     if (ItemType == EItemType::Ghost)
@@ -30,7 +30,7 @@ void AItemActor::Interact()
         return;
     }
 
-    Player->RequestItemPickup(this);
+    Player->Inventory->RequestPickup(this);
 
     //if (ItemType == EItemType::Wallet)
     //{

@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Interactable.h"
 #include "EItemType.h"
 #include "PaperSpriteComponent.h"
 #include "InteractableActor.h"
