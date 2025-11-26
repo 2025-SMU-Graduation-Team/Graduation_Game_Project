@@ -13,8 +13,8 @@ ANPCActor::ANPCActor()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
-	Sprite = CreateDefaultSubobject<UPaperFlipbookComponent>(TEXT("Sprite"));
-	RootComponent = Sprite;
+    Sprite = CreateDefaultSubobject<UPaperFlipbookComponent>(TEXT("Sprite"));
+    Sprite->SetupAttachment(RootComponent);
 
 	TalkWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("TalkWidget"));
 	TalkWidgetComponent->SetupAttachment(RootComponent);

@@ -6,13 +6,9 @@
 #include "PaperCharacter.h"
 #include "InputAction.h"
 #include "InputMappingContext.h"
-#include "EItemType.h"
-#include "ItemActor.h"
-#include "ItemInventoryWidget.h"
-
+#include "InventoryComponent.h"
 #include "DoorInteractionActor.h"
 #include "InteractableActor.h"
-
 #include "MyPaperCharacter.generated.h"
 
 /**
@@ -66,26 +62,11 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool bIsDead = false;
 
-	// Inventory
-	UPROPERTY(EditDefaultsOnly, Category="UI")
-	TSubclassOf<UItemInventoryWidget> InventoryWidgetClass;
-
-	UPROPERTY()
-	UItemInventoryWidget* InventoryWidget;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
-	TArray<UTexture2D*> InventoryItems;
-
-	void RequestItemPickup(class AItemActor* Item);
-
-	UFUNCTION(BlueprintCallable)
-	void ConfirmPickupYes();
-
-	UFUNCTION(BlueprintCallable)
-	void ConfirmPickupNo();
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	AInteractableActor* CurrentInteractable;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UInventoryComponent* Inventory;
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Animation")
@@ -102,10 +83,4 @@ private:
 
 	void UpdateAnimation();
 	void UpdateCharacterDirection(float AxisValue);
-
-	void AddItem(UTexture2D* Item);
-	void UpdateInventoryUI();
-
-	UPROPERTY()
-	class AItemActor* PendingItem;
 };
