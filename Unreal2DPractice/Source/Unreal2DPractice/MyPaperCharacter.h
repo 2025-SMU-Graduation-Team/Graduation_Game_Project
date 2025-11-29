@@ -18,6 +18,9 @@
 /**
  * 
  */
+
+class AHidingSpot;
+
 UCLASS()
 class UNREAL2DPRACTICE_API AMyPaperCharacter : public APaperCharacter
 {
@@ -63,6 +66,16 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool bIsDead = false;
 
+	// Hide Function
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Hide")
+	bool bIsHidden = false;        // 현재 숨은 상태인가?
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Hide")
+	bool bCanHide = false;         // 근처에 숨을 수 있는 오브젝트가 있는가?
+
+	UPROPERTY()
+	AHidingSpot* CurrentHidingSpot = nullptr;   // 지금 숨을 수 있는 대상
+
 	// Inventory
 	UPROPERTY(EditDefaultsOnly, Category="UI")
 	TSubclassOf<UItemInventoryWidget> InventoryWidgetClass;
@@ -86,6 +99,12 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	AInteractableActor* CurrentInteractable;
+
+	UFUNCTION()
+	void EnterHide();
+	void ExitHide();
+	void SetCanHide(AHidingSpot* Spot); // HidingSpot에서 호출 (Overlap)
+	void ClearCanHide(AHidingSpot* Spot);
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Animation")

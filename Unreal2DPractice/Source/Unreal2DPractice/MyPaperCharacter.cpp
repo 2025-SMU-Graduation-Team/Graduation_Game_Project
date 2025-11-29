@@ -8,6 +8,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Interactable.h"
 #include "Components/CapsuleComponent.h"
+#include "HidingSpot.h"
 
 AMyPaperCharacter::AMyPaperCharacter()
 {
@@ -228,4 +229,74 @@ void AMyPaperCharacter::Interact()
 	{
 		IInteractable::Execute_Interact(CurrentInteractable);
 	}
+}
+
+void AMyPaperCharacter::SetCanHide(AHidingSpot* Spot)
+{
+	if (!Spot) return;
+
+	bCanHide = true;
+	CurrentHidingSpot = Spot;
+
+	UE_LOG(LogTemp, Log, TEXT("Can hide at: %s"), *Spot->GetName());
+}
+void AMyPaperCharacter::ClearCanHide(AHidingSpot* Spot)
+{
+	if (CurrentHidingSpot == Spot)
+	{
+		bCanHide = false;
+		CurrentHidingSpot = nullptr;
+
+		// 숨은 상태로 범위를 벗어났다면 자동으로 나오도록
+		if (bIsHidden)
+		{
+			ExitHide();
+		}
+
+		UE_LOG(LogTemp, Log, TEXT("Left hiding spot"));
+	}
+}
+void AMyPaperCharacter::EnterHide()
+{
+	if (!bCanHide || !CurrentHidingSpot)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("EnterHide: No available hiding spot."));
+		return;
+	}
+
+	bIsHidden = true;
+
+	// 1) 위치를 HidingSpot 근처로 붙이기
+	FVector SpotLocation = CurrentHidingSpot->GetActorLocation();
+	FVector NewLocation = GetActorLocation();
+
+	// 2D 사이드뷰 기준: X만 맞춰서 물체 뒤로 살짝 숨는 느낌
+	NewLocation.X = SpotLocation.X;
+	SetActorLocation(NewLocation);
+
+	// 2) 이동 막기 (숨은 동안 플레이어가 움직이지 않게)
+	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+	{
+		MoveComp->DisableMovement();
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("Player is now hiding."));
+}
+
+void AMyPaperCharacter::ExitHide()
+{
+	if (!bIsHidden)
+	{
+		return;
+	}
+
+	bIsHidden = false;
+
+	// 이동 다시 허용
+	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+	{
+		MoveComp->SetMovementMode(MOVE_Walking);
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("Player exited hiding"));
 }
