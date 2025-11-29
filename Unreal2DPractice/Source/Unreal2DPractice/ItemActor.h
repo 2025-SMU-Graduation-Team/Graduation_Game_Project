@@ -4,13 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Interactable.h"
 #include "EItemType.h"
 #include "PaperSpriteComponent.h"
+#include "InteractableActor.h"
 #include "ItemActor.generated.h"
 
 UCLASS()
-class UNREAL2DPRACTICE_API AItemActor : public AActor, public IInteractable
+class UNREAL2DPRACTICE_API AItemActor : public AInteractableActor
 {
 	GENERATED_BODY()
 	
@@ -18,7 +18,7 @@ public:
 	// Sets default values for this actor's properties
 	AItemActor();
 
-	virtual void Interact_Implementation() override;
+	virtual void Interact() override;
 
 protected:
 

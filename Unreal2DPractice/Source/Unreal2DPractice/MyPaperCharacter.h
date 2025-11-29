@@ -65,6 +65,12 @@ public:
 	bool bIsDead = false;
 
 	// Hide Function
+	UFUNCTION()
+	void EnterHide();
+	void ExitHide();
+	void SetCanHide(AHidingSpot* Spot);
+	void ClearCanHide(AHidingSpot* Spot);
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Hide")
 	bool bIsHidden = false;
 
@@ -79,12 +85,6 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UInventoryComponent* Inventory;
-
-	UFUNCTION()
-	void EnterHide();
-	void ExitHide();
-	void SetCanHide(AHidingSpot* Spot);
-	void ClearCanHide(AHidingSpot* Spot);
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Animation")

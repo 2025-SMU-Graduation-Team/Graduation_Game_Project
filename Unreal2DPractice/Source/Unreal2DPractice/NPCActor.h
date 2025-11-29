@@ -4,10 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Interactable.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/WidgetComponent.h"
 #include "PaperSpriteComponent.h"
+#include "InteractableActor.h"
 #include "NPCActor.generated.h"
 
 class UPaperFlipbookComponent;
@@ -16,14 +16,14 @@ class UPaperFlipbookComponent;
  * 
  */
 UCLASS()
-class UNREAL2DPRACTICE_API ANPCActor : public AActor, public IInteractable
+class UNREAL2DPRACTICE_API ANPCActor : public AInteractableActor
 {
 	GENERATED_BODY()
 	
 public:
 	ANPCActor();
 
-	virtual void Interact_Implementation() override;
+	virtual void Interact() override;
 protected:
 	
 	virtual void BeginPlay() override;
