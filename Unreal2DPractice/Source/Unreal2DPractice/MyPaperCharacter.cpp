@@ -73,6 +73,16 @@ void AMyPaperCharacter::StopJump(const FInputActionValue& Value)
 
 void AMyPaperCharacter::Interact(const FInputActionValue& Value)
 {
+	if (bIsHidden)
+	{
+		ExitHide();
+		return;
+	}
+	if (bCanHide && CurrentHidingSpot)
+	{
+		EnterHide();
+		return;
+	}
 	if (CurrentInteractable)
 	{
 		CurrentInteractable->Interact();
