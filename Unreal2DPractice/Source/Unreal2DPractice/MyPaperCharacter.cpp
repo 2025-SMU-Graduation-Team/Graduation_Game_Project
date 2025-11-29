@@ -6,7 +6,6 @@
 #include "EnhancedInputSubsystems.h"
 #include "PaperFlipbookComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Interactable.h"
 #include "Components/CapsuleComponent.h"
 #include "HidingSpot.h"
 
@@ -18,29 +17,19 @@ AMyPaperCharacter::AMyPaperCharacter()
 	GetCharacterMovement()->AirControl = 0.8f;
 	GetCharacterMovement()->MaxWalkSpeed = 400.0f;
 	GetCharacterMovement()->JumpZVelocity = 800.0f;
+
+	Inventory = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
 }
 
 void AMyPaperCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &AMyPaperCharacter::OnOverlapBegin);
-	GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &AMyPaperCharacter::OnOverlapEnd);
-
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
-		if(UEnhancedInputLocalPlayerSubsystem* SubSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
+		if (UEnhancedInputLocalPlayerSubsystem* SubSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
 		{
 			SubSystem->AddMappingContext(InputMappingContext, 0);
-		}
-
-		if (InventoryWidgetClass)
-		{
-			InventoryWidget = CreateWidget<UItemInventoryWidget>(PC, InventoryWidgetClass);
-			if (InventoryWidget)
-			{
-				InventoryWidget->AddToViewport();
-			}
 		}
 	}
 }
@@ -69,7 +58,7 @@ void AMyPaperCharacter::Move(const FInputActionValue& Value)
 	float AxisValue = Value.Get<float>();
 	AddMovementInput(FVector(1.0f, 0.0f, 0.0f), AxisValue);
 	UpdateCharacterDirection(AxisValue);
-	
+
 }
 
 void AMyPaperCharacter::StartJump(const FInputActionValue& Value)
@@ -82,7 +71,7 @@ void AMyPaperCharacter::StopJump(const FInputActionValue& Value)
 	StopJumping();
 }
 
-void AMyPaperCharacter::InteractE(const FInputActionValue& Value) 
+void AMyPaperCharacter::Interact(const FInputActionValue& Value)
 {
 	if (CurrentInteractable)
 	{
@@ -122,25 +111,6 @@ void AMyPaperCharacter::UpdateAnimation()
 	}
 }
 
-void AMyPaperCharacter::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-	UE_LOG(LogTemp, Warning, TEXT("Overlap Begin with %s"), *OtherActor->GetName());
-	if (OtherActor->GetClass()->ImplementsInterface(UInteractable::StaticClass()))
-	{
-		CurrentInteractable = OtherActor;
-	}
-}
-
-void AMyPaperCharacter::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
-	if (OtherActor == CurrentInteractable)
-	{
-		CurrentInteractable = nullptr;
-	}
-}
-
 void AMyPaperCharacter::PlayDeath()
 {
 	bIsDead = true;
@@ -169,68 +139,6 @@ void AMyPaperCharacter::PlayDeath()
 	);*/
 }
 
-void AMyPaperCharacter::RequestItemPickup(AItemActor* Item)
-{
-	if (!Item) return;
-
-	PendingItem = Item;
-
-	if (InventoryWidget)
-	{
-		InventoryWidget->ShowConfirmPopup(Item->ItemIcon);
-	}
-}
-
-void AMyPaperCharacter::ConfirmPickupYes()
-{
-	if (!PendingItem) return;
-
-	AddItem(PendingItem->ItemIcon);
-	PendingItem->Destroy();
-	PendingItem = nullptr;
-
-	if (InventoryWidget)
-	{
-		InventoryWidget->HideConfirmPopup();
-	}
-}
-
-void AMyPaperCharacter::ConfirmPickupNo()
-{
-	PendingItem = nullptr;
-
-	if (InventoryWidget)
-	{
-		InventoryWidget->HideConfirmPopup();
-	}
-}
-
-void AMyPaperCharacter::AddItem(UTexture2D* Item)
-{
-	if (Item == nullptr) return;
-
-	InventoryItems.Add(Item);
-	UE_LOG(LogTemp, Log, TEXT("Add Item"));
-	UpdateInventoryUI();
-}
-
-void AMyPaperCharacter::UpdateInventoryUI()
-{
-	if (InventoryWidget)
-	{
-		UE_LOG(LogTemp, Log, TEXT("UpdateInventoryUI"));
-		InventoryWidget->UpdateInventory(InventoryItems);
-	}
-}
-
-void AMyPaperCharacter::Interact()
-{
-	if (CurrentInteractable && CurrentInteractable->GetClass()->ImplementsInterface(UInteractable::StaticClass()))
-	{
-		IInteractable::Execute_Interact(CurrentInteractable);
-	}
-}
-
 void AMyPaperCharacter::SetCanHide(AHidingSpot* Spot)
 {
 	if (!Spot) return;
@@ -240,6 +148,7 @@ void AMyPaperCharacter::SetCanHide(AHidingSpot* Spot)
 
 	UE_LOG(LogTemp, Log, TEXT("Can hide at: %s"), *Spot->GetName());
 }
+
 void AMyPaperCharacter::ClearCanHide(AHidingSpot* Spot)
 {
 	if (CurrentHidingSpot == Spot)
@@ -256,6 +165,7 @@ void AMyPaperCharacter::ClearCanHide(AHidingSpot* Spot)
 		UE_LOG(LogTemp, Log, TEXT("Left hiding spot"));
 	}
 }
+
 void AMyPaperCharacter::EnterHide()
 {
 	if (!bCanHide || !CurrentHidingSpot)
