@@ -8,6 +8,7 @@
 	#include "GameFramework/CharacterMovementComponent.h"
 	#include "Components/CapsuleComponent.h"
 
+
 	AMyPaperCharacter::AMyPaperCharacter()
 	{
 		PrimaryActorTick.bCanEverTick = true;
@@ -137,8 +138,3 @@
 			false
 		);*/
 	}
-
-
-
-
-

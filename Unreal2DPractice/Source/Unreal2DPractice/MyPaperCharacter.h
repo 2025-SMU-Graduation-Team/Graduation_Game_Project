@@ -14,6 +14,9 @@
 /**
  * 
  */
+
+class AHidingSpot;
+
 UCLASS()
 class UNREAL2DPRACTICE_API AMyPaperCharacter : public APaperCharacter
 {
