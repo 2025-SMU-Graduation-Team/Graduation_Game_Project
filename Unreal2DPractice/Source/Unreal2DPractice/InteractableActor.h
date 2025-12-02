@@ -25,6 +25,9 @@ protected:
 
 protected:
 	UPROPERTY(VisibleAnywhere)
+	USceneComponent* RootScene;
+
+	UPROPERTY(VisibleAnywhere)
 	class UBoxComponent* TriggerBox;
 
 	UPROPERTY()

@@ -13,6 +13,7 @@ AItemActor::AItemActor()
     Sprite = CreateDefaultSubobject<UPaperSpriteComponent>(TEXT("Sprite"));
     Sprite->SetupAttachment(RootComponent);
 
+    Sprite->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void AItemActor::Interact()
