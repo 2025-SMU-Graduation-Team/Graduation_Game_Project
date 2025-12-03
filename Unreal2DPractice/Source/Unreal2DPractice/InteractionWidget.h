@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "DelayedTaskData.h"
 #include "InteractionWidget.generated.h"
 
 class UButton;
@@ -39,4 +40,17 @@ public:
 
 	UFUNCTION()
 	void OnStation_DClicked();
+
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Task")
+	UDelayedTaskData* StationAData;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Task")
+	UDelayedTaskData* StationBData;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Task")
+	UDelayedTaskData* StationCData;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Task")
+	UDelayedTaskData* StationDData;
 };
