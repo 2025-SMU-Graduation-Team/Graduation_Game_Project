@@ -12,10 +12,13 @@ AInteractableActor::AInteractableActor()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
+	RootScene = CreateDefaultSubobject<USceneComponent>(TEXT("RootScene"));
+	RootComponent = RootScene;
+
 	TriggerBox = CreateDefaultSubobject<UBoxComponent>(TEXT("TriggerBox"));
-	RootComponent = TriggerBox;
-	
+	TriggerBox->SetupAttachment(RootScene);
 	TriggerBox->SetCollisionProfileName(TEXT("Trigger"));
+
 	TriggerBox->OnComponentBeginOverlap.AddDynamic(this, &AInteractableActor::OnOverlapBegin);
 	TriggerBox->OnComponentEndOverlap.AddDynamic(this, &AInteractableActor::OnOverlapEnd);
 }
