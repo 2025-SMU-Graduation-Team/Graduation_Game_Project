@@ -4,36 +4,58 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "DelayedTask.h"
+#include "DelayedTaskData.h"
 #include "SubLevelTaskManager.generated.h"
 
-/**
- * 
- */
-UCLASS(Blueprintable)
+USTRUCT()
+struct FMoveTask
+{
+	GENERATED_BODY()
+
+	AActor* Actor = nullptr;
+	UDelayedTaskData* TaskData = nullptr;
+
+	FVector StartLocation;
+	FVector TargetLocation;
+	float MoveSpeed = 100.f;
+
+	float StartTime = 0.f;
+};
+
+UCLASS()
 class UNREAL2DPRACTICE_API USubLevelTaskManager : public UObject
 {
 	GENERATED_BODY()
 	
-public:
+	public:
+	// Singleton Getter
 	static USubLevelTaskManager* Get(UWorld* World);
 
-	void RequestTask(const FDelayedTask& Task);
+	// Register task
+	void RequestTask(UDelayedTaskData* TaskData);
+
+	// Execute all pending tasks when sublevel loads
 	void OnSubLevelEntered();
-	void ScheduleTask(const FDelayedTask& Task);
-	void PerformTask(FDelayedTask Task);
-
-	virtual UWorld* GetWorld() const override { return WorldContext; }
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<FDelayedTask> PendingTasks;
 
 private:
+	// Internal functions
+	void ScheduleTask(UDelayedTaskData* TaskData);
+	void ExecuteTask(UDelayedTaskData* TaskData);
+
+	// Singleton instance
 	static USubLevelTaskManager* Instance;
 
+	// World context pointer (not used as owner)
 	UPROPERTY()
-	UWorld* WorldContext = nullptr;
+	TWeakObjectPtr<UWorld> WorldContext;
 
+	// Tasks waiting for sublevel load
 	UPROPERTY()
-	TMap<FName, FTimerHandle> ActiveTimerHandles;
+	TArray<UDelayedTaskData*> PendingTasks;
+
+	void TickMove();
+	void BeginDestroy();
+
+	TArray<FMoveTask> ActiveMoveTasks;
+	FTimerHandle MoveTimerHandle;
 };

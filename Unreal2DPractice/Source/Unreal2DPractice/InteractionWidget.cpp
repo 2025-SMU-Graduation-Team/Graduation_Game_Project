@@ -6,6 +6,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "SubLevelTaskManager.h"
 #include "EngineUtils.h"
+#include "Engine/StaticMeshActor.h"
 
 void UInteractionWidget::NativeConstruct()
 {
@@ -35,23 +36,25 @@ void UInteractionWidget::NativeConstruct()
 void UInteractionWidget::OnStation_AClicked()
 {
 	UE_LOG(LogTemp, Log, TEXT("Station A clicked"));
-	//USubLevelTaskManager::Get(GetWorld())->RequestTask(TEXT("StationA"));
+	if (!StationAData) return;
+
+	USubLevelTaskManager::Get(GetWorld())->RequestTask(StationAData);
 }
 
 void UInteractionWidget::OnStation_BClicked()
 {
 	UE_LOG(LogTemp, Log, TEXT("Station B clicked"));
-	//USubLevelTaskManager::Get(GetWorld())->RequestTask(TEXT("StationB"));
+	USubLevelTaskManager::Get(GetWorld())->RequestTask(StationBData);
 }
 
 void UInteractionWidget::OnStation_CClicked()
 {
 	UE_LOG(LogTemp, Log, TEXT("Station C clicked"));
-	//USubLevelTaskManager::Get(GetWorld())->RequestTask(TEXT("StationC"));
+	USubLevelTaskManager::Get(GetWorld())->RequestTask(StationCData);
 }
 
 void UInteractionWidget::OnStation_DClicked()
 {
 	UE_LOG(LogTemp, Log, TEXT("Station D clicked"));
-	//USubLevelTaskManager::Get(GetWorld())->RequestTask(TEXT("StationD"));
+	USubLevelTaskManager::Get(GetWorld())->RequestTask(StationDData);
 }
