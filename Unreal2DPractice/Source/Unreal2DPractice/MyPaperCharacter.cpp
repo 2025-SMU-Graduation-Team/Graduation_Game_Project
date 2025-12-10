@@ -1,4 +1,5 @@
-	// Fill out your copyright notice in the Description page of Project Settings.
+// Fill out your copyright notice in the Description page of Project Settings.
+
 
 #include "MyPaperCharacter.h"
 #include "EnhancedInputComponent.h"
@@ -54,6 +55,8 @@ void AMyPaperCharacter::Tick(float DeltaTime)
 
 void AMyPaperCharacter::Move(const FInputActionValue& Value)
 {
+	if (!bEnableMovement) return;
+
 	float AxisValue = Value.Get<float>();
 	AddMovementInput(FVector(1.0f, 0.0f, 0.0f), AxisValue);
 	UpdateCharacterDirection(AxisValue);
@@ -154,6 +157,9 @@ void AMyPaperCharacter::PlayDeath()
 	*/
 }
 
+// =====================
+//   Hide 관련 함수들
+// =====================
 void AMyPaperCharacter::SetCanHide(AHidingSpot* Spot)
 {
 	if (!Spot) return;
@@ -171,73 +177,9 @@ void AMyPaperCharacter::ClearCanHide(AHidingSpot* Spot)
 		bCanHide = false;
 		CurrentHidingSpot = nullptr;
 
+		// 숨은 상태로 범위를 벗어났다면 자동으로 나오도록
 		if (bIsHidden)
 		{
-			EnhancedInput->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AMyPaperCharacter::Move);
-			EnhancedInput->BindAction(JumpAction, ETriggerEvent::Started, this, &AMyPaperCharacter::StartJump);
-			EnhancedInput->BindAction(JumpAction, ETriggerEvent::Completed, this, &AMyPaperCharacter::StopJump);
-			EnhancedInput->BindAction(InteractAction, ETriggerEvent::Started, this, &AMyPaperCharacter::Interact);
-		}
-	}
-
-	void AMyPaperCharacter::Tick(float DeltaTime)
-	{
-		Super::Tick(DeltaTime);
-		UpdateAnimation();
-	}
-
-	void AMyPaperCharacter::Move(const FInputActionValue& Value)
-	{
-		if (!bEnableMovement) return;
-
-		float AxisValue = Value.Get<float>();
-		AddMovementInput(FVector(1.0f, 0.0f, 0.0f), AxisValue);
-		UpdateCharacterDirection(AxisValue);
-	
-	}
-
-	void AMyPaperCharacter::StartJump(const FInputActionValue& Value)
-	{
-		Jump();
-	}
-
-	void AMyPaperCharacter::StopJump(const FInputActionValue& Value)
-	{
-		StopJumping();
-	}
-
-	void AMyPaperCharacter::Interact(const FInputActionValue& Value) 
-	{
-		if (CurrentInteractable)
-		{
-			CurrentInteractable->Interact();
-		}
-	}
-
-	void AMyPaperCharacter::UpdateCharacterDirection(float AxisValue)
-	{
-		if (AxisValue > 0)
-		{
-			GetSprite()->SetRelativeRotation(FRotator(0.0f, 0.0f, 0.0f));
-		}
-		else if (AxisValue < 0)
-		{
-			GetSprite()->SetRelativeRotation(FRotator(0.0f, 180.0f, 0.0f));
-		}
-	}
-
-	void AMyPaperCharacter::UpdateAnimation()
-	{
-		if (bIsDead) return;
-
-		UPaperFlipbook* DesiredAnimation = IdleAnimation;
-		if (GetCharacterMovement()->IsFalling())
-		{
-			DesiredAnimation = JumpAnimation;
-		}
-		else if (FMath::Abs(GetVelocity().X) > 0.1f)
-		{
-			DesiredAnimation = RunAnimation;
 			ExitHide();
 		}
 
