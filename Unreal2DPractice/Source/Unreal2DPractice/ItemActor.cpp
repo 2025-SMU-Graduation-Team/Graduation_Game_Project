@@ -23,33 +23,24 @@ void AItemActor::Interact()
     AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(CachedPlayer);
     if (!Player) return;
 
-    if (ItemType == EItemType::Ghost)
+    Player->bEnableMovement = false;
+
+    switch (ItemType)
     {
-        UE_LOG(LogTemp, Error, TEXT("Ghost item interacted! Player dies."));
+    case EItemType::Ghost:
         Player->PlayDeath();
         Destroy();
         return;
+
+    case EItemType::Wallet:
+        Player->Inventory->RequestPickup(this, false); 
+        break;
+
+    case EItemType::Normal:
+    default:
+        Player->Inventory->RequestPickup(this, true); 
+        break;
     }
-
-    Player->Inventory->RequestPickup(this);
-
-    //if (ItemType == EItemType::Wallet)
-    //{
-    //    UE_LOG(LogTemp, Warning, TEXT("Wallet picked �� Convert to Card"));
-
-    //    Player->AddItem(ItemIcon);
-    //    Destroy();
-    //    return;
-    //}
-
-    //if (ItemType == EItemType::Normal)
-    //{
-    //    UE_LOG(LogTemp, Warning, TEXT("Normal item picked."));
-
-    //    Player->AddItem(ItemIcon);
-    //    Destroy();
-    //    return;
-    //}
 }
 
 

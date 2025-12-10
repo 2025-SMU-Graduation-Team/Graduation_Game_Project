@@ -55,6 +55,8 @@
 
 	void AMyPaperCharacter::Move(const FInputActionValue& Value)
 	{
+		if (!bEnableMovement) return;
+
 		float AxisValue = Value.Get<float>();
 		AddMovementInput(FVector(1.0f, 0.0f, 0.0f), AxisValue);
 		UpdateCharacterDirection(AxisValue);

@@ -42,7 +42,7 @@ public:
 
 	void UpdateInventoryUI();
 
-	void RequestPickup(AItemActor* Item);
+	void RequestPickup(AItemActor* Item, bool bIsWallet);
 
 	UFUNCTION(BlueprintCallable)
 	void ConfirmPickupYes();
