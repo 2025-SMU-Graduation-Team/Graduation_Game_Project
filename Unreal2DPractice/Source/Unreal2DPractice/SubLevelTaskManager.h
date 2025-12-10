@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "DelayedTaskData.h"
+#include "TaskWidgetInterface.h"
 #include "SubLevelTaskManager.generated.h"
 
 USTRUCT()
@@ -37,6 +38,8 @@ class UNREAL2DPRACTICE_API USubLevelTaskManager : public UObject
 	// Execute all pending tasks when sublevel loads
 	void OnSubLevelEntered();
 
+	void RegisterWidget(UUserWidget* Widget);
+
 private:
 	// Internal functions
 	void ScheduleTask(UDelayedTaskData* TaskData);
@@ -58,4 +61,9 @@ private:
 
 	TArray<FMoveTask> ActiveMoveTasks;
 	FTimerHandle MoveTimerHandle;
+
+	UPROPERTY()
+	TArray<TScriptInterface<ITaskWidgetInterface>> RegisteredWidgets;
+
+	void NotifyWidgets(bool bRunning);
 };

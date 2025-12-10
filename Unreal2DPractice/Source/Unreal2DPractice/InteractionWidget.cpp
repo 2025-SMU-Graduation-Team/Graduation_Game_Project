@@ -10,51 +10,102 @@
 
 void UInteractionWidget::NativeConstruct()
 {
-	Super::NativeConstruct();
+    Super::NativeConstruct();
 
-	if (Station_A)
-	{
-		Station_A->OnClicked.AddDynamic(this, &UInteractionWidget::OnStation_AClicked);
-	}
+    if (Station_A)
+        Station_A->OnClicked.AddDynamic(this, &UInteractionWidget::OnStation_AClicked);
+    if (Station_B)
+        Station_B->OnClicked.AddDynamic(this, &UInteractionWidget::OnStation_BClicked);
+    if (Station_C)
+        Station_C->OnClicked.AddDynamic(this, &UInteractionWidget::OnStation_CClicked);
+    if (Station_D)
+        Station_D->OnClicked.AddDynamic(this, &UInteractionWidget::OnStation_DClicked);
 
-	if (Station_B)
-	{
-		Station_B->OnClicked.AddDynamic(this, &UInteractionWidget::OnStation_BClicked);
-	}
+    if (Circle_A) Circle_A->SetColorAndOpacity(FLinearColor::Gray);
+    if (Circle_B) Circle_B->SetColorAndOpacity(FLinearColor::Gray);
+    if (Circle_C) Circle_C->SetColorAndOpacity(FLinearColor::Gray);
+    if (Circle_D) Circle_D->SetColorAndOpacity(FLinearColor::Gray);
 
-	if (Station_C)
-	{
-		Station_C->OnClicked.AddDynamic(this, &UInteractionWidget::OnStation_CClicked);
-	}
+    USubLevelTaskManager::Get(GetWorld())->RegisterWidget(this);
+}
 
-	if (Station_D)
-	{
-		Station_D->OnClicked.AddDynamic(this, &UInteractionWidget::OnStation_DClicked);
-	}
+void UInteractionWidget::UpdateTaskState_Implementation(bool bTaskRunning)
+{
+    LockButtons(bTaskRunning);
+}
+
+void UInteractionWidget::HighlightCircle(UImage* TargetCircle)
+{
+    if (!TargetCircle) return;
+
+    TargetCircle->SetColorAndOpacity(FLinearColor::Yellow);
+}
+
+void UInteractionWidget::DisableAllButtons()
+{
+    if (Station_A) Station_A->SetIsEnabled(false);
+    if (Station_B) Station_B->SetIsEnabled(false);
+    if (Station_C) Station_C->SetIsEnabled(false);
+    if (Station_D) Station_D->SetIsEnabled(false);
+}
+
+void UInteractionWidget::LockButtons(bool bLock)
+{
+    Station_A->SetIsEnabled(!bLock);
+    Station_B->SetIsEnabled(!bLock);
+    Station_C->SetIsEnabled(!bLock);
+    Station_D->SetIsEnabled(!bLock);
 }
 
 void UInteractionWidget::OnStation_AClicked()
 {
-	UE_LOG(LogTemp, Log, TEXT("Station A clicked"));
-	if (!StationAData) return;
+    if (bHasSelected) return;
+    UE_LOG(LogTemp, Log, TEXT("Station A clicked"));
+    bHasSelected = true;
 
-	USubLevelTaskManager::Get(GetWorld())->RequestTask(StationAData);
+    HighlightCircle(Circle_A);
+    DisableAllButtons();
+
+    if (!StationAData) return;
+    USubLevelTaskManager::Get(GetWorld())->RequestTask(StationAData);
 }
 
 void UInteractionWidget::OnStation_BClicked()
 {
-	UE_LOG(LogTemp, Log, TEXT("Station B clicked"));
-	USubLevelTaskManager::Get(GetWorld())->RequestTask(StationBData);
+    if (bHasSelected) return;
+    UE_LOG(LogTemp, Log, TEXT("Station B clicked"));
+    bHasSelected = true;
+
+    HighlightCircle(Circle_B);
+    DisableAllButtons();
+
+    if (!StationBData) return;
+    USubLevelTaskManager::Get(GetWorld())->RequestTask(StationBData);
 }
 
 void UInteractionWidget::OnStation_CClicked()
 {
-	UE_LOG(LogTemp, Log, TEXT("Station C clicked"));
-	USubLevelTaskManager::Get(GetWorld())->RequestTask(StationCData);
+    if (bHasSelected) return;
+    UE_LOG(LogTemp, Log, TEXT("Station C clicked"));
+    bHasSelected = true;
+
+    HighlightCircle(Circle_C);
+    DisableAllButtons();
+
+    if (!StationCData) return;
+    USubLevelTaskManager::Get(GetWorld())->RequestTask(StationCData);
 }
 
 void UInteractionWidget::OnStation_DClicked()
 {
-	UE_LOG(LogTemp, Log, TEXT("Station D clicked"));
-	USubLevelTaskManager::Get(GetWorld())->RequestTask(StationDData);
+    if (bHasSelected) return;
+    UE_LOG(LogTemp, Log, TEXT("Station D clicked"));
+    bHasSelected = true;
+
+    HighlightCircle(Circle_D);
+    DisableAllButtons();
+
+    if (!StationDData) return;
+    USubLevelTaskManager::Get(GetWorld())->RequestTask(StationDData);
 }
+

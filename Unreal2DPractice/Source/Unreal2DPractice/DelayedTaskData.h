@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "Components/Button.h"
 #include "DelayedTaskData.generated.h"
 
 /**
