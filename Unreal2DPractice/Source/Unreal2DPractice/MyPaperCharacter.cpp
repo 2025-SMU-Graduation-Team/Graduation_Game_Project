@@ -112,22 +112,37 @@ void AMyPaperCharacter::UpdateAnimation()
 
 void AMyPaperCharacter::PlayDeath()
 {
+	// if already dead, no die again
+	if (bIsDead)
+	{
+		return;
+	}
+
 	bIsDead = true;
 
-	/*APlayerController* PC = Cast<APlayerController>(GetController());
+	/*
+	APlayerController* PC = Cast<APlayerController>(GetController());
 	if (PC)
 	{
 		PC->DisableInput(PC);
-	}*/
+	}
+	GetCharacterMovement()->DisableMovement();
+	*/
 
 	if (DieAnimation)
 	{
-		GetSprite()->SetFlipbook(DieAnimation);
+		//GetSprite()->SetFlipbook(DieAnimation);
+		UPaperFlipbookComponent* FlipComp = GetSprite();
+		if (FlipComp)
+		{
+			FlipComp->SetFlipbook(DieAnimation);
+
+			FlipComp->SetLooping(false);
+			FlipComp->PlayFromStart();
+		}
 	}
 
-	/*GetCharacterMovement()->DisableMovement();
-
-
+	/*
 	FTimerHandle DeathTimer;
 	GetWorld()->GetTimerManager().SetTimer(
 		DeathTimer,
@@ -135,7 +150,8 @@ void AMyPaperCharacter::PlayDeath()
 		&AMyPaperCharacter::K2_DestroyActor,
 		1.2f,    
 		false
-	);*/
+	);
+	*/
 }
 
 void AMyPaperCharacter::SetCanHide(AHidingSpot* Spot)
