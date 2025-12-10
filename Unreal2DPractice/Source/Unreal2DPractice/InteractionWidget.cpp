@@ -5,12 +5,15 @@
 #include "Components/Button.h"
 #include "Kismet/GameplayStatics.h"
 #include "SubLevelTaskManager.h"
+#include "UISelectedManager.h"
 #include "EngineUtils.h"
 #include "Engine/StaticMeshActor.h"
 
 void UInteractionWidget::NativeConstruct()
 {
     Super::NativeConstruct();
+
+    UUISelectedManager* State = GetGameInstance()->GetSubsystem<UUISelectedManager>();
 
     if (Station_A)
         Station_A->OnClicked.AddDynamic(this, &UInteractionWidget::OnStation_AClicked);
@@ -25,6 +28,27 @@ void UInteractionWidget::NativeConstruct()
     if (Circle_B) Circle_B->SetColorAndOpacity(FLinearColor::Gray);
     if (Circle_C) Circle_C->SetColorAndOpacity(FLinearColor::Gray);
     if (Circle_D) Circle_D->SetColorAndOpacity(FLinearColor::Gray);
+
+    if (State->LastSelectedStation == "StationA") {
+        HighlightCircle(Circle_A);
+        bHasSelected = true;
+        DisableAllButtons();
+    }
+    else if (State->LastSelectedStation == "StationB") {
+        HighlightCircle(Circle_B);
+        bHasSelected = true;
+        DisableAllButtons();
+    }
+    else if (State->LastSelectedStation == "StationC") {
+        HighlightCircle(Circle_C);
+        bHasSelected = true;
+        DisableAllButtons();
+    }
+    else if (State->LastSelectedStation == "StationD") {
+        HighlightCircle(Circle_D);
+        bHasSelected = true;
+        DisableAllButtons();
+    }
 
     USubLevelTaskManager::Get(GetWorld())->RegisterWidget(this);
 }
@@ -66,6 +90,9 @@ void UInteractionWidget::OnStation_AClicked()
     HighlightCircle(Circle_A);
     DisableAllButtons();
 
+    UUISelectedManager* State = GetGameInstance()->GetSubsystem<UUISelectedManager>();
+    State->LastSelectedStation = "StationA";
+
     if (!StationAData) return;
     USubLevelTaskManager::Get(GetWorld())->RequestTask(StationAData);
 }
@@ -78,6 +105,9 @@ void UInteractionWidget::OnStation_BClicked()
 
     HighlightCircle(Circle_B);
     DisableAllButtons();
+
+    UUISelectedManager* State = GetGameInstance()->GetSubsystem<UUISelectedManager>();
+    State->LastSelectedStation = "StationB";
 
     if (!StationBData) return;
     USubLevelTaskManager::Get(GetWorld())->RequestTask(StationBData);
@@ -92,6 +122,9 @@ void UInteractionWidget::OnStation_CClicked()
     HighlightCircle(Circle_C);
     DisableAllButtons();
 
+    UUISelectedManager* State = GetGameInstance()->GetSubsystem<UUISelectedManager>();
+    State->LastSelectedStation = "StationC";
+
     if (!StationCData) return;
     USubLevelTaskManager::Get(GetWorld())->RequestTask(StationCData);
 }
@@ -104,6 +137,9 @@ void UInteractionWidget::OnStation_DClicked()
 
     HighlightCircle(Circle_D);
     DisableAllButtons();
+
+    UUISelectedManager* State = GetGameInstance()->GetSubsystem<UUISelectedManager>();
+    State->LastSelectedStation = "StationD";
 
     if (!StationDData) return;
     USubLevelTaskManager::Get(GetWorld())->RequestTask(StationDData);

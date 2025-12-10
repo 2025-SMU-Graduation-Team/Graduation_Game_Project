@@ -2,6 +2,7 @@
 #include "TimerManager.h"
 #include "Engine/World.h"
 #include "Engine/Engine.h"
+#include "UISelectedManager.h"
 
 USubLevelTaskManager* USubLevelTaskManager::Instance = nullptr;
 
@@ -59,47 +60,48 @@ void USubLevelTaskManager::RequestTask(UDelayedTaskData* TaskData)
 
     PendingTasks.Add(TaskData);
 
+    UE_LOG(LogTemp, Log, TEXT("Task Requested!"));
+
     NotifyWidgets(true);
 }
 
 void USubLevelTaskManager::OnSubLevelEntered()
 {
     for (auto* Data : PendingTasks)
+    {
         ScheduleTask(Data);
+    }
 
     PendingTasks.Empty();
 }
 
 void USubLevelTaskManager::ScheduleTask(UDelayedTaskData* TaskData)
 {
-    if (!TaskData || !WorldContext.IsValid())
-        return;
+    if (!TaskData || !WorldContext.IsValid()) return;
 
-    FTimerDelegate Delegate = FTimerDelegate::CreateUObject
-    (
-        this,
-        &USubLevelTaskManager::ExecuteTask,
-        TaskData
-    );
+    FTimerDelegate Delegate = FTimerDelegate::CreateUObject(this, &USubLevelTaskManager::ExecuteTask, TaskData);
 
     FTimerHandle Handle;
-    WorldContext->GetTimerManager().SetTimer
-    (
-        Handle,
-        Delegate,
-        TaskData->Delay,
-        false
-    );
+    WorldContext->GetTimerManager().SetTimer(Handle, Delegate, TaskData->Delay, false);
+    UE_LOG(LogTemp, Log, TEXT("Scheduled Task for %s (Delay: %.2f)"),
+        TaskData->TargetActor.IsValid() ? *TaskData->TargetActor->GetName() : TEXT("NULL"),
+        TaskData->Delay);
+
+    UUISelectedManager* State = WorldContext->GetGameInstance()->GetSubsystem<UUISelectedManager>();
+    State->LastSelectedStation = "";
 }
 
 void USubLevelTaskManager::ExecuteTask(UDelayedTaskData* TaskData)
 {
-    if (!TaskData)
-        return;
+    if (!TaskData) return;
 
     AActor* Actor = TaskData->TargetActor.Get();
-    if (!Actor)
-        return;
+    if (!Actor) return;
+
+    if (!TaskData->StartLocation.IsZero())
+    {
+        Actor->SetActorLocation(TaskData->StartLocation);
+    }
 
     FMoveTask NewTask;
     NewTask.Actor = Actor;
@@ -110,31 +112,28 @@ void USubLevelTaskManager::ExecuteTask(UDelayedTaskData* TaskData)
 
     ActiveMoveTasks.Add(NewTask);
 
-    if (!WorldContext.IsValid()) return;
-
-    if (!WorldContext->GetTimerManager().IsTimerActive(MoveTimerHandle))
+    if (WorldContext.IsValid() && !WorldContext->GetTimerManager().IsTimerActive(MoveTimerHandle))
     {
-        WorldContext->GetTimerManager().SetTimer
-        (
+        WorldContext->GetTimerManager().SetTimer(
             MoveTimerHandle,
-            this,
-            &USubLevelTaskManager::TickMove,
+            FTimerDelegate::CreateUObject(this, &USubLevelTaskManager::TickMove),
             0.01f,
             true
         );
     }
+
+    UE_LOG(LogTemp, Log, TEXT("ExecuteTask started for %s"), *Actor->GetName());
 }
 
 void USubLevelTaskManager::TickMove()
 {
-    if (!WorldContext.IsValid())
-        return;
+    if (!WorldContext.IsValid()) return;
 
     TArray<int32> Completed;
 
     for (int32 i = 0; i < ActiveMoveTasks.Num(); i++)
     {
-        auto& M = ActiveMoveTasks[i];
+        FMoveTask& M = ActiveMoveTasks[i];
 
         if (!M.Actor)
         {
@@ -157,8 +156,10 @@ void USubLevelTaskManager::TickMove()
         M.Actor->SetActorLocation(NewPos);
     }
 
-    for (int32 j = Completed.Num() - 1; j >= 0; j--)
+    for (int32 j = Completed.Num() - 1; j >= 0; j--) 
+    {
         ActiveMoveTasks.RemoveAt(Completed[j]);
+    }
 
     if (ActiveMoveTasks.Num() == 0)
     {
@@ -169,6 +170,7 @@ void USubLevelTaskManager::TickMove()
 
 void USubLevelTaskManager::BeginDestroy()
 {
+    Instance = nullptr;
     if (WorldContext.IsValid())
         WorldContext->GetTimerManager().ClearAllTimersForObject(this);
 
