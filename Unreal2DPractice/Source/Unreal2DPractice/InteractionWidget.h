@@ -29,15 +29,6 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	UButton* Station_D;
 
-	UPROPERTY(meta = (BindWidget))
-	UImage* Circle_A;
-	UPROPERTY(meta = (BindWidget))
-	UImage* Circle_B;
-	UPROPERTY(meta = (BindWidget))
-	UImage* Circle_C;
-	UPROPERTY(meta = (BindWidget))
-	UImage* Circle_D;
-
 	UFUNCTION()
 	void OnStation_AClicked();
 
@@ -62,10 +53,4 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Task")
 	UDelayedTaskData* StationDData;
-
-protected:
-	bool bHasSelected = false;
-
-	void HighlightCircle(UImage* TargetCircle);
-	void DisableAllButtons();
 };
