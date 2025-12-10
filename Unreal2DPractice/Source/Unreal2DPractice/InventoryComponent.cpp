@@ -4,6 +4,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Blueprint/UserWidget.h"
 #include "GameFramework/PlayerController.h"
+#include "MyPaperCharacter.h"
 
 
 UInventoryComponent::UInventoryComponent()
@@ -30,9 +31,9 @@ void UInventoryComponent::BeginPlay()
 	}
 }
 
-void UInventoryComponent::RequestPickup(AItemActor* Item)
+void UInventoryComponent::RequestPickup(AItemActor* Item, bool bIsWallet)
 {
-	if (!Item) return;
+	if (!InventoryWidget && !Item) return;
 
 	PendingItem = Item;
 
@@ -42,19 +43,28 @@ void UInventoryComponent::RequestPickup(AItemActor* Item)
 		PC->SetInputMode(FInputModeUIOnly());
 	}
 
-	if (InventoryWidget)
-	{
-		InventoryWidget->ShowConfirmPopup(Item->ItemIcon);
-	}
+	InventoryWidget->ShowConfirmPopup(Item->ItemIcon);
 }
 
 void UInventoryComponent::ConfirmPickupYes()
 {
 	if (!PendingItem) return;
 
-	AddItem(PendingItem->ItemIcon);
-	PendingItem->Destroy();
-	PendingItem = nullptr;
+	AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(GetOwner());
+
+	if (PendingItem->ItemType == EItemType::Wallet)
+	{
+		FVector SpawnLoc = PendingItem->GetActorLocation();
+		GetWorld()->SpawnActor<AItemActor>(
+			PendingItem->CardItemClass,
+			SpawnLoc,
+			PendingItem->GetActorRotation()
+		);
+	}
+	else
+	{
+		AddItem(PendingItem->ItemIcon);
+	}
 
 	if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
 	{
@@ -66,6 +76,10 @@ void UInventoryComponent::ConfirmPickupYes()
 	{
 		InventoryWidget->HideConfirmPopup();
 	}
+
+	PendingItem->Destroy();
+	PendingItem = nullptr;
+	Player->bEnableMovement = true; 
 }
 
 void UInventoryComponent::ConfirmPickupNo()
@@ -81,6 +95,11 @@ void UInventoryComponent::ConfirmPickupNo()
 	if (InventoryWidget)
 	{
 		InventoryWidget->HideConfirmPopup();
+	}
+
+	if (AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(GetOwner()))
+	{
+		Player->bEnableMovement = true; 
 	}
 }
 
