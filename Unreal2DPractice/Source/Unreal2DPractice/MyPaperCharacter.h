@@ -12,9 +12,8 @@
 #include "MyPaperCharacter.generated.h"
 
 /**
- * 
- */
-
+ *
+**/
 class AHidingSpot;
 
 UCLASS()
@@ -66,6 +65,22 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool bIsDead = false;
+
+	// Hide Function
+	UFUNCTION()
+	void EnterHide();
+	void ExitHide();
+	void SetCanHide(AHidingSpot* Spot);
+	void ClearCanHide(AHidingSpot* Spot);
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Hide")
+	bool bIsHidden = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Hide")
+	bool bCanHide = false;
+
+	UPROPERTY()
+	AHidingSpot* CurrentHidingSpot = nullptr;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	AInteractableActor* CurrentInteractable;
