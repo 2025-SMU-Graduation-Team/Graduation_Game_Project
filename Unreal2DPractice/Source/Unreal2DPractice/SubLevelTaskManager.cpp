@@ -107,7 +107,7 @@ void USubLevelTaskManager::ExecuteTask(UDelayedTaskData* TaskData)
     NewTask.Actor = Actor;
     NewTask.TaskData = TaskData;
     NewTask.StartLocation = Actor->GetActorLocation();
-    NewTask.TargetLocation = TaskData->TargetTransform.GetLocation();
+    NewTask.TargetLocation = TaskData->TargetTransform;
     NewTask.MoveSpeed = TaskData->MoveSpeed;
 
     ActiveMoveTasks.Add(NewTask);

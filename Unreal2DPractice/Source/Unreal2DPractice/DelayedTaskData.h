@@ -20,7 +20,7 @@ public:
 	TSoftObjectPtr<AActor> TargetActor = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FTransform TargetTransform;
+	FVector TargetTransform = FVector::ZeroVector;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) 
 	FVector StartLocation = FVector::ZeroVector;
