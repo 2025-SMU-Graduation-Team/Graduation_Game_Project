@@ -33,4 +33,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float Delay = 5.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bIsAnswer = false;
 };
