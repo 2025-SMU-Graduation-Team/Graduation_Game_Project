@@ -31,9 +31,23 @@ void UInventoryComponent::BeginPlay()
 	}
 }
 
+bool UInventoryComponent::IsInventoryFull() const
+{
+	return Items.Num() >= MaxInventorySize;
+}
+
 void UInventoryComponent::RequestPickup(AItemActor* Item, bool bIsWallet)
 {
 	if (!InventoryWidget && !Item) return;
+
+	if (IsInventoryFull())
+	{
+		AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(GetOwner());
+		Player->bEnableMovement = true;
+
+		InventoryWidget->ShowInventoryFullPopup();
+		return;
+	}
 
 	PendingItem = Item;
 
@@ -51,8 +65,9 @@ void UInventoryComponent::ConfirmPickupYes()
 	if (!PendingItem) return;
 
 	AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(GetOwner());
+	AddItem(PendingItem);
 
-	if (PendingItem->ItemType == EItemType::Wallet)
+	/*if (PendingItem->ItemType == EItemType::Wallet)
 	{
 		FVector SpawnLoc = PendingItem->GetActorLocation();
 		GetWorld()->SpawnActor<AItemActor>(
@@ -64,7 +79,7 @@ void UInventoryComponent::ConfirmPickupYes()
 	else
 	{
 		AddItem(PendingItem->ItemIcon);
-	}
+	}*/
 
 	if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
 	{
@@ -103,11 +118,58 @@ void UInventoryComponent::ConfirmPickupNo()
 	}
 }
 
-void UInventoryComponent::AddItem(UTexture2D* ItemIcon)
+void UInventoryComponent::SelectSlot(int32 Index)
 {
-	if (!ItemIcon) return;
+	if (!Items.IsValidIndex(Index))
+	{
+		return;
+	}
 
-	Items.Add(ItemIcon);
+	if (SelectedInvenIndex == Index)
+	{
+		SelectedInvenIndex = INDEX_NONE;
+		InventoryWidget->HideItemInfoPopup();
+		return;
+	}
+
+	SelectedInvenIndex = Index;
+	InventoryWidget->ShowItemInfoPopup(Items[Index].ItemName);
+}
+
+void UInventoryComponent::UseSelectedItem()
+{
+	if (!Items.IsValidIndex(SelectedInvenIndex)) return;
+
+	FInventoryItem& SelectedItem = Items[SelectedInvenIndex];
+
+	if (!SelectedItem.bIsWallet)
+	{
+		UE_LOG(LogTemp, Log, TEXT("Item is not a wallet."));
+		return;
+	}
+
+	SelectedItem.bIsWallet = false;
+	SelectedItem.ItemName = FText::FromString(TEXT("Card"));
+	SelectedItem.Icon = CardIcon;
+
+	UpdateInventoryUI();
+
+	if (InventoryWidget)
+	{
+		InventoryWidget->ShowItemInfoPopup(SelectedItem.ItemName);
+	}
+}
+
+void UInventoryComponent::AddItem(AItemActor* ItemActor)
+{
+	if (!ItemActor) return;
+
+	FInventoryItem NewItem;
+	NewItem.Icon = ItemActor->ItemIcon;
+	NewItem.ItemName = FText::FromName(ItemActor->ItemName);
+	NewItem.bIsWallet = (ItemActor->ItemType == EItemType::Wallet);
+
+	Items.Add(NewItem);
 	UpdateInventoryUI();
 }
 
