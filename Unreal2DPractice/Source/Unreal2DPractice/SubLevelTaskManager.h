@@ -8,19 +8,32 @@
 #include "TaskWidgetInterface.h"
 #include "SubLevelTaskManager.generated.h"
 
+UENUM()
+enum class EMovePhase : uint8
+{
+	MovingToTarget,
+	Waiting,
+	MovingForward,
+};
+
 USTRUCT()
 struct FMoveTask
 {
 	GENERATED_BODY()
 
-	AActor* Actor = nullptr;
+	TWeakObjectPtr<AActor> Actor;
 	UDelayedTaskData* TaskData = nullptr;
 
 	FVector StartLocation;
 	FVector TargetLocation;
-	float MoveSpeed = 100.f;
+	FVector MoveDirection;
+	float MoveSpeed = 200.f;
 
 	float StartTime = 0.f;
+
+	EMovePhase Phase = EMovePhase::MovingToTarget;
+	float WaitRemaining = 0.f;
+	float ForwardMoveRemaining = 5.f;
 };
 
 UCLASS()
@@ -66,4 +79,8 @@ private:
 	TArray<TScriptInterface<ITaskWidgetInterface>> RegisteredWidgets;
 
 	void NotifyWidgets(bool bRunning);
+
+	void HandleMoveToTarget(FMoveTask& Task);
+	void HandleWaiting(FMoveTask& Task, float Delta);
+	bool HandleMoveForward(FMoveTask& Task, float Delta);
 };

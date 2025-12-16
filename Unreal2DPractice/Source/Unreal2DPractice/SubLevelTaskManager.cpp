@@ -103,12 +103,15 @@ void USubLevelTaskManager::ExecuteTask(UDelayedTaskData* TaskData)
         Actor->SetActorLocation(TaskData->StartLocation);
     }
 
+    FVector Dir = (TaskData->TargetTransform - Actor->GetActorLocation()).GetSafeNormal();
+
     FMoveTask NewTask;
     NewTask.Actor = Actor;
     NewTask.TaskData = TaskData;
-    NewTask.StartLocation = Actor->GetActorLocation();
     NewTask.TargetLocation = TaskData->TargetTransform;
+    NewTask.MoveDirection = Dir;
     NewTask.MoveSpeed = TaskData->MoveSpeed;
+    NewTask.Phase = EMovePhase::MovingToTarget;
 
     ActiveMoveTasks.Add(NewTask);
 
@@ -116,7 +119,8 @@ void USubLevelTaskManager::ExecuteTask(UDelayedTaskData* TaskData)
     {
         WorldContext->GetTimerManager().SetTimer(
             MoveTimerHandle,
-            FTimerDelegate::CreateUObject(this, &USubLevelTaskManager::TickMove),
+            this,
+            &USubLevelTaskManager::TickMove,
             0.01f,
             true
         );
@@ -129,43 +133,107 @@ void USubLevelTaskManager::TickMove()
 {
     if (!WorldContext.IsValid()) return;
 
+    constexpr float Delta = 0.01f;
     TArray<int32> Completed;
 
     for (int32 i = 0; i < ActiveMoveTasks.Num(); i++)
     {
-        FMoveTask& M = ActiveMoveTasks[i];
+        FMoveTask& Task = ActiveMoveTasks[i];
 
-        if (!M.Actor)
+        if (!Task.Actor.IsValid())
         {
             Completed.Add(i);
             continue;
         }
 
-        FVector Cur = M.Actor->GetActorLocation();
-        FVector Target = M.TargetLocation;
-        float Dist = FVector::Distance(Cur, Target);
-
-        if (Dist < 1.f)
+        switch (Task.Phase)
         {
-            Completed.Add(i);
-            continue;
+        case EMovePhase::MovingToTarget:
+            HandleMoveToTarget(Task);
+            break;
+
+        case EMovePhase::Waiting:
+            HandleWaiting(Task, Delta);
+            break;
+
+        case EMovePhase::MovingForward:
+            if (HandleMoveForward(Task, Delta))
+            {
+                Completed.Add(i);
+            }
+            break;
         }
-
-        FVector Dir = (Target - Cur).GetSafeNormal();
-        FVector NewPos = Cur + Dir * M.MoveSpeed * 0.01f;
-        M.Actor->SetActorLocation(NewPos);
     }
 
-    for (int32 j = Completed.Num() - 1; j >= 0; j--) 
-    {
-        ActiveMoveTasks.RemoveAt(Completed[j]);
-    }
+    for (int32 i = Completed.Num() - 1; i >= 0; i--)
+        ActiveMoveTasks.RemoveAt(Completed[i]);
 
     if (ActiveMoveTasks.Num() == 0)
     {
         NotifyWidgets(false);
         WorldContext->GetTimerManager().ClearTimer(MoveTimerHandle);
     }
+}
+
+void USubLevelTaskManager::HandleMoveToTarget(FMoveTask& Task)
+{
+    AActor* Actor = Task.Actor.Get();
+    if (!Actor) return;
+
+    FVector Cur = Actor->GetActorLocation();
+    float Dist = FVector::Dist(Cur, Task.TargetLocation);
+
+    if (Dist < 1.f)
+    {
+        // µµÂø Ã³¸®
+        if (Task.TaskData->bIsAnswer)
+        {
+            //OpenSubwayDoor(Actor);
+            //OpenScreenDoor(Actor);
+            Task.WaitRemaining = Task.TaskData->Delay * 2.f;
+        }
+        else
+        {
+            Task.WaitRemaining = Task.TaskData->Delay;
+        }
+
+        Task.Phase = EMovePhase::Waiting;
+        return;
+    }
+
+    Actor->SetActorLocation(
+        Cur + Task.MoveDirection * Task.MoveSpeed * 0.01f
+    );
+}
+
+void USubLevelTaskManager::HandleWaiting(FMoveTask& Task, float Delta)
+{
+    Task.WaitRemaining -= Delta;
+
+    if (Task.WaitRemaining > 0.f)
+        return;
+
+    if (Task.TaskData->bIsAnswer)
+    {
+        //CloseSubwayDoor(Task.Actor.Get());
+    }
+
+    Task.ForwardMoveRemaining = 15.f;
+    Task.Phase = EMovePhase::MovingForward;
+}
+
+bool USubLevelTaskManager::HandleMoveForward(FMoveTask& Task, float Delta)
+{
+    AActor* Actor = Task.Actor.Get();
+    if (!Actor) return true;
+
+    Actor->SetActorLocation(
+        Actor->GetActorLocation() +
+        Task.MoveDirection * Task.MoveSpeed * Delta
+    );
+
+    Task.ForwardMoveRemaining -= Delta;
+    return Task.ForwardMoveRemaining <= 0.f;
 }
 
 void USubLevelTaskManager::BeginDestroy()
