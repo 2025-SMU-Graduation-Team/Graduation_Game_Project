@@ -28,20 +28,25 @@ protected:
 	
 	virtual void BeginPlay() override;
 
-private:
-	bool bCanInteract;
-
-	UPROPERTY(VisibleAnywhere, Category = "Components")
+public:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UPaperFlipbookComponent* Sprite;
 
-	UPROPERTY(VisibleAnywhere, Category = "Components")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UWidgetComponent* TalkWidgetComponent;
+
+	UPROPERTY(EditAnywhere, Category = "Interaction")
+	bool bKillPlayer = false;
+
+private:
+	bool bCanInteract;
 
 	UPROPERTY(EditAnywhere, Category = "Dialogue")
 	FText DialogueText;
 
 	UPROPERTY(EditAnywhere, Category = "UI")
 	TSubclassOf<UUserWidget> TalkWidgetClass;
-	
+
+	void KillPlayer();
 
 };

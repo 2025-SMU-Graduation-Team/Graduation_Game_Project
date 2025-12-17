@@ -34,7 +34,4 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Item")
 	UTexture2D* ItemIcon;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
-	TSubclassOf<AItemActor> CardItemClass;
 };

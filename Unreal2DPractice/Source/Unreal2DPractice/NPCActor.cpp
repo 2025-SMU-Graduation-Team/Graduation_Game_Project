@@ -7,7 +7,10 @@
 #include "Blueprint/UserWidget.h"
 #include "Components/TextBlock.h"
 #include "Components/WidgetComponent.h"
+#include "NPCWidget.h"
+#include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
+#include "MyPaperCharacter.h"
 
 ANPCActor::ANPCActor()
 {
@@ -23,58 +26,41 @@ ANPCActor::ANPCActor()
 	bCanInteract = false;
 }
 
-void ANPCActor::BeginPlay()
-{
-    Super::BeginPlay();
+	void ANPCActor::BeginPlay()
+	{
+		Super::BeginPlay();
+	}
 
-    TalkWidgetComponent->SetVisibility(false);
-    if (!TalkWidgetClass)
-    {
-        return;
-    }
+	void ANPCActor::KillPlayer()
+	{
+		AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(UGameplayStatics::GetPlayerCharacter(this, 0));
 
-    TalkWidgetComponent->SetWidgetClass(TalkWidgetClass);
-    TalkWidgetComponent->InitWidget();
-    UUserWidget* Widget = TalkWidgetComponent->GetUserWidgetObject();
-
-    if (!Widget)
-    {
-        return;
-    }
-
-    UTextBlock* TextBlock = Cast<UTextBlock>(Widget->GetWidgetFromName(TEXT("DialogueText")));
-
-    if (!TextBlock)
-    {
-        return;
-    }
-
-    TextBlock->SetText(DialogueText);
-}
+		if (Player)
+		{
+			Player->PlayDeath();
+		}
+	}
 
 void ANPCActor::Interact()
 {
-    TalkWidgetComponent->SetVisibility(true);
-    UUserWidget* Widget = TalkWidgetComponent->GetUserWidgetObject();
+	UE_LOG(LogTemp, Log, TEXT("Interact NPC"));
+	UNPCWidget* Widget = Cast<UNPCWidget>(TalkWidgetComponent->GetUserWidgetObject());
 
-    if (Widget)
-    {
-        UTextBlock* TextBlock = Cast<UTextBlock>(Widget->GetWidgetFromName(TEXT("DialogueText")));
+	if (Widget)
+	{
+		Widget->ShowDialoguePopup(DialogueText, bKillPlayer);
 
-        if (TextBlock)
-        {
-            TextBlock->SetText(DialogueText);
-        }
-    }
+		if (bKillPlayer)
+		{
+			FTimerHandle KillTimerHandle;
 
-    FTimerHandle HideTimer;
-    GetWorld()->GetTimerManager().SetTimer(
-        HideTimer,
-        [this]()
-        {
-            TalkWidgetComponent->SetVisibility(false);
-        },
-        1.5f,
-        false
-    );
+			GetWorld()->GetTimerManager().SetTimer(
+				KillTimerHandle,
+				this,
+				&ANPCActor::KillPlayer,
+				2.0f,
+				false
+			);
+		}
+	}
 }
