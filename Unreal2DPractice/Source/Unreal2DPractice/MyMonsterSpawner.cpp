@@ -5,7 +5,6 @@
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 #include "Engine/World.h"
-#include "EngineUtils.h"          // ★ 추가: TActorIterator 사용
 
 #include "MyPaperMonster.h"
 #include "MyPaperCharacter.h"
@@ -45,11 +44,13 @@ void AMyMonsterSpawner::BeginPlay()
     if (TriggerBox)
     {
         TriggerBox->OnComponentBeginOverlap.AddDynamic(
-            this, &AMyMonsterSpawner::OnTriggerBegin);
+            this,
+            &AMyMonsterSpawner::OnTriggerBegin);
     }
 
     // 플레이어 캐싱
-    CachedPlayer = Cast<AMyPaperCharacter>(UGameplayStatics::GetPlayerPawn(this, 0));
+    CachedPlayer = Cast<AMyPaperCharacter>(
+        UGameplayStatics::GetPlayerPawn(this, 0));
 }
 
 void AMyMonsterSpawner::OnTriggerBegin(
@@ -60,34 +61,14 @@ void AMyMonsterSpawner::OnTriggerBegin(
     bool bFromSweep,
     const FHitResult& SweepResult)
 {
-    UE_LOG(LogTemp, Warning, TEXT("OnTriggerBegin: Something overlapped! OtherActor = %s"),
-        *GetNameSafe(OtherActor));
-
-    // 이미 한 번 스폰했다면, 소리/타이머/스폰 전부 막기
+    // 이미 한 번 썼고 OneShot이면 무시
     if (bOneShot && bHasSpawned)
     {
-        UE_LOG(LogTemp, Warning, TEXT("OnTriggerBegin: Already spawned once, ignore"));
         return;
     }
 
-    if (!OtherActor)
+    if (!OtherActor || OtherActor != CachedPlayer)
     {
-        UE_LOG(LogTemp, Warning, TEXT("OnTriggerBegin: OtherActor is null"));
-        return;
-    }
-
-    // 아직 CachedPlayer가 비어 있으면, 이번에 들어온 액터를 플레이어로 캐싱
-    if (!CachedPlayer)
-    {
-        CachedPlayer = Cast<AMyPaperCharacter>(OtherActor);
-        UE_LOG(LogTemp, Warning, TEXT("OnTriggerBegin: CachedPlayer set to %s"),
-            *GetNameSafe(CachedPlayer));
-    }
-
-    // (원래 의도대로라면 여기서 타입 체크)
-    if (OtherActor != CachedPlayer)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("OnTriggerBegin: OtherActor is not CachedPlayer"));
         return;
     }
 
@@ -96,25 +77,21 @@ void AMyMonsterSpawner::OnTriggerBegin(
     // 랜덤 방향 결정
     bSpawnFromLeft = FMath::RandBool();
 
-    UE_LOG(LogTemp, Warning, TEXT("OnTriggerBegin: Will spawn from %s"),
-        bSpawnFromLeft ? TEXT("Left") : TEXT("Right"));
-
     USceneComponent* SpawnPoint = bSpawnFromLeft ? LeftSpawnPoint : RightSpawnPoint;
+    USoundBase* UseSound = bSpawnFromLeft ? Sound_Left : Sound_Right;
 
     // 좌/우 사운드 재생
-    if (SpawnSound && SpawnPoint)
+    if (UseSound && SpawnPoint)
     {
         UGameplayStatics::PlaySoundAtLocation(
             this,
-            SpawnSound,
+            UseSound,
             SpawnPoint->GetComponentLocation());
-        UE_LOG(LogTemp, Warning, TEXT("OnTriggerBegin: Played sound"));
     }
 
+    // 1.5초(또는 설정된 시간) 후 몬스터 스폰
     if (SpawnDelay > 0.f)
     {
-        UE_LOG(LogTemp, Warning, TEXT("OnTriggerBegin: Set timer for spawn (%.2f)"), SpawnDelay);
-
         GetWorldTimerManager().SetTimer(
             TimerHandle_Spawn,
             this,
@@ -126,41 +103,24 @@ void AMyMonsterSpawner::OnTriggerBegin(
     {
         SpawnMonster();
     }
+
+    // 다시 안 쓰게 하고 싶으면 트리거 끄기
+    if (bOneShot && TriggerBox)
+    {
+        TriggerBox->SetGenerateOverlapEvents(false);
+    }
 }
 
 void AMyMonsterSpawner::SpawnMonster()
 {
-    UE_LOG(LogTemp, Warning, TEXT("SpawnMonster() called"));
-
-    if (!MonsterClass)
+    if (!MonsterClass || !CachedPlayer)
     {
-        UE_LOG(LogTemp, Error, TEXT("SpawnMonster aborted: MonsterClass is NULL"));
         return;
-    }
-
-    if (!CachedPlayer)
-    {
-        UE_LOG(LogTemp, Error, TEXT("SpawnMonster aborted: CachedPlayer is NULL"));
-        return;
-    }
-
-    // 월드에 이미 몬스터가 있는지 체크 (전역 1마리 보장)
-    for (TActorIterator<AMyPaperMonster> It(GetWorld()); It; ++It)
-    {
-        AMyPaperMonster* Existing = *It;
-        if (IsValid(Existing))
-        {
-            UE_LOG(LogTemp, Warning,
-                TEXT("SpawnMonster: Monster already exists (%s), skip spawning"),
-                *Existing->GetName());
-            return;    // 이미 월드에 살아 있는 몬스터가 1마리 있음 → 스폰 중단
-        }
     }
 
     USceneComponent* SpawnPoint = bSpawnFromLeft ? LeftSpawnPoint : RightSpawnPoint;
     if (!SpawnPoint)
     {
-        UE_LOG(LogTemp, Error, TEXT("SpawnMonster aborted: SpawnPoint is NULL"));
         return;
     }
 
@@ -168,18 +128,18 @@ void AMyMonsterSpawner::SpawnMonster()
     const FRotator Rot = FRotator::ZeroRotator;
 
     FActorSpawnParameters Params;
-    Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    Params.SpawnCollisionHandlingOverride =
+        ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
     AMyPaperMonster* Monster = GetWorld()->SpawnActor<AMyPaperMonster>(
-        MonsterClass, Loc, Rot, Params);
+        MonsterClass,
+        Loc,
+        Rot,
+        Params);
 
     if (Monster)
     {
-        UE_LOG(LogTemp, Warning, TEXT("SpawnMonster: Monster spawned at %s"), *Loc.ToString());
+        // 몬스터에게 타겟과 감지 거리 넘겨줌
         Monster->InitTarget(CachedPlayer, true, 800.f);
-    }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("SpawnMonster: Failed to spawn monster"));
     }
 }

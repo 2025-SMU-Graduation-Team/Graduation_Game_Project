@@ -10,16 +10,9 @@
 class UPaperFlipbookComponent;
 class UPaperFlipbook;
 class AMyPaperCharacter; //class APlayer2DCharacter;
-class UBoxComponent;
 
 UENUM(BlueprintType)
-enum class EMonsterState : uint8 
-{
-    Idle,       // 대기/순찰
-    Chase,      // 추격
-    Search,     // 수색 (놓친 뒤 주변 탐색)
-    Cooldown    // 잠깐 쉬었다가 Idle 복귀
-};
+enum class EMonsterState : uint8 { Idle, Walk, Attack };
 
 
 UCLASS()
@@ -33,6 +26,7 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
+	// 스포너가 타겟/옵션을 넣어줌
 	void InitTarget(AMyPaperCharacter * InTarget, bool bUseDistance, float InRadius);
 
 protected:
@@ -40,42 +34,30 @@ protected:
 	virtual void BeginPlay() override;
 
     void UpdateMovement(float DeltaTime);
+    void UpdateDetection();
+
     void SetState(EMonsterState NewState);
     void FaceToTarget();
 
-    void EnableDetection();
-
-	// When Monster and Player overlap, call this function
-    UFUNCTION()
-    void OnHitBoxOverlap(
-        UPrimitiveComponent* OverlappedComp,
-        AActor* OtherActor,
-        UPrimitiveComponent* OtherComp,
-        int32 OtherBodyIndex,
-        bool bFromSweep,
-        const FHitResult& SweepResult
-    );
-
+    // 몬스터 스프라이트 컴포넌트
     UPROPERTY(VisibleAnywhere, Category = "Monster|Visual")
     UPaperFlipbookComponent* Flipbook;
 
     UPROPERTY(EditAnywhere, Category = "Monster|Anim")
     UPaperFlipbook* FB_Idle;
-
-    UPROPERTY(VisibleAnywhere, Category = "Monster|Collision")
-    UBoxComponent* HitBox;
+    UPROPERTY(EditAnywhere, Category = "Monster|Anim")
+    UPaperFlipbook* FB_Walk;
+    UPROPERTY(EditAnywhere, Category = "Monster|Anim")
+    UPaperFlipbook* FB_Attack;
 
     UPROPERTY(EditAnywhere, Category = "AI")
-    float MoveSpeed = 250.f;
+    float MoveSpeed = 300.f;
 
     UPROPERTY(EditAnywhere, Category = "Detect")
     bool bDetectByDistance = true;
 
     UPROPERTY(EditAnywhere, Category = "Detect", meta = (EditCondition = "bDetectByDistance"))
-    float DetectRadius = 80.f;
-
-    bool bCanDetect = false;
-    FTimerHandle DetectionDelayHandle;
+    float DetectRadius = 800.f;
 
     UPROPERTY()
     AMyPaperCharacter * Target = nullptr;
@@ -84,6 +66,7 @@ protected:
 
     // 시야 감지용 LineTrace 채널(필요 시 변경)
     ECollisionChannel LOSChannel = ECC_Visibility;
+
 //public:	
 // 
 	//Called to bind functionality to input
