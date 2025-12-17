@@ -42,4 +42,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bIsAnswer = false;
+
+	UPROPERTY()
+	bool bDoorCloseRequested = false;
 };

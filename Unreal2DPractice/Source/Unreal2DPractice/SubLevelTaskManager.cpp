@@ -189,7 +189,7 @@ void USubLevelTaskManager::HandleMoveToTarget(FMoveTask& Task)
         // µµÂø Ã³¸®
         if (Task.TaskData->bIsAnswer)
         {
-            //OpenSubwayDoor(Actor);
+            OpenDoor(Task.TaskData->SubwayDoorActor.Get());
 
             OpenDoor(Task.TaskData->ScreenDoorActor.Get());
             Task.WaitRemaining = Task.TaskData->Delay * 2.f;
@@ -212,13 +212,18 @@ void USubLevelTaskManager::HandleWaiting(FMoveTask& Task, float Delta)
 {
     Task.WaitRemaining -= Delta;
 
-    if (Task.WaitRemaining > 0.f)
+    if (Task.WaitRemaining > 3.0f)
         return;
 
     if (Task.TaskData->bIsAnswer)
     {
-        //CloseSubwayDoor(Task.Actor.Get());
+        CloseDoor(Task.TaskData->SubwayDoorActor.Get());
     }
+
+    Task.WaitRemaining -= Delta;
+
+    if (Task.WaitRemaining > 0.f)
+        return;
 
     Task.ForwardMoveRemaining = 15.f;
     Task.Phase = EMovePhase::MovingForward;
@@ -249,6 +254,15 @@ void USubLevelTaskManager::OpenDoor(AActor* Actor)
     if (Actor->GetClass()->ImplementsInterface(UOpeningDoorInterface::StaticClass()))
     {
         IOpeningDoorInterface::Execute_OpenDoor(Actor);
+    }
+}
+
+void USubLevelTaskManager::CloseDoor(AActor* Actor)
+{
+    if (!Actor) return;
+    if (Actor->GetClass()->ImplementsInterface(UOpeningDoorInterface::StaticClass()))
+    {
+        IOpeningDoorInterface::Execute_CloseDoor(Actor);
     }
 }
 

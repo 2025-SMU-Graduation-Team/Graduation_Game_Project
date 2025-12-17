@@ -85,4 +85,5 @@ private:
 	bool HandleMoveForward(FMoveTask& Task, float Delta);
 
 	void OpenDoor(AActor* Actor);
+	void CloseDoor(AActor* Actor);
 };
