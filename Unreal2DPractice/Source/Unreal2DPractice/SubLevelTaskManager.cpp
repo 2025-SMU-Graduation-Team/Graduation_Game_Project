@@ -3,6 +3,7 @@
 #include "Engine/World.h"
 #include "Engine/Engine.h"
 #include "UISelectedManager.h"
+#include "OpeningDoorInterface.h"
 
 USubLevelTaskManager* USubLevelTaskManager::Instance = nullptr;
 
@@ -189,7 +190,8 @@ void USubLevelTaskManager::HandleMoveToTarget(FMoveTask& Task)
         if (Task.TaskData->bIsAnswer)
         {
             //OpenSubwayDoor(Actor);
-            //OpenScreenDoor(Actor);
+
+            OpenDoor(Task.TaskData->ScreenDoorActor.Get());
             Task.WaitRemaining = Task.TaskData->Delay * 2.f;
         }
         else
@@ -234,6 +236,20 @@ bool USubLevelTaskManager::HandleMoveForward(FMoveTask& Task, float Delta)
 
     Task.ForwardMoveRemaining -= Delta;
     return Task.ForwardMoveRemaining <= 0.f;
+}
+
+void USubLevelTaskManager::OpenDoor(AActor* Actor)
+{
+    if (!Actor)
+    {
+        UE_LOG(LogTemp, Log, TEXT("[OpenScreenDoor] The Actor is empty"));
+    }
+
+    UE_LOG(LogTemp, Warning, TEXT("[OpenScreenDoor] Actor Name: %s"), *Actor->GetName());
+    if (Actor->GetClass()->ImplementsInterface(UOpeningDoorInterface::StaticClass()))
+    {
+        IOpeningDoorInterface::Execute_OpenDoor(Actor);
+    }
 }
 
 void USubLevelTaskManager::BeginDestroy()

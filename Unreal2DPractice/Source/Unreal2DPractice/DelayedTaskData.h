@@ -25,6 +25,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) 
 	FVector StartLocation = FVector::ZeroVector;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<AActor> ScreenDoorActor;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<AActor> SubwayDoorActor;
+
 	UPROPERTY(EditAnywhere)
 	float MoveSpeed = 100.f;
 
