@@ -7,6 +7,7 @@
 	#include "PaperFlipbookComponent.h"
 	#include "GameFramework/CharacterMovementComponent.h"
 	#include "Components/CapsuleComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 
 	AMyPaperCharacter::AMyPaperCharacter()
@@ -148,15 +149,19 @@
 			GetSprite()->SetFlipbook(DieAnimation);
 		}
 
-		/*GetCharacterMovement()->DisableMovement();
-
+		GetCharacterMovement()->DisableMovement();
 
 		FTimerHandle DeathTimer;
 		GetWorld()->GetTimerManager().SetTimer(
 			DeathTimer,
 			this,
-			&AMyPaperCharacter::K2_DestroyActor,
+			&AMyPaperCharacter::GoToGameOverLevel,
 			1.2f,    
 			false
-		);*/
+		);
+	}
+
+	void AMyPaperCharacter::GoToGameOverLevel()
+	{
+		UGameplayStatics::OpenLevel(this, FName("GameOver"));
 	}

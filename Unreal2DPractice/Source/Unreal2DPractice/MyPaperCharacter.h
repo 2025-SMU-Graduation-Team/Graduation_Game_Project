@@ -29,6 +29,9 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	UFUNCTION()
+	void GoToGameOverLevel();
+
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
