@@ -7,6 +7,7 @@
 	#include "PaperFlipbookComponent.h"
 	#include "GameFramework/CharacterMovementComponent.h"
 	#include "Components/CapsuleComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 
 	AMyPaperCharacter::AMyPaperCharacter()
@@ -44,6 +45,8 @@
 			EnhancedInput->BindAction(JumpAction, ETriggerEvent::Started, this, &AMyPaperCharacter::StartJump);
 			EnhancedInput->BindAction(JumpAction, ETriggerEvent::Completed, this, &AMyPaperCharacter::StopJump);
 			EnhancedInput->BindAction(InteractAction, ETriggerEvent::Started, this, &AMyPaperCharacter::Interact);
+			EnhancedInput->BindAction(SelectSlotAction, ETriggerEvent::Triggered, this, &AMyPaperCharacter::OnSelectSlot);
+			EnhancedInput->BindAction(UseItemAction, ETriggerEvent::Triggered, this, &AMyPaperCharacter::OnUseItem);
 		}
 	}
 
@@ -79,6 +82,24 @@
 		{
 			CurrentInteractable->Interact();
 		}
+	}
+
+	void AMyPaperCharacter::OnSelectSlot(const FInputActionValue& Value)
+	{
+		if (!Inventory) return;
+
+		int32 SlotIndex = FMath::RoundToInt(Value.Get<float>());
+		UE_LOG(LogTemp, Log, TEXT("Key Pressed Slot(Index): %d"), SlotIndex);
+
+		Inventory->SelectSlot(SlotIndex - 1);
+	}
+
+	void AMyPaperCharacter::OnUseItem(const FInputActionValue& Value)
+	{
+		if (!Inventory) return;
+
+		UE_LOG(LogTemp, Log, TEXT("Use Item by Pressing Q"));
+		Inventory->UseSelectedItem();
 	}
 
 	void AMyPaperCharacter::UpdateCharacterDirection(float AxisValue)
@@ -128,15 +149,19 @@
 			GetSprite()->SetFlipbook(DieAnimation);
 		}
 
-		/*GetCharacterMovement()->DisableMovement();
-
+		GetCharacterMovement()->DisableMovement();
 
 		FTimerHandle DeathTimer;
 		GetWorld()->GetTimerManager().SetTimer(
 			DeathTimer,
 			this,
-			&AMyPaperCharacter::K2_DestroyActor,
+			&AMyPaperCharacter::GoToGameOverLevel,
 			1.2f,    
 			false
-		);*/
+		);
+	}
+
+	void AMyPaperCharacter::GoToGameOverLevel()
+	{
+		UGameplayStatics::OpenLevel(this, FName("GameOver"));
 	}

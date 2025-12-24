@@ -3,7 +3,7 @@
 
 #include "ItemInventoryWidget.h"
 
-void UItemInventoryWidget::UpdateInventory(const TArray<UTexture2D*>& Items)
+void UItemInventoryWidget::UpdateInventory(const TArray<FInventoryItem>& Items)
 {
 	if (!InventoryBox) return;
 
@@ -13,10 +13,10 @@ void UItemInventoryWidget::UpdateInventory(const TArray<UTexture2D*>& Items)
 		UImage* SlotImage = Cast<UImage>(InventoryBox->GetChildAt(i));
 		if (!SlotImage) continue;
 
-		if (i < Items.Num() && Items[i] != nullptr)
+		if (i < Items.Num() && Items[i].Icon != nullptr)
 		{
 			FSlateBrush Brush;
-			Brush.SetResourceObject(Items[i]);
+			Brush.SetResourceObject(Items[i].Icon);
 			Brush.ImageSize = FVector2D(60.f, 60.f);
 			SlotImage->SetBrush(Brush);
 		}

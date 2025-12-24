@@ -29,6 +29,9 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	UFUNCTION()
+	void GoToGameOverLevel();
+
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -46,6 +49,12 @@ public:
 	TObjectPtr<UInputAction> InteractAction;
 
 	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<UInputAction> SelectSlotAction;
+
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<UInputAction> UseItemAction;
+
+	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UInputMappingContext> InputMappingContext;
 
 	// State Function
@@ -60,6 +69,9 @@ public:
 
 	UFUNCTION()
 	void Interact(const FInputActionValue& Value);
+
+	void OnSelectSlot(const FInputActionValue& Value);
+	void OnUseItem(const FInputActionValue& Value);
 
 	UFUNCTION()
 	void PlayDeath();

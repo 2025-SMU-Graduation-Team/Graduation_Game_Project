@@ -11,6 +11,21 @@ class UTexture2D;
 class UItemInventoryWidget;
 class AItemActor;
 
+USTRUCT(BlueprintType)
+struct FInventoryItem
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UTexture2D* Icon;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FText ItemName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool bIsWallet;
+};
+
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class UNREAL2DPRACTICE_API UInventoryComponent : public UActorComponent
 {
@@ -25,7 +40,16 @@ protected:
 public:
 	/** Item List */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	TArray<UTexture2D*> Items;
+	TArray<FInventoryItem> Items;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Inventory")
+	int32 MaxInventorySize = 5;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	int32 SelectedInvenIndex = INDEX_NONE;
+
+	UFUNCTION(BlueprintCallable)
+	bool IsInventoryFull() const;
 
 	/** UI Widget */
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
@@ -38,7 +62,13 @@ public:
 	AItemActor* PendingItem;
 
 	UFUNCTION(BlueprintCallable)
-	void AddItem(UTexture2D* ItemIcon);
+	void SelectSlot(int32 Index);
+
+	UFUNCTION(BlueprintCallable)
+	void UseSelectedItem();
+
+	UFUNCTION(BlueprintCallable)
+	void AddItem(AItemActor* ItemActor);
 
 	void UpdateInventoryUI();
 
@@ -49,4 +79,8 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void ConfirmPickupNo();
+
+private:
+	UPROPERTY(EditAnywhere, Category = "Card")
+	UTexture2D* CardIcon;
 };
