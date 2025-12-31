@@ -35,5 +35,11 @@ private:
 
     ESubwayState CurrentState;
 
-    static const TCHAR* StateToString(ESubwayState State);
+    const TCHAR* StateToString(ESubwayState State);
+
+    UPROPERTY(EditAnywhere, Category = "Subway")
+    FVector NormalTeleportLocation;
+
+    UPROPERTY(EditAnywhere, Category = "Subway")
+    FVector HiddenTeleportLocation;
 };

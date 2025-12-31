@@ -202,11 +202,6 @@ void USubLevelTaskManager::HandleMoveToTarget(FMoveTask& Task)
             OpenDoor(Task.TaskData->SubwayDoorActor.Get());
             OpenDoor(Task.TaskData->ScreenDoorActor.Get());
 
-            if (Task.TaskData->SubwayStateActor.IsValid())
-            {
-                Task.TaskData->SubwayStateActor->SetState(ESubwayState::DoorsOpen);
-            }
-
             Task.WaitRemaining = Task.TaskData->Delay * 2.f;
         }
         else
@@ -225,6 +220,11 @@ void USubLevelTaskManager::HandleMoveToTarget(FMoveTask& Task)
 
 void USubLevelTaskManager::HandleWaiting(FMoveTask& Task, float Delta)
 {
+    if (Task.TaskData->SubwayStateActor.IsValid())
+    {
+        Task.TaskData->SubwayStateActor->SetState(ESubwayState::DoorsOpen);
+    }
+
     Task.WaitRemaining -= Delta;
 
     if (Task.WaitRemaining > 3.f)
@@ -252,6 +252,11 @@ bool USubLevelTaskManager::HandleMoveForward(FMoveTask& Task, float Delta)
         Actor->GetActorLocation() +
         Task.MoveDirection * Task.MoveSpeed * Delta
     );
+
+    if (Task.TaskData->SubwayStateActor.IsValid())
+    {
+        Task.TaskData->SubwayStateActor->SetState(ESubwayState::Leaving);
+    }
 
     Task.ForwardMoveRemaining -= Delta;
 
