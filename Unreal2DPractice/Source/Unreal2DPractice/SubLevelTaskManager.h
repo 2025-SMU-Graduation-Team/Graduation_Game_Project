@@ -1,61 +1,83 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "DelayedTaskData.h"
+#include "TaskWidgetInterface.h"
+#include "UObject/Object.h"
 #include "SubLevelTaskManager.generated.h"
+
+class UDelayedTaskData;
+class UUserWidget;
+class ASubwayStateActor;
+
+UENUM()
+enum class EMovePhase : uint8
+{
+    MovingToTarget,
+    Waiting,
+    MovingForward
+};
 
 USTRUCT()
 struct FMoveTask
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
-	AActor* Actor = nullptr;
-	UDelayedTaskData* TaskData = nullptr;
+    TWeakObjectPtr<AActor> Actor;
+    UDelayedTaskData* TaskData = nullptr;
 
-	FVector StartLocation;
-	FVector TargetLocation;
-	float MoveSpeed = 100.f;
+    FVector TargetLocation;
+    FVector MoveDirection;
 
-	float StartTime = 0.f;
+    float MoveSpeed = 0.f;
+    float WaitRemaining = 0.f;
+    float ForwardMoveRemaining = 0.f;
+
+    EMovePhase Phase = EMovePhase::MovingToTarget;
 };
 
 UCLASS()
 class UNREAL2DPRACTICE_API USubLevelTaskManager : public UObject
 {
-	GENERATED_BODY()
-	
-	public:
-	// Singleton Getter
-	static USubLevelTaskManager* Get(UWorld* World);
+    GENERATED_BODY()
 
-	// Register task
-	void RequestTask(UDelayedTaskData* TaskData);
+    public:
+    static USubLevelTaskManager* Get(UWorld* World);
 
-	// Execute all pending tasks when sublevel loads
-	void OnSubLevelEntered();
+    void RegisterWidget(UUserWidget* Widget);
+    void RequestTask(UDelayedTaskData* TaskData);
+    void OnSubLevelEntered();
+
+protected:
+    virtual void BeginDestroy() override;
 
 private:
-	// Internal functions
-	void ScheduleTask(UDelayedTaskData* TaskData);
-	void ExecuteTask(UDelayedTaskData* TaskData);
+    void NotifyWidgets(bool bRunning);
 
-	// Singleton instance
-	static USubLevelTaskManager* Instance;
+    void ScheduleTask(UDelayedTaskData* TaskData);
+    void ExecuteTask(UDelayedTaskData* TaskData);
 
-	// World context pointer (not used as owner)
-	UPROPERTY()
-	TWeakObjectPtr<UWorld> WorldContext;
+    void TickMove();
 
-	// Tasks waiting for sublevel load
-	UPROPERTY()
-	TArray<UDelayedTaskData*> PendingTasks;
+    void HandleMoveToTarget(FMoveTask& Task);
+    void HandleWaiting(FMoveTask& Task, float Delta);
+    bool HandleMoveForward(FMoveTask& Task, float Delta);
 
-	void TickMove();
-	void BeginDestroy();
+    void OpenDoor(AActor* Actor);
+    void CloseDoor(AActor* Actor);
 
-	TArray<FMoveTask> ActiveMoveTasks;
-	FTimerHandle MoveTimerHandle;
+private:
+    static USubLevelTaskManager* Instance;
+
+    TWeakObjectPtr<UWorld> WorldContext;
+
+    TArray<UDelayedTaskData*> PendingTasks;
+    TArray<FMoveTask> ActiveMoveTasks;
+
+    TArray<TScriptInterface<class UTaskWidgetInterface>> RegisteredWidgets;
+
+    FTimerHandle MoveTimerHandle;
+
+    TWeakObjectPtr<ASubwayStateActor> SubwayStateActor;
 };

@@ -5,17 +5,21 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "DelayedTaskData.h"
+#include "Components/Image.h"
+#include "TaskWidgetInterface.h"  
 #include "InteractionWidget.generated.h"
 
 class UButton;
 
 UCLASS()
-class UNREAL2DPRACTICE_API UInteractionWidget : public UUserWidget
+class UNREAL2DPRACTICE_API UInteractionWidget : public UUserWidget, public ITaskWidgetInterface
 {
 	GENERATED_BODY()
 	
 public:
 	virtual void NativeConstruct() override;
+
+	virtual void UpdateTaskState_Implementation(bool bTaskRunning) override;
 
 	UPROPERTY(meta=(BindWidget))
 	UButton* Station_A;
@@ -28,6 +32,15 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	UButton* Station_D;
+
+	UPROPERTY(meta = (BindWidget))
+	UImage* Circle_A;
+	UPROPERTY(meta = (BindWidget))
+	UImage* Circle_B;
+	UPROPERTY(meta = (BindWidget))
+	UImage* Circle_C;
+	UPROPERTY(meta = (BindWidget))
+	UImage* Circle_D;
 
 	UFUNCTION()
 	void OnStation_AClicked();
@@ -53,4 +66,12 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Task")
 	UDelayedTaskData* StationDData;
+
+protected:
+	bool bHasSelected = false;
+
+	void HighlightCircle(UImage* TargetCircle);
+	void DisableAllButtons();
+
+	void LockButtons(bool bLock);
 };

@@ -1,210 +1,307 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #include "SubLevelTaskManager.h"
 #include "TimerManager.h"
 #include "Engine/World.h"
-#include "EngineUtils.h"
 #include "Engine/Engine.h"
+#include "UISelectedManager.h"
+#include "OpeningDoorInterface.h"
+#include "SubwayStateActor.h"
+#include "DelayedTaskData.h"
+#include "TaskWidgetInterface.h"
 
 USubLevelTaskManager* USubLevelTaskManager::Instance = nullptr;
 
 USubLevelTaskManager* USubLevelTaskManager::Get(UWorld* World)
 {
-	if (!Instance)
-	{
-		if (!World)
-		{
-			UE_LOG(LogTemp, Error, TEXT("SubLevelTaskManager::Get called with null World!"));
-			return nullptr;
-		}
+    if (!Instance)
+    {
+        if (!World)
+        {
+            UE_LOG(LogTemp, Error, TEXT("SubLevelTaskManager::Get - World is null"));
+            return nullptr;
+        }
 
-		UObject* Outer = World->GetGameInstance();
-		if (!Outer)
-		{
-			UE_LOG(LogTemp, Error, TEXT("SubLevelTaskManager::Get - World has no GameInstance!"));
-			return nullptr;
-		}
+        UObject* Outer = World->GetGameInstance();
+        Instance = NewObject<USubLevelTaskManager>(Outer);
+        Instance->SetFlags(RF_Transient);
+        Instance->WorldContext = World;
+    }
+    else
+    {
+        Instance->WorldContext = World;
+    }
 
-		Instance = NewObject<USubLevelTaskManager>(Outer);
-		Instance->WorldContext = World;
-		Instance->SetFlags(RF_Transient);
+    return Instance;
+}
 
-		UE_LOG(LogTemp, Log, TEXT("SubLevelTaskManager created (Outer = GameInstance)"));
-	}
-	else
-	{
-		if (World)
-		{
-			Instance->WorldContext = World;
-		}
-	}
+void USubLevelTaskManager::RegisterWidget(UUserWidget* Widget)
+{
+    if (!Widget)
+        return;
 
-	return Instance;
+    if (!Widget->GetClass()->ImplementsInterface(UTaskWidgetInterface::StaticClass()))
+        return;
+
+    RegisteredWidgets.Add(Widget);
+
+    const bool bRunning = PendingTasks.Num() > 0 || ActiveMoveTasks.Num() > 0;
+    ITaskWidgetInterface::Execute_UpdateTaskState(Widget, bRunning);
+}
+
+void USubLevelTaskManager::NotifyWidgets(bool bRunning)
+{
+    for (auto& Widget : RegisteredWidgets)
+    {
+        UObject* Obj = Widget.GetObject();
+        if (!Obj)
+            continue;
+
+        ITaskWidgetInterface::Execute_UpdateTaskState(Obj, bRunning);
+    }
 }
 
 void USubLevelTaskManager::RequestTask(UDelayedTaskData* TaskData)
 {
-	if (!TaskData)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("RequestTask: TaskData is NULL!"));
-		return;
-	}
+    if (!TaskData)
+        return;
 
-	PendingTasks.Add(TaskData);
-
-	if (TaskData->TargetActor.IsValid())
-	{
-		UE_LOG(LogTemp, Log, TEXT("Task Requested for actor: %s"),
-			*TaskData->TargetActor->GetName());
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Task Requested with invalid TargetActor"));
-	}
+    PendingTasks.Add(TaskData);
+    NotifyWidgets(true);
 }
 
 void USubLevelTaskManager::OnSubLevelEntered()
 {
-	UE_LOG(LogTemp, Log, TEXT("OnSubLevelEntered - scheduling %d tasks"), PendingTasks.Num());
+    for (auto* Task : PendingTasks)
+    {
+        ScheduleTask(Task);
+    }
 
-	for (UDelayedTaskData* Data : PendingTasks)
-	{
-		ScheduleTask(Data);
-	}
-
-	PendingTasks.Empty();
+    PendingTasks.Empty();
 }
 
 void USubLevelTaskManager::ScheduleTask(UDelayedTaskData* TaskData)
 {
-	if (!TaskData)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("ScheduleTask: Invalid TaskData"));
-		return;
-	}
+    if (!TaskData || !WorldContext.IsValid())
+        return;
 
-	UWorld* World = WorldContext.IsValid() ? WorldContext.Get() : nullptr;
-	if (!World)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("ScheduleTask: No valid world"));
-		return;
-	}
+    FTimerDelegate Delegate =
+        FTimerDelegate::CreateUObject(this, &USubLevelTaskManager::ExecuteTask, TaskData);
 
-	FTimerDelegate Delegate = FTimerDelegate::CreateUObject(
-		this,
-		&USubLevelTaskManager::ExecuteTask,
-		TaskData
-	);
+    FTimerHandle Handle;
+    WorldContext->GetTimerManager().SetTimer(
+        Handle,
+        Delegate,
+        TaskData->Delay,
+        false
+    );
 
-	FTimerHandle Handle;
-	World->GetTimerManager().SetTimer(
-		Handle,
-		Delegate,
-		TaskData->Delay,
-		false
-	);
-
-	UE_LOG(LogTemp, Log, TEXT("Scheduled Task for %s (Delay: %.2f)"),
-		TaskData->TargetActor.IsValid() ? *TaskData->TargetActor->GetName() : TEXT("NULL"),
-		TaskData->Delay);
+    if (UUISelectedManager* UIState =
+        WorldContext->GetGameInstance()->GetSubsystem<UUISelectedManager>())
+    {
+        UIState->LastSelectedStation = NAME_None;
+    }
 }
 
 void USubLevelTaskManager::ExecuteTask(UDelayedTaskData* TaskData)
 {
-	if (!TaskData)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("ExecuteTask: TaskData is null"));
-		return;
-	}
+    if (!TaskData)
+        return;
 
-	AActor* Actor = TaskData->TargetActor.Get();
-	if (!Actor)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("ExecuteTask: TargetActor is null! Task skipped."));
-		return;
-	}
+    AActor* Actor = TaskData->TargetActor.Get();
+    if (!Actor)
+        return;
 
-	// 시작 위치 세팅
-	if (!TaskData->StartLocation.IsZero())
-	{
-		Actor->SetActorLocation(TaskData->StartLocation);
-	}
+    if (!TaskData->StartLocation.IsZero())
+    {
+        Actor->SetActorLocation(TaskData->StartLocation);
+    }
 
-	// 이동 태스크 등록
-	FMoveTask NewTask;
-	NewTask.Actor = Actor;
-	NewTask.TaskData = TaskData;
-	NewTask.StartTime = WorldContext.IsValid() ? WorldContext->GetTimeSeconds() : 0.f;
-	NewTask.StartLocation = Actor->GetActorLocation();
-	NewTask.TargetLocation = TaskData->TargetTransform.GetLocation();
-	NewTask.MoveSpeed = TaskData->MoveSpeed;
+    FMoveTask NewTask;
+    NewTask.Actor = Actor;
+    NewTask.TaskData = TaskData;
+    NewTask.TargetLocation = TaskData->TargetTransform;
+    NewTask.MoveDirection = (TaskData->TargetTransform - Actor->GetActorLocation()).GetSafeNormal();
+    NewTask.MoveSpeed = TaskData->MoveSpeed;
+    NewTask.Phase = EMovePhase::MovingToTarget;
 
-	ActiveMoveTasks.Add(NewTask);
+    ActiveMoveTasks.Add(NewTask);
 
-	// 타이머 시작 (매 0.01초마다 TickMove)
-	if (WorldContext.IsValid() && !WorldContext->GetTimerManager().IsTimerActive(MoveTimerHandle))
-	{
-		WorldContext->GetTimerManager().SetTimer(
-			MoveTimerHandle,
-			FTimerDelegate::CreateUObject(this, &USubLevelTaskManager::TickMove),
-			0.01f,
-			true
-		);
-	}
-
-	UE_LOG(LogTemp, Log, TEXT("ExecuteTask started for %s"), *Actor->GetName());
+    if (!WorldContext->GetTimerManager().IsTimerActive(MoveTimerHandle))
+    {
+        WorldContext->GetTimerManager().SetTimer(
+            MoveTimerHandle,
+            this,
+            &USubLevelTaskManager::TickMove,
+            0.01f,
+            true
+        );
+    }
 }
 
 void USubLevelTaskManager::TickMove()
 {
-	if (!WorldContext.IsValid())
-		return;
+    if (!WorldContext.IsValid())
+        return;
 
-	TArray<int32> Completed;
+    constexpr float Delta = 0.01f;
+    TArray<int32> Completed;
 
-	for (int32 i = 0; i < ActiveMoveTasks.Num(); i++)
-	{
-		FMoveTask& M = ActiveMoveTasks[i];
+    for (int32 i = 0; i < ActiveMoveTasks.Num(); ++i)
+    {
+        FMoveTask& Task = ActiveMoveTasks[i];
 
-		if (!M.Actor)
-		{
-			Completed.Add(i);
-			continue;
-		}
+        if (!Task.Actor.IsValid())
+        {
+            Completed.Add(i);
+            continue;
+        }
 
-		FVector Cur = M.Actor->GetActorLocation();
-		FVector Target = M.TargetLocation;
+        switch (Task.Phase)
+        {
+        case EMovePhase::MovingToTarget:
+            HandleMoveToTarget(Task);
+            break;
 
-		float Dist = FVector::Distance(Cur, Target);
-		if (Dist < 1.f)
-		{
-			Completed.Add(i);
-			continue;
-		}
+        case EMovePhase::Waiting:
+            HandleWaiting(Task, Delta);
+            break;
 
-		FVector Dir = (Target - Cur).GetSafeNormal();
-		FVector NewPos = Cur + Dir * M.MoveSpeed * 0.01f;
+        case EMovePhase::MovingForward:
+            if (HandleMoveForward(Task, Delta))
+            {
+                Completed.Add(i);
+            }
+            break;
+        }
+    }
 
-		M.Actor->SetActorLocation(NewPos);
-	}
+    for (int32 i = Completed.Num() - 1; i >= 0; --i)
+    {
+        ActiveMoveTasks.RemoveAt(Completed[i]);
+    }
 
-	for (int32 Index = Completed.Num() - 1; Index >= 0; Index--)
-	{
-		ActiveMoveTasks.RemoveAt(Completed[Index]);
-	}
+    if (ActiveMoveTasks.Num() == 0)
+    {
+        NotifyWidgets(false);
+        WorldContext->GetTimerManager().ClearTimer(MoveTimerHandle);
+    }
+}
 
-	if (ActiveMoveTasks.Num() == 0)
-	{
-		WorldContext->GetTimerManager().ClearTimer(MoveTimerHandle);
-	}
+void USubLevelTaskManager::HandleMoveToTarget(FMoveTask& Task)
+{
+    AActor* Actor = Task.Actor.Get();
+    if (!Actor)
+        return;
+
+    const FVector Current = Actor->GetActorLocation();
+    const float Distance = FVector::Dist(Current, Task.TargetLocation);
+
+    if (Distance < 1.f)
+    {
+        if (Task.TaskData->bIsAnswer)
+        {
+            OpenDoor(Task.TaskData->SubwayDoorActor.Get());
+            OpenDoor(Task.TaskData->ScreenDoorActor.Get());
+
+            Task.WaitRemaining = Task.TaskData->Delay * 2.f;
+        }
+        else
+        {
+            Task.WaitRemaining = Task.TaskData->Delay;
+        }
+
+        Task.Phase = EMovePhase::Waiting;
+        return;
+    }
+
+    Actor->SetActorLocation(
+        Current + Task.MoveDirection * Task.MoveSpeed * 0.01f
+    );
+}
+
+void USubLevelTaskManager::HandleWaiting(FMoveTask& Task, float Delta)
+{
+    if (Task.TaskData->SubwayStateActor.IsValid())
+    {
+        Task.TaskData->SubwayStateActor->SetState(ESubwayState::DoorsOpen);
+    }
+
+    Task.WaitRemaining -= Delta;
+
+    if (Task.WaitRemaining > 3.f)
+        return;
+
+    if (Task.TaskData->bIsAnswer)
+    {
+        CloseDoor(Task.TaskData->SubwayDoorActor.Get());
+    }
+
+    if (Task.WaitRemaining > 0.f)
+        return;
+
+    Task.ForwardMoveRemaining = 15.f;
+    Task.Phase = EMovePhase::MovingForward;
+}
+
+bool USubLevelTaskManager::HandleMoveForward(FMoveTask& Task, float Delta)
+{
+    AActor* Actor = Task.Actor.Get();
+    if (!Actor)
+        return true;
+
+    Actor->SetActorLocation(
+        Actor->GetActorLocation() +
+        Task.MoveDirection * Task.MoveSpeed * Delta
+    );
+
+    if (Task.TaskData->SubwayStateActor.IsValid())
+    {
+        Task.TaskData->SubwayStateActor->SetState(ESubwayState::Leaving);
+    }
+
+    Task.ForwardMoveRemaining -= Delta;
+
+    if (Task.ForwardMoveRemaining <= 0.f)
+    {
+        if (Task.TaskData->SubwayStateActor.IsValid())
+        {
+            Task.TaskData->SubwayStateActor->SetState(ESubwayState::Passed);
+        }
+        return true;
+    }
+
+    return false;
+}
+
+void USubLevelTaskManager::OpenDoor(AActor* Actor)
+{
+    if (!Actor)
+        return;
+
+    if (Actor->GetClass()->ImplementsInterface(UOpeningDoorInterface::StaticClass()))
+    {
+        IOpeningDoorInterface::Execute_OpenDoor(Actor);
+    }
+}
+
+void USubLevelTaskManager::CloseDoor(AActor* Actor)
+{
+    if (!Actor)
+        return;
+
+    if (Actor->GetClass()->ImplementsInterface(UOpeningDoorInterface::StaticClass()))
+    {
+        IOpeningDoorInterface::Execute_CloseDoor(Actor);
+    }
 }
 
 void USubLevelTaskManager::BeginDestroy()
 {
-	if (WorldContext.IsValid())
-	{
-		WorldContext->GetTimerManager().ClearAllTimersForObject(this);
-	}
+    Instance = nullptr;
 
-	Super::BeginDestroy();
+    if (WorldContext.IsValid())
+    {
+        WorldContext->GetTimerManager().ClearAllTimersForObject(this);
+    }
+
+    Super::BeginDestroy();
 }
