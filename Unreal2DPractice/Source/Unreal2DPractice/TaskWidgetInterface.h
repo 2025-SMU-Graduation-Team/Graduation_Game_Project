@@ -3,7 +3,7 @@
 #include "UObject/Interface.h"
 #include "TaskWidgetInterface.generated.h"
 
-UINTERFACE(BlueprintType)
+UINTERFACE(Blueprintable)
 class UTaskWidgetInterface : public UInterface
 {
     GENERATED_BODY()
@@ -13,8 +13,7 @@ class ITaskWidgetInterface
 {
     GENERATED_BODY()
 
-    public:
-
+public:
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-    void UpdateTaskState(bool bIsRunning);
+    void UpdateTaskState(bool bRunning);
 };

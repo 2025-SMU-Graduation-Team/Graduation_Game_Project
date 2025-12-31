@@ -7,9 +7,8 @@
 #include "Components/Button.h"
 #include "DelayedTaskData.generated.h"
 
-/**
- * 
- */
+class ASubwayStateActor;
+
 UCLASS()
 class UNREAL2DPRACTICE_API UDelayedTaskData : public UDataAsset
 {
@@ -45,4 +44,7 @@ public:
 
 	UPROPERTY()
 	bool bDoorCloseRequested = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<ASubwayStateActor> SubwayStateActor;
 };
