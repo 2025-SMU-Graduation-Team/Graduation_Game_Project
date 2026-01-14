@@ -107,9 +107,6 @@ public:
 	UPROPERTY()
 	FVector DefaultSpriteOffset;
 
-	UPROPERTY(EditAnywhere, Category = "Hide")
-	float HideSpriteZOffset = -60.f;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	AInteractableActor* CurrentInteractable;
 

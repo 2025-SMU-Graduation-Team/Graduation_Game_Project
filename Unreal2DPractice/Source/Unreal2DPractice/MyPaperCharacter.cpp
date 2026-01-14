@@ -123,13 +123,17 @@
 	void AMyPaperCharacter::UpdateAnimation()
 	{
 		if (bIsDead) return;
-
-		UPaperFlipbook* DesiredAnimation = IdleAnimation;
-
+		
 		if (bIsHidden)
 		{
-			DesiredAnimation = HideAnimation;
+			if (HideAnimation && GetSprite()->GetFlipbook() != HideAnimation)
+			{
+				GetSprite()->SetFlipbook(HideAnimation);
+			}
+			return;
 		}
+
+		UPaperFlipbook* DesiredAnimation = IdleAnimation;
 
 		if (GetCharacterMovement()->IsFalling())
 		{
@@ -196,7 +200,10 @@ void AMyPaperCharacter::ClearCanHide(AHidingSpot* Spot)
 	bCanHide = false;
 	CurrentHidingSpot = nullptr;
 
-	UE_LOG(LogTemp, Warning, TEXT("[HIDE] Left hiding spot"));
+	if (bIsHidden)
+	{
+		ExitHide();
+	}
 }
 
 void AMyPaperCharacter::EnterHide()
@@ -211,7 +218,6 @@ void AMyPaperCharacter::EnterHide()
 	}
 
 	bIsHidden = true;
-	GetSprite()->SetRelativeLocation(DefaultSpriteOffset + FVector(0, 0, HideSpriteZOffset));
 
 	UE_LOG(LogTemp, Log, TEXT("Player is now hiding."));
 }
