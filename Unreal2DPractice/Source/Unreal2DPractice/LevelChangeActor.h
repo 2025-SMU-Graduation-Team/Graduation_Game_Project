@@ -14,9 +14,6 @@ class UNREAL2DPRACTICE_API ALevelChangeActor : public AActor
 public:	
 	ALevelChangeActor();
 
-	UFUNCTION(BlueprintCallable)
-	void MoveToLevel(FName LevelName);
-
 	UPROPERTY(EditAnywhere, Category = "Level")
 	FName NextLevelName;
 

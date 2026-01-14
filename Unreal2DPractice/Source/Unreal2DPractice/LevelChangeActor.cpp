@@ -6,6 +6,7 @@
 #include "Components/BoxComponent.h"
 #include "MyPaperCharacter.h"
 #include "SubLevelTaskManager.h"
+#include "LevelTransitionManager.h"
 
 ALevelChangeActor::ALevelChangeActor()
 {
@@ -22,19 +23,10 @@ void ALevelChangeActor::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AAct
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
 	const FHitResult& SweepResult)
 {
-	if (AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(OtherActor))
-	{
-		MoveToLevel(NextLevelName);
-	}
-}
+	ALevelTransitionManager* Manager = ALevelTransitionManager::Get(GetWorld());
 
-void ALevelChangeActor::MoveToLevel(FName LevelName)
-{
-	if (LevelName == FName("SongChaegang"))
+	if (Manager)
 	{
-		UGameplayStatics::OpenLevel(this, LevelName);
-		return;
+		Manager->ChangeSubLevel(NextLevelName);
 	}
-
-	UGameplayStatics::LoadStreamLevel(this, LevelName, true, false, FLatentActionInfo());
 }
