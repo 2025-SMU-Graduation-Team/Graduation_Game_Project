@@ -38,8 +38,7 @@ void ACameraLimitVolume::OnOverlapBegin(
 {
     if (!OtherActor) return;
 
-    UPlayerCameraController* CameraController =
-        OtherActor->FindComponentByClass<UPlayerCameraController>();
+    UPlayerCameraController* CameraController = OtherActor->FindComponentByClass<UPlayerCameraController>();
 
     if (CameraController)
     {
