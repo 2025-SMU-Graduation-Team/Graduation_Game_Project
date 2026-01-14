@@ -33,6 +33,7 @@
 				SubSystem->AddMappingContext(InputMappingContext, 0);
 			}
 		}
+		DefaultSpriteOffset = GetSprite()->GetRelativeLocation();
 	}
 
 	void AMyPaperCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -45,8 +46,13 @@
 			EnhancedInput->BindAction(JumpAction, ETriggerEvent::Started, this, &AMyPaperCharacter::StartJump);
 			EnhancedInput->BindAction(JumpAction, ETriggerEvent::Completed, this, &AMyPaperCharacter::StopJump);
 			EnhancedInput->BindAction(InteractAction, ETriggerEvent::Started, this, &AMyPaperCharacter::Interact);
+
 			EnhancedInput->BindAction(SelectSlotAction, ETriggerEvent::Triggered, this, &AMyPaperCharacter::OnSelectSlot);
 			EnhancedInput->BindAction(UseItemAction, ETriggerEvent::Triggered, this, &AMyPaperCharacter::OnUseItem);
+
+			EnhancedInput->BindAction(HideAction, ETriggerEvent::Started, this, &AMyPaperCharacter::OnHidePressed);
+			EnhancedInput->BindAction(HideAction, ETriggerEvent::Completed, this, &AMyPaperCharacter::OnHideReleased);
+			EnhancedInput->BindAction(HideAction, ETriggerEvent::Canceled, this, &AMyPaperCharacter::OnHideReleased);
 		}
 	}
 
@@ -119,6 +125,12 @@
 		if (bIsDead) return;
 
 		UPaperFlipbook* DesiredAnimation = IdleAnimation;
+
+		if (bIsHidden)
+		{
+			DesiredAnimation = HideAnimation;
+		}
+
 		if (GetCharacterMovement()->IsFalling())
 		{
 			DesiredAnimation = JumpAnimation;
@@ -172,27 +184,26 @@ void AMyPaperCharacter::SetCanHide(AHidingSpot* Spot)
 	bCanHide = true;
 	CurrentHidingSpot = Spot;
 
-	UE_LOG(LogTemp, Log, TEXT("Can hide at: %s"), *Spot->GetName());
+	UE_LOG(LogTemp, Warning, TEXT("[HIDE] Can hide at: %s"), *GetNameSafe(Spot));
 }
 
 void AMyPaperCharacter::ClearCanHide(AHidingSpot* Spot)
 {
-	if (CurrentHidingSpot == Spot)
-	{
-		bCanHide = false;
-		CurrentHidingSpot = nullptr;
+	if (CurrentHidingSpot != Spot) return;
 
-		if (bIsHidden)
-		{
-			ExitHide();
-		}
+	UE_LOG(LogTemp, Warning, TEXT("[HIDE] ClearCanHide: %s"), *GetNameSafe(Spot));
 
-		UE_LOG(LogTemp, Log, TEXT("Left hiding spot"));
-	}
+	bCanHide = false;
+	CurrentHidingSpot = nullptr;
+
+	UE_LOG(LogTemp, Warning, TEXT("[HIDE] Left hiding spot"));
 }
 
 void AMyPaperCharacter::EnterHide()
 {
+	UE_LOG(LogTemp, Warning, TEXT("[HIDE] EnterHide called. bCanHide=%d Spot=%s"),
+		bCanHide, *GetNameSafe(CurrentHidingSpot));
+
 	if (!bCanHide || !CurrentHidingSpot)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("EnterHide: No available hiding spot."));
@@ -200,17 +211,7 @@ void AMyPaperCharacter::EnterHide()
 	}
 
 	bIsHidden = true;
-
-	FVector SpotLocation = CurrentHidingSpot->GetActorLocation();
-	FVector NewLocation = GetActorLocation();
-
-	NewLocation.X = SpotLocation.X;
-	SetActorLocation(NewLocation);
-
-	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
-	{
-		MoveComp->DisableMovement();
-	}
+	GetSprite()->SetRelativeLocation(DefaultSpriteOffset + FVector(0, 0, HideSpriteZOffset));
 
 	UE_LOG(LogTemp, Log, TEXT("Player is now hiding."));
 }
@@ -223,6 +224,7 @@ void AMyPaperCharacter::ExitHide()
 	}
 
 	bIsHidden = false;
+	GetSprite()->SetRelativeLocation(DefaultSpriteOffset);
 
 	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
 	{
@@ -230,4 +232,27 @@ void AMyPaperCharacter::ExitHide()
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("Player exited hiding"));
+}
+void AMyPaperCharacter::OnHidePressed(const FInputActionValue& Value)
+{
+	UE_LOG(LogTemp, Warning, TEXT("[HIDE] OnHidePressed fired")); 
+	if (bIsDead) return;
+
+	if (bIsHidden) return;
+
+	UE_LOG(LogTemp, Warning, TEXT("[HIDE] Pressed. bCanHide=%d bIsHidden=%d Spot=%s"),
+		bCanHide, bIsHidden, *GetNameSafe(CurrentHidingSpot));
+
+	if (bCanHide)
+	{
+		EnterHide();
+	}
+}
+void AMyPaperCharacter::OnHideReleased(const FInputActionValue& Value)
+{
+	if (bIsDead) return;
+
+	if (!bIsHidden) return;
+
+	ExitHide();
 }

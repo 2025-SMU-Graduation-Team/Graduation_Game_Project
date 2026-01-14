@@ -42,7 +42,7 @@ protected:
     float SpawnDelay = 1.5f;
 
     UPROPERTY(EditAnywhere, Category = "Spawner|Sound")
-    USoundBase* SpawnSound;
+    USoundBase* MonsterWalkSound;
 
     UPROPERTY(EditAnywhere, Category = "Spawner")
     bool bOneShot = true;

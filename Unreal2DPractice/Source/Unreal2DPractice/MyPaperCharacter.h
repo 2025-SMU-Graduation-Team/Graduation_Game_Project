@@ -51,6 +51,9 @@ public:
 	TObjectPtr<UInputAction> UseItemAction;
 
 	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<UInputAction> HideAction;
+
+	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UInputMappingContext> InputMappingContext;
 
 	// State Function
@@ -78,9 +81,19 @@ public:
 	// Hide Function
 	UFUNCTION()
 	void EnterHide();
+
+	UFUNCTION()
 	void ExitHide();
+
+	UFUNCTION()
 	void SetCanHide(AHidingSpot* Spot);
 	void ClearCanHide(AHidingSpot* Spot);
+
+	UFUNCTION()
+	void OnHidePressed(const FInputActionValue& Value);
+
+	UFUNCTION()
+	void OnHideReleased(const FInputActionValue& Value);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Hide")
 	bool bIsHidden = false;
@@ -90,6 +103,12 @@ public:
 
 	UPROPERTY()
 	AHidingSpot* CurrentHidingSpot = nullptr;
+
+	UPROPERTY()
+	FVector DefaultSpriteOffset;
+
+	UPROPERTY(EditAnywhere, Category = "Hide")
+	float HideSpriteZOffset = -60.f;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	AInteractableActor* CurrentInteractable;
@@ -110,6 +129,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Animation")
 	class UPaperFlipbook* DieAnimation;
+
+	UPROPERTY(EditAnywhere, Category = "Animation")
+	class UPaperFlipbook* HideAnimation;
 
 	void UpdateAnimation();
 	void UpdateCharacterDirection(float AxisValue);

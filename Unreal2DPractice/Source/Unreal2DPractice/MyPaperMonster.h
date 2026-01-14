@@ -4,6 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
+#include "Components/AudioComponent.h"
+#include "Sound/SoundBase.h"
+
 #include "MyPaperMonster.generated.h"
 
 
@@ -34,6 +37,8 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	void InitTarget(AMyPaperCharacter * InTarget, bool bUseDistance, float InRadius);
+    
+    void StartWalkSound(USoundBase* WalkSound);
 
 protected:
 	// Called when the game starts or when spawned
@@ -84,9 +89,18 @@ protected:
 
     // 시야 감지용 LineTrace 채널(필요 시 변경)
     ECollisionChannel LOSChannel = ECC_Visibility;
-//public:	
-// 
-	//Called to bind functionality to input
-	//virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+private:
+    UPROPERTY(VisibleAnywhere, Category = "Sound")
+    UAudioComponent* WalkAudioComp;
+
+    UPROPERTY(EditAnywhere, Category = "Sound")
+    USoundBase* WalkSound;
+
+    UPROPERTY(EditAnywhere, Category = "Sound")
+    USoundBase* ShoutSound;
+
+    UPROPERTY()
+    bool bHasKilledPlayer = false;
 
 };

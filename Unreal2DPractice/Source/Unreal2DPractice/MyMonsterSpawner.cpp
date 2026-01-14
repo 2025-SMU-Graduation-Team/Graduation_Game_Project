@@ -5,7 +5,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 #include "Engine/World.h"
-#include "EngineUtils.h"          // ★ 추가: TActorIterator 사용
+#include "EngineUtils.h"          // 추가: TActorIterator 사용
+#include "Sound/SoundBase.h"
 
 #include "MyPaperMonster.h"
 #include "MyPaperCharacter.h"
@@ -50,6 +51,11 @@ void AMyMonsterSpawner::BeginPlay()
 
     // 플레이어 캐싱
     CachedPlayer = Cast<AMyPaperCharacter>(UGameplayStatics::GetPlayerPawn(this, 0));
+
+    if (!CachedPlayer)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("BeginPlay: CachedPlayer is NULL"));
+    }
 }
 
 void AMyMonsterSpawner::OnTriggerBegin(
@@ -100,16 +106,6 @@ void AMyMonsterSpawner::OnTriggerBegin(
         bSpawnFromLeft ? TEXT("Left") : TEXT("Right"));
 
     USceneComponent* SpawnPoint = bSpawnFromLeft ? LeftSpawnPoint : RightSpawnPoint;
-
-    // 좌/우 사운드 재생
-    if (SpawnSound && SpawnPoint)
-    {
-        UGameplayStatics::PlaySoundAtLocation(
-            this,
-            SpawnSound,
-            SpawnPoint->GetComponentLocation());
-        UE_LOG(LogTemp, Warning, TEXT("OnTriggerBegin: Played sound"));
-    }
 
     if (SpawnDelay > 0.f)
     {
@@ -175,8 +171,12 @@ void AMyMonsterSpawner::SpawnMonster()
 
     if (Monster)
     {
-        UE_LOG(LogTemp, Warning, TEXT("SpawnMonster: Monster spawned at %s"), *Loc.ToString());
         Monster->InitTarget(CachedPlayer, true, 800.f);
+        // WalkSound Start
+        if (MonsterWalkSound)
+        {
+            Monster->StartWalkSound(MonsterWalkSound);
+        }
     }
     else
     {

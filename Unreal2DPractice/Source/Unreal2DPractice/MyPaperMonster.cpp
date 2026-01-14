@@ -20,6 +20,8 @@ AMyPaperMonster::AMyPaperMonster()
 	RootComponent = Flipbook;
 	Flipbook->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+	SetActorScale3D(FVector(2.5f, 2.5f, 2.5f));
+
 	// Idle Anim
 	static ConstructorHelpers::FObjectFinder<UPaperFlipbook> IdleFB(
 		TEXT("/Game/Monster/MonsterIdle.MonsterIdle"));
@@ -32,7 +34,7 @@ AMyPaperMonster::AMyPaperMonster()
 	HitBox = CreateDefaultSubobject<UBoxComponent>(TEXT("HitBox"));
 	HitBox->SetupAttachment(RootComponent);
 
-	HitBox->SetBoxExtent(FVector(40.f, 10.f, 80.f));
+	HitBox->SetBoxExtent(FVector(120.f, 30.f, 240.f));
 
 	// Collision Settnig: Sense the Player Pawn
 	HitBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
@@ -40,6 +42,10 @@ AMyPaperMonster::AMyPaperMonster()
 	HitBox->SetCollisionResponseToAllChannels(ECR_Ignore);
 	HitBox->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 	HitBox->SetGenerateOverlapEvents(true);
+
+	WalkAudioComp = CreateDefaultSubobject<UAudioComponent>(TEXT("WalkAudioComp"));
+	WalkAudioComp->SetupAttachment(RootComponent);
+	WalkAudioComp->bAutoActivate = false;
 }
 
 // Called when the game starts or when spawned
@@ -62,6 +68,16 @@ void AMyPaperMonster::BeginPlay()
 			this,
 			&AMyPaperMonster::OnHitBoxOverlap
 		);
+	}
+}
+void AMyPaperMonster::StartWalkSound(USoundBase* InSound)
+{
+	if (!WalkAudioComp || !InSound) return;
+
+	if (!WalkAudioComp->IsPlaying())
+	{
+		WalkAudioComp->SetSound(InSound);
+		WalkAudioComp->Play();
 	}
 }
 
@@ -129,6 +145,8 @@ void AMyPaperMonster::OnHitBoxOverlap(
 	bool bFromSweep,
 	const FHitResult& SweepResult)
 {
+	if (bHasKilledPlayer) return;
+
 	if (!bCanDetect)
 	{
 		return; // Just after Spawn, Off the sensing for moment
@@ -140,9 +158,29 @@ void AMyPaperMonster::OnHitBoxOverlap(
 	}
 
 	AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(OtherActor);
-	if (!Player)
+	if (!Player) return;
+
+	if (Player->bIsHidden)
 	{
-		return; //if not player, ignore
+		UE_LOG(LogTemp, Warning, TEXT("Player is hidden. Ignore."));
+		return;
+	}
+
+	bHasKilledPlayer = true;
+
+
+	if (WalkAudioComp)
+	{
+		WalkAudioComp->Stop();
+	}
+
+	if (ShoutSound) 
+	{
+		UGameplayStatics::PlaySoundAtLocation(
+			this,
+			ShoutSound,
+			GetActorLocation()
+		);
 	}
 
 	// 1.Player Die
