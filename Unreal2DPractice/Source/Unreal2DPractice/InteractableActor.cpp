@@ -6,6 +6,7 @@
 #include "MyPaperCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "Blueprint/UserWidget.h"
+#include "MyGameInstance.h"
 
 // Sets default values
 AInteractableActor::AInteractableActor()
@@ -28,29 +29,68 @@ void AInteractableActor::BeginPlay()
 {
 	Super::BeginPlay();
 	PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+
+	PrimaryActorTick.bCanEverTick = true;
 }
 
 void AInteractableActor::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(OtherActor))
-	{
-		CachedPlayer = Player;
-		Player->CurrentInteractable = this;
-		PC = Cast<APlayerController>(Player->GetController());
-	}
+	AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(OtherActor);
+	if (!Player || ActiveWidget) return;
+
+	CachedPlayer = Player;
+	Player->CurrentInteractable = this;
+
+	PC = Cast<APlayerController>(Player->GetController());
+	if (!PC) return;
+
+	UMyGameInstance* GI = GetWorld()->GetGameInstance<UMyGameInstance>();
+	if (!GI || !GI->DefaultInteractWidget) return;
+
+	ActiveWidget = CreateWidget<UUserWidget>(PC, GI->DefaultInteractWidget);
+	if (!ActiveWidget) return;
+
+	ActiveWidget->AddToViewport();
+	UpdateWidgetPosition();
 }
 
 void AInteractableActor::OnOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(OtherActor))
+	AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(OtherActor);
+	if (!Player) return;
+
+	if (Player->CurrentInteractable == this)
 	{
-		if (Player->CurrentInteractable == this)
-		{
-			Player->CurrentInteractable = nullptr;
-		}
-		CachedPlayer = nullptr;
-		PC = nullptr;
+		Player->CurrentInteractable = nullptr;
 	}
+
+	if (ActiveWidget)
+	{
+		ActiveWidget->RemoveFromParent();
+		ActiveWidget = nullptr;
+	}
+
+	CachedPlayer = nullptr;
+	PC = nullptr;
+}
+
+void AInteractableActor::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+	UpdateWidgetPosition();
+}
+
+void AInteractableActor::UpdateWidgetPosition()
+{
+	if (!CachedPlayer || !PC || !ActiveWidget) return;
+
+	FVector WorldPos = CachedPlayer->GetActorLocation();
+	WorldPos += FVector(-120.f, 0.f, 80.f);
+
+	FVector2D ScreenPos;
+	PC->ProjectWorldLocationToScreen(WorldPos, ScreenPos);
+
+	ActiveWidget->SetPositionInViewport(ScreenPos, true);
 }
 
 void AInteractableActor::Interact()

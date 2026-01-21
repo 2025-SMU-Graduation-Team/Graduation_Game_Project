@@ -22,6 +22,7 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	void Tick(float DeltaTime);
 
 protected:
 	UPROPERTY(VisibleAnywhere)
@@ -29,6 +30,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	class UBoxComponent* TriggerBox;
+
+	UPROPERTY()
+	UUserWidget* ActiveWidget;
 
 	UPROPERTY()
 	AMyPaperCharacter* CachedPlayer;
@@ -44,6 +48,8 @@ protected:
 	UFUNCTION()
 	void OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	void UpdateWidgetPosition();
 
 	APlayerController* PC;
 };
