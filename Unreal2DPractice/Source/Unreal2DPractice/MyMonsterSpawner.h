@@ -29,31 +29,8 @@ protected:
     UPROPERTY(VisibleAnywhere, Category = "Components")
     UBoxComponent* TriggerBox;
 
-    UPROPERTY(VisibleAnywhere, Category = "Components")
-    USceneComponent* LeftSpawnPoint;
-
-    UPROPERTY(VisibleAnywhere, Category = "Components")
-    USceneComponent* RightSpawnPoint;
-
-    UPROPERTY(EditAnywhere, Category = "Spawner")
-    TSubclassOf<AMyPaperMonster> MonsterClass;
-
-    UPROPERTY(EditAnywhere, Category = "Spawner")
-    float SpawnDelay = 1.5f;
-
-    UPROPERTY(EditAnywhere, Category = "Spawner|Sound")
-    USoundBase* MonsterWalkSound;
-
-    UPROPERTY(EditAnywhere, Category = "Spawner")
-    bool bOneShot = true;
-
-    bool bHasSpawned = false;
-    bool bSpawnFromLeft = true;
-
     UPROPERTY()
     AMyPaperCharacter* CachedPlayer = nullptr;
-
-    FTimerHandle TimerHandle_Spawn;
 
     UFUNCTION()
     void OnTriggerBegin(
@@ -63,6 +40,4 @@ protected:
         int32 OtherBodyIndex,
         bool bFromSweep,
         const FHitResult& SweepResult);
-
-    void SpawnMonster();
 };

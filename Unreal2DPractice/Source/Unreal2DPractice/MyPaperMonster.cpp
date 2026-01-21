@@ -93,24 +93,28 @@ void AMyPaperMonster::InitTarget(AMyPaperCharacter* InTarget, bool bUseDistance,
 	DetectRadius = InRadius;
 }
 
+void AMyPaperMonster::SetMoveDirectionX(float DirX)
+{
+	MoveDirX = (DirX >= 0.f) ? 1.f : -1.f;
+	UE_LOG(LogTemp, Warning, TEXT("[Monster] SetMoveDirectionX = %.0f"), MoveDirX);
+}
+
 void AMyPaperMonster::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	if (!Target) return;
-
 	UpdateMovement(DeltaTime);
 }
 
 void AMyPaperMonster::UpdateMovement(float DeltaTime)
 {
-	const FVector ToTarget = Target->GetActorLocation() - GetActorLocation();
-	const FVector Dir = ToTarget.GetSafeNormal2D();
+	// 방향 전환 없음: MoveDirX로만 직진
+	AddActorWorldOffset(FVector(MoveDirX * MoveSpeed * DeltaTime, 0.f, 0.f), false);
 
-	// Left/Right Face
-	FaceToTarget();
-
-	// Move(State is always Idle, No walking anim for now)
-	AddActorWorldOffset(Dir * MoveSpeed * DeltaTime, false);
+	// 시각적으로 방향만 맞추기
+	FVector Scale = GetActorScale3D();
+	Scale.Y = 1.f;
+	Scale.X = FMath::Abs(Scale.X) * MoveDirX;  // 오른쪽이면 +, 왼쪽이면 -
+	SetActorScale3D(Scale);
 }
 
 void AMyPaperMonster::FaceToTarget()
@@ -159,6 +163,10 @@ void AMyPaperMonster::OnHitBoxOverlap(
 
 	AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(OtherActor);
 	if (!Player) return;
+
+	UE_LOG(LogTemp, Warning, TEXT("[MonsterHit] bCanDetect=%d PlayerHidden=%d"),
+		bCanDetect ? 1 : 0,
+		Player->bIsHidden ? 1 : 0);
 
 	if (Player->bIsHidden)
 	{

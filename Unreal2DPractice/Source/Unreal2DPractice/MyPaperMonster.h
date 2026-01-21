@@ -38,6 +38,8 @@ public:
 
 	void InitTarget(AMyPaperCharacter * InTarget, bool bUseDistance, float InRadius);
     
+    void SetMoveDirectionX(float DirX); // SpawnManager가 스폰 직후 방향을 고정 설정
+
     void StartWalkSound(USoundBase* WalkSound);
 
 protected:
@@ -90,6 +92,8 @@ protected:
     // 시야 감지용 LineTrace 채널(필요 시 변경)
     ECollisionChannel LOSChannel = ECC_Visibility;
 
+    // +1 = 오른쪽으로 직진, -1 = 왼쪽으로 직진
+    float MoveDirX = 1.f;
 private:
     UPROPERTY(VisibleAnywhere, Category = "Sound")
     UAudioComponent* WalkAudioComp;
