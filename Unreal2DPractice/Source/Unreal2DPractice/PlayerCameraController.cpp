@@ -16,6 +16,8 @@ void UPlayerCameraController::BeginPlay()
     Super::BeginPlay();
 
     SpringArm = GetOwner()->FindComponentByClass<USpringArmComponent>();
+    Camera = GetOwner()->FindComponentByClass<UCameraComponent>();
+
     if (!SpringArm)
     {
         UE_LOG(LogTemp, Error, TEXT("PlayerCameraController: SpringArm not found"));
@@ -24,6 +26,7 @@ void UPlayerCameraController::BeginPlay()
 
     SpringArm->bEnableCameraLag = false;
     SpringArm->bEnableCameraRotationLag = false;
+    SpringArm->bDoCollisionTest = false;
 }
 
 void UPlayerCameraController::SetLimitVolume(ACameraLimitVolume* NewVolume)
@@ -45,6 +48,20 @@ void UPlayerCameraController::TickComponent(
     SpringArm->SetWorldLocation(ClampedTarget);
 }
 
+float UPlayerCameraController::GetHalfViewHeight() const
+{
+    if (!Camera || !SpringArm)
+    {
+        return 0.f;
+    }
+
+    const float FovRad = FMath::DegreesToRadians(Camera->FieldOfView * 0.5f);
+    const float Distance = SpringArm->TargetArmLength;
+
+    return FMath::Tan(FovRad) * Distance;
+}
+
+
 FVector UPlayerCameraController::GetClampedCameraTarget() const
 {
     const FVector PlayerLoc = GetOwner()->GetActorLocation();
@@ -53,12 +70,14 @@ FVector UPlayerCameraController::GetClampedCameraTarget() const
     FVector Result = PlayerLoc;
 
     const float HalfViewWidth = SpringArm->TargetArmLength;
+    const float HalfViewHeight = GetHalfViewHeight();
 
-    Result.X = FMath::Clamp(
-        PlayerLoc.X,
-        Bounds.Min.X + HalfViewWidth,
-        Bounds.Max.X - HalfViewWidth
-    );
+    Result.X = FMath::Clamp(PlayerLoc.X, Bounds.Min.X + HalfViewWidth, Bounds.Max.X - HalfViewWidth);
+    const float MaxCameraZ = Bounds.Max.Z - HalfViewHeight;
+    if (Result.Z > MaxCameraZ)
+    {
+        Result.Z = MaxCameraZ;
+    }
 
     return Result;
 }
