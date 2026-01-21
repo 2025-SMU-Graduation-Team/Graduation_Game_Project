@@ -21,6 +21,14 @@ AMyPaperCharacter::AMyPaperCharacter()
 	GetCharacterMovement()->MaxWalkSpeed = 400.0f;
 	GetCharacterMovement()->JumpZVelocity = 800.0f;
 
+	GetCharacterMovement()->SetPlaneConstraintEnabled(true);
+	GetCharacterMovement()->SetPlaneConstraintAxisSetting(EPlaneConstraintAxisSetting::Y);
+
+	GetCharacterMovement()->SetWalkableFloorAngle(55.0f);
+	GetCharacterMovement()->bUseFlatBaseForFloorChecks = true;
+	GetCharacterMovement()->MaxStepHeight = 5.0f;
+	GetCharacterMovement()->PerchRadiusThreshold = 0.0f;
+
 	Inventory = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
 	CameraController = CreateDefaultSubobject<UPlayerCameraController>(TEXT("CameraController"));
 }
