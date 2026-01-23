@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "LevelChangeActor.generated.h"
 
+class AMyPaperCharacter;
+
 UCLASS()
 class UNREAL2DPRACTICE_API ALevelChangeActor : public AActor
 {
@@ -17,6 +19,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Level")
 	FName NextLevelName;
 
+	UPROPERTY(EditAnywhere, Category = "Level")
+	FVector TargetTeleportLocation;
+
 protected:
 	UPROPERTY(VisibleAnywhere)
 	class UBoxComponent* TriggerBox;
@@ -25,4 +30,7 @@ protected:
 	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
 		const FHitResult& SweepResult);
+
+	UPROPERTY()
+	AMyPaperCharacter* CachedPlayer;
 };
