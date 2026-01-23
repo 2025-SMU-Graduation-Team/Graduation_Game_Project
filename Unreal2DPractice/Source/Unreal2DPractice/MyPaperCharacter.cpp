@@ -1,5 +1,4 @@
-	// Fill out your copyright notice in the Description page of Project Settings.
-
+// Fill out your copyright notice in the Description page of Project Settings.
 
 #include "MyPaperCharacter.h"
 #include "EnhancedInputComponent.h"
@@ -10,6 +9,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "PlayerCameraController.h"
 #include "CameraLimitVolume.h"
+#include "HidingSpot.h"
 
 
 AMyPaperCharacter::AMyPaperCharacter()
@@ -49,6 +49,8 @@ void AMyPaperCharacter::BeginPlay()
 		this,
 		&AMyPaperCharacter::OnOverlapBegin
 	);
+
+	DefaultSpriteOffset = GetSprite()->GetRelativeLocation();
 }
 
 void AMyPaperCharacter::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,AActor* OtherActor,UPrimitiveComponent* OtherComp,
@@ -146,7 +148,17 @@ void AMyPaperCharacter::UpdateAnimation()
 {
 	if (bIsDead) return;
 
+	if (bIsHidden)
+	{
+		if (HideAnimation && GetSprite()->GetFlipbook() != HideAnimation)
+		{
+			GetSprite()->SetFlipbook(HideAnimation);
+		}
+		return;
+	}
+
 	UPaperFlipbook* DesiredAnimation = IdleAnimation;
+
 	if (GetCharacterMovement()->IsFalling())
 	{
 		DesiredAnimation = JumpAnimation;
@@ -192,4 +204,90 @@ void AMyPaperCharacter::PlayDeath()
 void AMyPaperCharacter::GoToGameOverLevel()
 {
 	UGameplayStatics::OpenLevel(this, FName("GameOver"));
+}
+
+// =====================
+//   Hide 
+// =====================
+void AMyPaperCharacter::SetCanHide(AHidingSpot* Spot)
+{
+	if (!Spot) return;
+
+	bCanHide = true;
+	CurrentHidingSpot = Spot;
+
+	UE_LOG(LogTemp, Warning, TEXT("[HIDE] Can hide at: %s"), *GetNameSafe(Spot));
+}
+
+void AMyPaperCharacter::ClearCanHide(AHidingSpot* Spot)
+{
+	if (CurrentHidingSpot != Spot) return;
+
+	UE_LOG(LogTemp, Warning, TEXT("[HIDE] ClearCanHide: %s"), *GetNameSafe(Spot));
+
+	bCanHide = false;
+	CurrentHidingSpot = nullptr;
+
+	if (bIsHidden)
+	{
+		ExitHide();
+	}
+}
+
+void AMyPaperCharacter::EnterHide()
+{
+	UE_LOG(LogTemp, Warning, TEXT("[HIDE] EnterHide called. bCanHide=%d Spot=%s"),
+		bCanHide, *GetNameSafe(CurrentHidingSpot));
+
+	if (!bCanHide || !CurrentHidingSpot)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("EnterHide: No available hiding spot."));
+		return;
+	}
+
+	bIsHidden = true;
+
+	UE_LOG(LogTemp, Log, TEXT("Player is now hiding."));
+}
+
+void AMyPaperCharacter::ExitHide()
+{
+	if (!bIsHidden)
+	{
+		return;
+	}
+
+	bIsHidden = false;
+	GetSprite()->SetRelativeLocation(DefaultSpriteOffset);
+
+	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+	{
+		MoveComp->SetMovementMode(MOVE_Walking);
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("Player exited hiding"));
+}
+
+void AMyPaperCharacter::OnHidePressed(const FInputActionValue& Value)
+{
+	UE_LOG(LogTemp, Warning, TEXT("[HIDE] OnHidePressed fired")); 
+	if (bIsDead) return;
+
+	if (bIsHidden) return;
+
+	UE_LOG(LogTemp, Warning, TEXT("[HIDE] Pressed. bCanHide=%d bIsHidden=%d Spot=%s"),
+		bCanHide, bIsHidden, *GetNameSafe(CurrentHidingSpot));
+
+	if (bCanHide)
+	{
+		EnterHide();
+	}
+}
+void AMyPaperCharacter::OnHideReleased(const FInputActionValue& Value)
+{
+	if (bIsDead) return;
+
+	if (!bIsHidden) return;
+
+	ExitHide();
 }
