@@ -1,37 +1,10 @@
 #include "SubLevelTaskManager.h"
 #include "TimerManager.h"
 #include "Engine/World.h"
-#include "Engine/Engine.h"
 #include "UISelectedManager.h"
 #include "OpeningDoorInterface.h"
 #include "SubwayStateActor.h"
 #include "DelayedTaskData.h"
-#include "TaskWidgetInterface.h"
-
-USubLevelTaskManager* USubLevelTaskManager::Instance = nullptr;
-
-USubLevelTaskManager* USubLevelTaskManager::Get(UWorld* World)
-{
-    if (!Instance)
-    {
-        if (!World)
-        {
-            UE_LOG(LogTemp, Error, TEXT("SubLevelTaskManager::Get - World is null"));
-            return nullptr;
-        }
-
-        UObject* Outer = World->GetGameInstance();
-        Instance = NewObject<USubLevelTaskManager>(Outer);
-        Instance->SetFlags(RF_Transient);
-        Instance->WorldContext = World;
-    }
-    else
-    {
-        Instance->WorldContext = World;
-    }
-
-    return Instance;
-}
 
 void USubLevelTaskManager::RegisterWidget(UUserWidget* Widget)
 {
@@ -64,13 +37,16 @@ void USubLevelTaskManager::RequestTask(UDelayedTaskData* TaskData)
     if (!TaskData)
         return;
 
+    UE_LOG(LogTemp, Warning, TEXT("RequestTask registered"));
     PendingTasks.Add(TaskData);
     NotifyWidgets(true);
 }
 
 void USubLevelTaskManager::OnSubLevelEntered()
 {
-    for (auto* Task : PendingTasks)
+    UE_LOG(LogTemp, Warning, TEXT("OnSubLevelEntered. PendingTasks: %d"), PendingTasks.Num());
+
+    for (UDelayedTaskData* Task : PendingTasks)
     {
         ScheduleTask(Task);
     }
@@ -80,22 +56,21 @@ void USubLevelTaskManager::OnSubLevelEntered()
 
 void USubLevelTaskManager::ScheduleTask(UDelayedTaskData* TaskData)
 {
-    if (!TaskData || !WorldContext.IsValid())
+    if (!TaskData || !GetWorld())
         return;
 
     FTimerDelegate Delegate =
         FTimerDelegate::CreateUObject(this, &USubLevelTaskManager::ExecuteTask, TaskData);
 
-    FTimerHandle Handle;
-    WorldContext->GetTimerManager().SetTimer(
-        Handle,
+    GetWorld()->GetTimerManager().SetTimer(
+        ExecuteTaskTimerHandle,
         Delegate,
         TaskData->Delay,
         false
     );
 
     if (UUISelectedManager* UIState =
-        WorldContext->GetGameInstance()->GetSubsystem<UUISelectedManager>())
+        GetGameInstance()->GetSubsystem<UUISelectedManager>())
     {
         UIState->LastSelectedStation = NAME_None;
     }
@@ -106,9 +81,14 @@ void USubLevelTaskManager::ExecuteTask(UDelayedTaskData* TaskData)
     if (!TaskData)
         return;
 
+    UE_LOG(LogTemp, Warning, TEXT("ExecuteTask"));
+
     AActor* Actor = TaskData->TargetActor.Get();
     if (!Actor)
+    {
+        UE_LOG(LogTemp, Error, TEXT("TargetActor is null"));
         return;
+    }
 
     if (!TaskData->StartLocation.IsZero())
     {
@@ -119,16 +99,16 @@ void USubLevelTaskManager::ExecuteTask(UDelayedTaskData* TaskData)
     NewTask.Actor = Actor;
     NewTask.TaskData = TaskData;
     NewTask.TargetLocation = TaskData->TargetTransform;
-    NewTask.MoveDirection = (TaskData->TargetTransform - Actor->GetActorLocation()).GetSafeNormal();
+    NewTask.MoveDirection =
+        (TaskData->TargetTransform - Actor->GetActorLocation()).GetSafeNormal();
     NewTask.MoveSpeed = TaskData->MoveSpeed;
-    NewTask.Phase = EMovePhase::MovingToTarget;
 
     ActiveMoveTasks.Add(NewTask);
 
-    if (!WorldContext->GetTimerManager().IsTimerActive(MoveTimerHandle))
+    if (!GetWorld()->GetTimerManager().IsTimerActive(MoveTickTimerHandle))
     {
-        WorldContext->GetTimerManager().SetTimer(
-            MoveTimerHandle,
+        GetWorld()->GetTimerManager().SetTimer(
+            MoveTickTimerHandle,
             this,
             &USubLevelTaskManager::TickMove,
             0.01f,
@@ -139,11 +119,15 @@ void USubLevelTaskManager::ExecuteTask(UDelayedTaskData* TaskData)
 
 void USubLevelTaskManager::TickMove()
 {
-    if (!WorldContext.IsValid())
+    UWorld* World = GetWorld();
+    if (!World)
+    {
+        ActiveMoveTasks.Empty();
         return;
+    }
 
     constexpr float Delta = 0.01f;
-    TArray<int32> Completed;
+    TArray<int32> CompletedTasks;
 
     for (int32 i = 0; i < ActiveMoveTasks.Num(); ++i)
     {
@@ -151,7 +135,13 @@ void USubLevelTaskManager::TickMove()
 
         if (!Task.Actor.IsValid())
         {
-            Completed.Add(i);
+            CompletedTasks.Add(i);
+            continue;
+        }
+
+        if (!IsValid(Task.TaskData))
+        {
+            CompletedTasks.Add(i);
             continue;
         }
 
@@ -168,21 +158,25 @@ void USubLevelTaskManager::TickMove()
         case EMovePhase::MovingForward:
             if (HandleMoveForward(Task, Delta))
             {
-                Completed.Add(i);
+                CompletedTasks.Add(i);
             }
+            break;
+
+        default:
+            CompletedTasks.Add(i);
             break;
         }
     }
 
-    for (int32 i = Completed.Num() - 1; i >= 0; --i)
+    for (int32 i = CompletedTasks.Num() - 1; i >= 0; --i)
     {
-        ActiveMoveTasks.RemoveAt(Completed[i]);
+        ActiveMoveTasks.RemoveAt(CompletedTasks[i]);
     }
 
     if (ActiveMoveTasks.Num() == 0)
     {
         NotifyWidgets(false);
-        WorldContext->GetTimerManager().ClearTimer(MoveTimerHandle);
+        World->GetTimerManager().ClearTimer(MoveTickTimerHandle);
     }
 }
 
@@ -197,11 +191,16 @@ void USubLevelTaskManager::HandleMoveToTarget(FMoveTask& Task)
 
     if (Distance < 1.f)
     {
+        if (!IsValid(Task.TaskData))
+        {
+            Task.Phase = EMovePhase::MovingForward;
+            return;
+        }
+
         if (Task.TaskData->bIsAnswer)
         {
             OpenDoor(Task.TaskData->SubwayDoorActor.Get());
             OpenDoor(Task.TaskData->ScreenDoorActor.Get());
-
             Task.WaitRemaining = Task.TaskData->Delay * 2.f;
         }
         else
@@ -212,7 +211,6 @@ void USubLevelTaskManager::HandleMoveToTarget(FMoveTask& Task)
         Task.Phase = EMovePhase::Waiting;
         return;
     }
-
     Actor->SetActorLocation(
         Current + Task.MoveDirection * Task.MoveSpeed * 0.01f
     );
@@ -292,16 +290,4 @@ void USubLevelTaskManager::CloseDoor(AActor* Actor)
     {
         IOpeningDoorInterface::Execute_CloseDoor(Actor);
     }
-}
-
-void USubLevelTaskManager::BeginDestroy()
-{
-    Instance = nullptr;
-
-    if (WorldContext.IsValid())
-    {
-        WorldContext->GetTimerManager().ClearAllTimersForObject(this);
-    }
-
-    Super::BeginDestroy();
 }

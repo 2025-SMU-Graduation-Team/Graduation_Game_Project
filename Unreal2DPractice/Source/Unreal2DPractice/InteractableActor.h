@@ -34,6 +34,12 @@ protected:
 	UPROPERTY()
 	UUserWidget* ActiveWidget;
 
+	UPROPERTY(EditAnywhere, Category = "Interact")
+	FText InteractKey=FText::FromString("E");
+
+	UPROPERTY(EditAnywhere, Category = "Interact")
+	FText InteractText=FText::FromString("Interact");
+
 	UPROPERTY()
 	AMyPaperCharacter* CachedPlayer;
 

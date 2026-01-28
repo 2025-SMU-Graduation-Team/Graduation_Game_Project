@@ -50,7 +50,10 @@ void UInteractionWidget::NativeConstruct()
         DisableAllButtons();
     }
 
-    USubLevelTaskManager::Get(GetWorld())->RegisterWidget(this);
+    if (USubLevelTaskManager* TaskManager = GetGameInstance()->GetSubsystem<USubLevelTaskManager>())
+    {
+        TaskManager->RegisterWidget(this);
+    }
 }
 
 void UInteractionWidget::UpdateTaskState_Implementation(bool bTaskRunning)
@@ -94,7 +97,10 @@ void UInteractionWidget::OnStation_AClicked()
     State->LastSelectedStation = "StationA";
 
     if (!StationAData) return;
-    USubLevelTaskManager::Get(GetWorld())->RequestTask(StationAData);
+    if (USubLevelTaskManager* TaskManager = GetGameInstance()->GetSubsystem<USubLevelTaskManager>())
+    {
+        TaskManager->RequestTask(StationAData);
+    }
 }
 
 void UInteractionWidget::OnStation_BClicked()
@@ -110,7 +116,10 @@ void UInteractionWidget::OnStation_BClicked()
     State->LastSelectedStation = "StationB";
 
     if (!StationBData) return;
-    USubLevelTaskManager::Get(GetWorld())->RequestTask(StationBData);
+    if (USubLevelTaskManager* TaskManager = GetGameInstance()->GetSubsystem<USubLevelTaskManager>())
+    {
+        TaskManager->RequestTask(StationBData);
+    }
 }
 
 void UInteractionWidget::OnStation_CClicked()
@@ -126,7 +135,10 @@ void UInteractionWidget::OnStation_CClicked()
     State->LastSelectedStation = "StationC";
 
     if (!StationCData) return;
-    USubLevelTaskManager::Get(GetWorld())->RequestTask(StationCData);
+    if (USubLevelTaskManager* TaskManager = GetGameInstance()->GetSubsystem<USubLevelTaskManager>())
+    {
+        TaskManager->RequestTask(StationCData);
+    }
 }
 
 void UInteractionWidget::OnStation_DClicked()
@@ -142,6 +154,9 @@ void UInteractionWidget::OnStation_DClicked()
     State->LastSelectedStation = "StationD";
 
     if (!StationDData) return;
-    USubLevelTaskManager::Get(GetWorld())->RequestTask(StationDData);
+    if (USubLevelTaskManager* TaskManager = GetGameInstance()->GetSubsystem<USubLevelTaskManager>())
+    {
+        TaskManager->RequestTask(StationDData);
+    }
 }
 

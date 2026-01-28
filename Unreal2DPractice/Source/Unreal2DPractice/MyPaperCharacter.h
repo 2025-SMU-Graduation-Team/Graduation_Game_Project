@@ -63,6 +63,9 @@ public:
 	TObjectPtr<UInputAction> HideAction;
 
 	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<UInputAction> NextLevelAction;
+
+	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UInputMappingContext> InputMappingContext;
 
 	// State Function
@@ -80,6 +83,7 @@ public:
 
 	void OnSelectSlot(const FInputActionValue& Value);
 	void OnUseItem(const FInputActionValue& Value);
+	void GoToNextLevel(const FInputActionValue& Value);
 
 	UFUNCTION()
 	void PlayDeath();
