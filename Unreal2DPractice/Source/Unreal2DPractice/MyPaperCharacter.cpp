@@ -77,7 +77,12 @@ void AMyPaperCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		EnhancedInput->BindAction(InteractAction, ETriggerEvent::Started, this, &AMyPaperCharacter::Interact);
 		EnhancedInput->BindAction(SelectSlotAction, ETriggerEvent::Triggered, this, &AMyPaperCharacter::OnSelectSlot);
 		EnhancedInput->BindAction(UseItemAction, ETriggerEvent::Triggered, this, &AMyPaperCharacter::OnUseItem);
+
+		EnhancedInput->BindAction(HideAction, ETriggerEvent::Started, this, &AMyPaperCharacter::OnHidePressed);
+		EnhancedInput->BindAction(HideAction, ETriggerEvent::Completed, this, &AMyPaperCharacter::OnHideReleased);
+		EnhancedInput->BindAction(HideAction, ETriggerEvent::Canceled, this, &AMyPaperCharacter::OnHideReleased);
 	}
+	UE_LOG(LogTemp, Warning, TEXT("[INPUT] Setup bindings done. HideAction=%s"), *GetNameSafe(HideAction));
 }
 
 void AMyPaperCharacter::Tick(float DeltaTime)
@@ -272,8 +277,6 @@ void AMyPaperCharacter::OnHidePressed(const FInputActionValue& Value)
 {
 	UE_LOG(LogTemp, Warning, TEXT("[HIDE] OnHidePressed fired")); 
 	if (bIsDead) return;
-
-	if (bIsHidden) return;
 
 	UE_LOG(LogTemp, Warning, TEXT("[HIDE] Pressed. bCanHide=%d bIsHidden=%d Spot=%s"),
 		bCanHide, bIsHidden, *GetNameSafe(CurrentHidingSpot));
