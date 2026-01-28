@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "EItemType.h"
 #include "InventoryComponent.generated.h"
 
 // Forward Declaration
@@ -23,8 +24,14 @@ struct FInventoryItem
 	FText ItemName;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	bool bIsWallet;
+	EItemType ItemType;
 };
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
+	FOnEquipItemChanged,
+	EItemType,
+	NewItemType
+);
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class UNREAL2DPRACTICE_API UInventoryComponent : public UActorComponent
@@ -48,6 +55,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	int32 SelectedInvenIndex = INDEX_NONE;
 
+	UPROPERTY(BlueprintAssignable)
+	FOnEquipItemChanged OnEquipItemChanged;
+
 	UFUNCTION(BlueprintCallable)
 	bool IsInventoryFull() const;
 
@@ -60,6 +70,9 @@ public:
 
 	UPROPERTY()
 	AItemActor* PendingItem;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	EItemType EquippedItemType;
 
 	UFUNCTION(BlueprintCallable)
 	void SelectSlot(int32 Index);
