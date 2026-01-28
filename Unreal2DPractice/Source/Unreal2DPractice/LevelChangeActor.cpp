@@ -23,16 +23,17 @@ void ALevelChangeActor::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AAct
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
 	const FHitResult& SweepResult)
 {
-	ALevelTransitionManager* Manager = ALevelTransitionManager::Get(GetWorld());
-	if (AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(OtherActor))
-	{
-		CachedPlayer = Player;
-	}
+    AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(OtherActor);
+    if (!Player)
+        return;
 
-	if (Manager)
-	{
-		Manager->ChangeSubLevel(NextLevelName);
-	}
+    CachedPlayer = Player;
 
-	CachedPlayer->SetActorLocation(TargetTeleportLocation);
+    CachedPlayer->SetActorLocation(TargetTeleportLocation);
+
+    ALevelTransitionManager* Manager = ALevelTransitionManager::Get(GetWorld());
+    if (Manager)
+    {
+        Manager->ChangeSubLevel(NextLevelName);
+    }
 }

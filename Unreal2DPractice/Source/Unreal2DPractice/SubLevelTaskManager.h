@@ -1,13 +1,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
+#include "Subsystems/GameInstanceSubsystem.h"
 #include "DelayedTaskData.h"
 #include "TaskWidgetInterface.h"
-#include "UObject/Object.h"
 #include "SubLevelTaskManager.generated.h"
 
-class UDelayedTaskData;
 class UUserWidget;
 class ASubwayStateActor;
 
@@ -27,8 +25,8 @@ struct FMoveTask
     TWeakObjectPtr<AActor> Actor;
     UDelayedTaskData* TaskData = nullptr;
 
-    FVector TargetLocation;
-    FVector MoveDirection;
+    FVector TargetLocation = FVector::ZeroVector;
+    FVector MoveDirection = FVector::ZeroVector;
 
     float MoveSpeed = 0.f;
     float WaitRemaining = 0.f;
@@ -38,19 +36,14 @@ struct FMoveTask
 };
 
 UCLASS()
-class UNREAL2DPRACTICE_API USubLevelTaskManager : public UObject
+class UNREAL2DPRACTICE_API USubLevelTaskManager : public UGameInstanceSubsystem
 {
     GENERATED_BODY()
 
     public:
-    static USubLevelTaskManager* Get(UWorld* World);
-
     void RegisterWidget(UUserWidget* Widget);
     void RequestTask(UDelayedTaskData* TaskData);
     void OnSubLevelEntered();
-
-protected:
-    virtual void BeginDestroy() override;
 
 private:
     void NotifyWidgets(bool bRunning);
@@ -68,16 +61,11 @@ private:
     void CloseDoor(AActor* Actor);
 
 private:
-    static USubLevelTaskManager* Instance;
-
-    TWeakObjectPtr<UWorld> WorldContext;
-
     TArray<UDelayedTaskData*> PendingTasks;
     TArray<FMoveTask> ActiveMoveTasks;
 
-    TArray<TScriptInterface<class UTaskWidgetInterface>> RegisteredWidgets;
+    TArray<TScriptInterface<UTaskWidgetInterface>> RegisteredWidgets;
 
-    FTimerHandle MoveTimerHandle;
-
-    TWeakObjectPtr<ASubwayStateActor> SubwayStateActor;
+    FTimerHandle ExecuteTaskTimerHandle;
+    FTimerHandle MoveTickTimerHandle;
 };

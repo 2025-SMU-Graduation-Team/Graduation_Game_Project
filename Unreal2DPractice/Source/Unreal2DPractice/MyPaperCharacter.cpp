@@ -132,6 +132,14 @@ void AMyPaperCharacter::OnUseItem(const FInputActionValue& Value)
 	Inventory->UseSelectedItem();
 }
 
+void AMyPaperCharacter::GoToNextLevel(const FInputActionValue& Value)
+{
+	if (CurrentInteractable)
+	{
+		//CurrentInteractable->GoToNextLevel();
+	}
+}
+
 void AMyPaperCharacter::UpdateCharacterDirection(float AxisValue)
 {
 	if (AxisValue > 0)

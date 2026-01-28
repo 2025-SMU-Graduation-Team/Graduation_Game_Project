@@ -44,7 +44,10 @@ void AMyGameModeBase::OnLevelLoaded(ULevel* LoadedLevel, UWorld* World)
         if (LevelName.Contains(TEXT("Subway")))
         {
             UE_LOG(LogTemp, Warning, TEXT("Subway Loaded Detected!"));
-            USubLevelTaskManager::Get(World)->OnSubLevelEntered();
+            if (USubLevelTaskManager* TaskManager = GetGameInstance()->GetSubsystem<USubLevelTaskManager>())
+            {
+                TaskManager->OnSubLevelEntered();
+            }
         }
     }
 }
