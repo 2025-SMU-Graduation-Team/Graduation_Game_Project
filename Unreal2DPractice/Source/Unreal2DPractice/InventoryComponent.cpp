@@ -140,25 +140,28 @@ void UInventoryComponent::UseSelectedItem()
 {
 	if (!Items.IsValidIndex(SelectedInvenIndex)) return;
 
-	FInventoryItem& SelectedItem = Items[SelectedInvenIndex];
+	FInventoryItem& Item = Items[SelectedInvenIndex];
 
-	if (!SelectedItem.bIsWallet)
+	if (Item.ItemType == EItemType::Wallet)
 	{
-		UE_LOG(LogTemp, Log, TEXT("Item is not a wallet."));
-		return;
+		Item.ItemName = FText::FromString(TEXT("Card"));
+		Item.Icon = CardIcon;
+
+		UpdateInventoryUI();
+
+		if (InventoryWidget)
+		{
+			InventoryWidget->ShowItemInfoPopup(Item.ItemName);
+		}
+
+		return; 
 	}
 
-	SelectedItem.bIsWallet = false;
-	SelectedItem.ItemName = FText::FromString(TEXT("Card"));
-	SelectedItem.Icon = CardIcon;
-
-	UpdateInventoryUI();
-
-	if (InventoryWidget)
-	{
-		InventoryWidget->ShowItemInfoPopup(SelectedItem.ItemName);
-	}
+	EquippedItemType = Item.ItemType;
+	OnEquipItemChanged.Broadcast(EquippedItemType);
+	UE_LOG(LogTemp, Log, TEXT("Equipped: %s"), *UEnum::GetValueAsString(EquippedItemType));
 }
+
 
 void UInventoryComponent::AddItem(AItemActor* ItemActor)
 {
@@ -167,7 +170,7 @@ void UInventoryComponent::AddItem(AItemActor* ItemActor)
 	FInventoryItem NewItem;
 	NewItem.Icon = ItemActor->ItemIcon;
 	NewItem.ItemName = FText::FromName(ItemActor->ItemName);
-	NewItem.bIsWallet = (ItemActor->ItemType == EItemType::Wallet);
+	NewItem.ItemType = ItemActor->ItemType;
 
 	Items.Add(NewItem);
 	UpdateInventoryUI();
