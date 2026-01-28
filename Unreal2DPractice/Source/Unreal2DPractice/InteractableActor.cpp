@@ -7,6 +7,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Blueprint/UserWidget.h"
 #include "MyGameInstance.h"
+#include "InteractWidget.h"
 
 // Sets default values
 AInteractableActor::AInteractableActor()
@@ -52,6 +53,11 @@ void AInteractableActor::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent
 
 	ActiveWidget->AddToViewport();
 	UpdateWidgetPosition();
+
+	if (UInteractWidget* InteractWidget = Cast<UInteractWidget>(ActiveWidget))
+	{
+		InteractWidget->SetInteractInfo(InteractKey, InteractText);
+	}
 }
 
 void AInteractableActor::OnOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
@@ -85,7 +91,7 @@ void AInteractableActor::UpdateWidgetPosition()
 	if (!CachedPlayer || !PC || !ActiveWidget) return;
 
 	FVector WorldPos = CachedPlayer->GetActorLocation();
-	WorldPos += FVector(-120.f, 0.f, 80.f);
+	WorldPos += FVector(-100.f, 0.f, 70.f);
 
 	FVector2D ScreenPos;
 	PC->ProjectWorldLocationToScreen(WorldPos, ScreenPos);
