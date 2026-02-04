@@ -12,6 +12,7 @@ ASubwayStateActor::ASubwayStateActor()
 void ASubwayStateActor::BeginPlay()
 {
     Super::BeginPlay();
+    SetState(CurrentState);
 }
 
 void ASubwayStateActor::SetState(ESubwayState NewState)
