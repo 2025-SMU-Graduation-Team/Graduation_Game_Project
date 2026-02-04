@@ -42,6 +42,8 @@ public:
 
     void StartWalkSound(USoundBase* WalkSound);
 
+    UBoxComponent* GetHitBox() const { return HitBox; }
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -71,6 +73,9 @@ protected:
 
     UPROPERTY(VisibleAnywhere, Category = "Monster|Collision")
     UBoxComponent* HitBox;
+
+    UPROPERTY(VisibleAnywhere, Category = "Monster|Collision")
+    UBoxComponent* DespawnSensor;
 
     UPROPERTY(EditAnywhere, Category = "AI")
     float MoveSpeed = 250.f;

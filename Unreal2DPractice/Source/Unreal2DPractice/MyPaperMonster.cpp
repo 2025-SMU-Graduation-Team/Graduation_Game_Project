@@ -41,7 +41,26 @@ AMyPaperMonster::AMyPaperMonster()
 	HitBox->SetCollisionObjectType(ECC_WorldDynamic);
 	HitBox->SetCollisionResponseToAllChannels(ECR_Ignore);
 	HitBox->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+	HitBox->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Overlap); //added
 	HitBox->SetGenerateOverlapEvents(true);
+
+	//***추가: DespawnVolume 감지용 센서
+	DespawnSensor = CreateDefaultSubobject<UBoxComponent>(TEXT("DespawnSensor"));
+	DespawnSensor->SetupAttachment(RootComponent);
+
+	// 몬스터 몸 전체를 대충 커버하는 정도로
+	DespawnSensor->SetBoxExtent(FVector(80.f, 40.f, 120.f));
+
+	// Overlap 전용
+	DespawnSensor->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	DespawnSensor->SetCollisionObjectType(ECC_Pawn); // 혹은 WorldDynamic 아무거나 OK
+	DespawnSensor->SetCollisionResponseToAllChannels(ECR_Ignore);
+
+	// DespawnVolume이 WorldStatic이니까, 여기만 Overlap 열어줌
+	DespawnSensor->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Overlap);
+
+	DespawnSensor->SetGenerateOverlapEvents(true);
+	//***여기까지
 
 	WalkAudioComp = CreateDefaultSubobject<UAudioComponent>(TEXT("WalkAudioComp"));
 	WalkAudioComp->SetupAttachment(RootComponent);
