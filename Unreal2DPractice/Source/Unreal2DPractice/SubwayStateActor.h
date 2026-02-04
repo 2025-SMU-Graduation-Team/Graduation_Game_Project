@@ -2,7 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "InteractableActor.h"
-#include "DelayedTaskData.h"
+#include "LevelSequenceActor.h"
+#include "EndingFlowManager.h"
 #include "SubwayStateActor.generated.h"
 
 UENUM()
@@ -22,24 +23,42 @@ class UNREAL2DPRACTICE_API ASubwayStateActor : public AInteractableActor
 public:
     ASubwayStateActor();
 
+    virtual void Interact() override;
+
     void SetState(ESubwayState NewState);
 
-    virtual void Interact() override;
+    UFUNCTION(BlueprintCallable)
+    void HandleRide();
+
+    UFUNCTION(BlueprintCallable)
+    void HandleSkip();
 
 protected:
     virtual void BeginPlay() override;
 
-private:
-    void HandleRide();
-    void HandleSkip();
+    UPROPERTY(EditInstanceOnly)
+    AEndingFlowManager* FlowManager;
 
-    ESubwayState CurrentState;
+private:
+    void PlayEnterCutscene();
 
     const TCHAR* StateToString(ESubwayState State);
+
+private:
+    UPROPERTY(EditAnywhere, Category = "Cutscene")
+    ALevelSequenceActor* DoorsOpenCutscene;
+
+    UPROPERTY(EditAnywhere, Category = "Cutscene")
+    ALevelSequenceActor* PassedCutscene;
 
     UPROPERTY(EditAnywhere, Category = "Subway")
     FVector NormalTeleportLocation;
 
     UPROPERTY(EditAnywhere, Category = "Subway")
     FVector HiddenTeleportLocation;
+
+    UPROPERTY()
+    ALevelSequenceActor* ActiveCutscene;
+
+    ESubwayState CurrentState;
 };
