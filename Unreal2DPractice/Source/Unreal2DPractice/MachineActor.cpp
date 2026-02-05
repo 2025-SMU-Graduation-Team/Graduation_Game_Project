@@ -3,6 +3,7 @@
 
 #include "MachineActor.h"
 #include "Blueprint/UserWidget.h"
+#include "MyPaperCharacter.h"
 #include "Kismet/GameplayStatics.h"
 
 // Sets default values
@@ -25,16 +26,42 @@ void AMachineActor::Interact()
 {
     if (!WBPMachine || !PC) return;
 
-    if (!CurrentPanel)
+    AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(CachedPlayer);
+    if (!Player) return;
+
+    if (CurrentPanel)
+    {
+        Player->bEnableMovement = true; 
+
+        CurrentPanel->RemoveFromParent();
+        CurrentPanel = nullptr;
+
+        PC->bShowMouseCursor = false;
+
+        FInputModeGameOnly Mode;
+        PC->SetInputMode(Mode);
+
+        return;
+    }
+
+    CurrentPanel = CreateWidget<UUserWidget>(PC, WBPMachine);
+    if (CurrentPanel)
     {
         CurrentPanel = CreateWidget<UUserWidget>(PC, WBPMachine);
 
         if (CurrentPanel)
         {
+            Player->bEnableMovement = false;
+
             CurrentPanel->AddToViewport();
 
             PC->bShowMouseCursor = true;
-            PC->SetInputMode(FInputModeUIOnly());
+
+            FInputModeGameAndUI InputMode;
+            InputMode.SetWidgetToFocus(CurrentPanel->TakeWidget());
+            InputMode.SetHideCursorDuringCapture(false);
+
+            PC->SetInputMode(InputMode);
         }
     }
 }

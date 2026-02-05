@@ -33,12 +33,12 @@ void AItemActor::Interact()
         return;
 
     case EItemType::Wallet:
-        Player->Inventory->RequestPickup(this, false); 
+        Player->Inventory->RequestPickup(this); 
         break;
 
     case EItemType::Normal:
     default:
-        Player->Inventory->RequestPickup(this, true); 
+        Player->Inventory->RequestPickup(this); 
         break;
     }
 }

@@ -51,6 +51,16 @@ void AMyPaperCharacter::BeginPlay()
 	);
 
 	DefaultSpriteOffset = GetSprite()->GetRelativeLocation();
+
+	if (Inventory)
+	{
+		Inventory->OnEquipItemChanged.RemoveAll(this); 
+
+		Inventory->OnEquipItemChanged.AddDynamic(
+			this,
+			&AMyPaperCharacter::OnItemChanged
+		);
+	}
 }
 
 void AMyPaperCharacter::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,AActor* OtherActor,UPrimitiveComponent* OtherComp,
@@ -190,12 +200,7 @@ void AMyPaperCharacter::UpdateAnimation()
 void AMyPaperCharacter::PlayDeath()
 {
 	bIsDead = true;
-
-	/*APlayerController* PC = Cast<APlayerController>(GetController());
-	if (PC)
-	{
-		PC->DisableInput(PC);
-	}*/
+	bEnableMovement = false;
 
 	if (DieAnimation)
 	{
@@ -301,4 +306,11 @@ void AMyPaperCharacter::OnHideReleased(const FInputActionValue& Value)
 	if (!bIsHidden) return;
 
 	ExitHide();
+}
+
+void AMyPaperCharacter::OnItemChanged(EItemType NewType)
+{
+	EquippedTool = NewType;
+
+	UE_LOG(LogTemp, Log, TEXT("Equipped Tool: %s"), *UEnum::GetValueAsString(NewType));
 }

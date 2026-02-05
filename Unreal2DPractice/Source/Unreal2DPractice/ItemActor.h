@@ -34,4 +34,7 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Item")
 	UTexture2D* ItemIcon;
+
+	UPROPERTY(EditAnywhere, Category = "Item")
+	FText ItemDescription;
 };
