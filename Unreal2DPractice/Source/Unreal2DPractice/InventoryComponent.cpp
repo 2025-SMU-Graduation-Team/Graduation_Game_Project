@@ -36,7 +36,7 @@ bool UInventoryComponent::IsInventoryFull() const
 	return Items.Num() >= MaxInventorySize;
 }
 
-void UInventoryComponent::RequestPickup(AItemActor* Item, bool bIsWallet)
+void UInventoryComponent::RequestPickup(AItemActor* Item)
 {
 	if (!InventoryWidget && !Item) return;
 
@@ -66,20 +66,6 @@ void UInventoryComponent::ConfirmPickupYes()
 
 	AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(GetOwner());
 	AddItem(PendingItem);
-
-	/*if (PendingItem->ItemType == EItemType::Wallet)
-	{
-		FVector SpawnLoc = PendingItem->GetActorLocation();
-		GetWorld()->SpawnActor<AItemActor>(
-			PendingItem->CardItemClass,
-			SpawnLoc,
-			PendingItem->GetActorRotation()
-		);
-	}
-	else
-	{
-		AddItem(PendingItem->ItemIcon);
-	}*/
 
 	if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
 	{
@@ -120,6 +106,8 @@ void UInventoryComponent::ConfirmPickupNo()
 
 void UInventoryComponent::SelectSlot(int32 Index)
 {
+	InventoryWidget->ShowBorder(Index);
+
 	if (!Items.IsValidIndex(Index))
 	{
 		return;
@@ -133,7 +121,7 @@ void UInventoryComponent::SelectSlot(int32 Index)
 	}
 
 	SelectedInvenIndex = Index;
-	InventoryWidget->ShowItemInfoPopup(Items[Index].ItemName);
+	InventoryWidget->ShowItemInfoPopup(Items[Index].ItemName, Items[Index].ItemDescription);
 }
 
 void UInventoryComponent::UseSelectedItem()
@@ -151,12 +139,12 @@ void UInventoryComponent::UseSelectedItem()
 
 		if (InventoryWidget)
 		{
-			InventoryWidget->ShowItemInfoPopup(Item.ItemName);
+			InventoryWidget->ShowItemInfoPopup(Item.ItemName, Item.ItemDescription);
 		}
 
 		return; 
 	}
-
+	InventoryWidget->ShowEquippedItem(Item.Icon);
 	EquippedItemType = Item.ItemType;
 	OnEquipItemChanged.Broadcast(EquippedItemType);
 	UE_LOG(LogTemp, Log, TEXT("Equipped: %s"), *UEnum::GetValueAsString(EquippedItemType));
@@ -170,9 +158,12 @@ void UInventoryComponent::AddItem(AItemActor* ItemActor)
 	FInventoryItem NewItem;
 	NewItem.Icon = ItemActor->ItemIcon;
 	NewItem.ItemName = FText::FromName(ItemActor->ItemName);
+	NewItem.ItemDescription = ItemActor->ItemDescription;
 	NewItem.ItemType = ItemActor->ItemType;
 
 	Items.Add(NewItem);
+	InventoryWidget->HideItemInfoPopup();
+	InventoryWidget->HideAllBorder();
 	UpdateInventoryUI();
 }
 

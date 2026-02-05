@@ -10,20 +10,24 @@ void UItemInventoryWidget::UpdateInventory(const TArray<FInventoryItem>& Items)
 	int32 ChildCount = InventoryBox->GetChildrenCount();
 	for (int32 i = 0; i < ChildCount; i++)
 	{
-		UImage* SlotImage = Cast<UImage>(InventoryBox->GetChildAt(i));
-		if (!SlotImage) continue;
+		UOverlay* ItemSlot = Cast<UOverlay>(InventoryBox->GetChildAt(i));
+		if (!ItemSlot) continue;
 
-		if (i < Items.Num() && Items[i].Icon != nullptr)
+		UImage* ItemSlotImage = Cast<UImage>(ItemSlot->GetChildAt(0));
+		if (!ItemSlotImage) continue;
+
+		FSlateBrush Brush;
+		Brush.ImageSize = FVector2D(100.f, 100.f);
+
+		if (i < Items.Num() && Items[i].Icon)
 		{
-			FSlateBrush Brush;
 			Brush.SetResourceObject(Items[i].Icon);
-			Brush.ImageSize = FVector2D(60.f, 60.f);
-			SlotImage->SetBrush(Brush);
 		}
 		else
 		{
-			FSlateBrush EmptyBrush;
-			SlotImage->SetBrush(EmptyBrush);
+			Brush.SetResourceObject(EmptySlotTexture);
 		}
+
+		ItemSlotImage->SetBrush(Brush);
 	}
 }

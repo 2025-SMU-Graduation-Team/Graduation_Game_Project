@@ -6,6 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "Components/HorizontalBox.h"
 #include "Components/Image.h"
+#include "Components/Overlay.h"
 #include "InventoryComponent.h" 
 #include "ItemInventoryWidget.generated.h"
 
@@ -30,10 +31,22 @@ public:
 	void ShowInventoryFullPopup();
 
 	UFUNCTION(BlueprintImplementableEvent)
-	void ShowItemInfoPopup(const FText& ItemText);
+	void ShowItemInfoPopup(const FText& ItemName, const FText& ItemDescription);
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void HideItemInfoPopup();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void ShowBorder(int32 Index);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void HideAllBorder();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void ShowEquippedItem(UTexture2D* ItemIcon);
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory")
+	UTexture2D* EmptySlotTexture;
 
 protected:
 	UPROPERTY(meta = (BindWidget))

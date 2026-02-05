@@ -25,6 +25,9 @@ struct FInventoryItem
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	EItemType ItemType;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FText ItemDescription;
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
@@ -74,6 +77,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	EItemType EquippedItemType;
 
+
 	UFUNCTION(BlueprintCallable)
 	void SelectSlot(int32 Index);
 
@@ -85,7 +89,7 @@ public:
 
 	void UpdateInventoryUI();
 
-	void RequestPickup(AItemActor* Item, bool bIsWallet);
+	void RequestPickup(AItemActor* Item);
 
 	UFUNCTION(BlueprintCallable)
 	void ConfirmPickupYes();
