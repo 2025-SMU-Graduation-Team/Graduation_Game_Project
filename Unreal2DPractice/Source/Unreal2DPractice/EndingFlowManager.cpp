@@ -2,42 +2,81 @@
 #include "Kismet/GameplayStatics.h"
 #include "MyPaperCharacter.h"
 
-void AEndingFlowManager::RequestEnding(EEndingType Type)
+AEndingFlowManager::AEndingFlowManager()
 {
-    PendingEnding = Type;
+    PrimaryActorTick.bCanEverTick = false;
+}
 
-    if (Type == EEndingType::Hidden)
-    {
-        PendingLevelName = TEXT("HiddenEnding");
-        PendingTeleportLocation = FVector(6230, -14280, -216);
-    }
-    else
-    {
-        PendingLevelName = TEXT("NormalEnding");
-        PendingTeleportLocation = FVector(6230, -14280, -216);
-    }
+void AEndingFlowManager::BeginPlay()
+{
+    Super::BeginPlay();
+}
 
-    FLatentActionInfo Info;
-    Info.CallbackTarget = this;
-    Info.ExecutionFunction = "OnEndingLevelLoaded";
-    Info.Linkage = 0;
-    Info.UUID = __LINE__;
+void AEndingFlowManager::RequestEnding(EEndingType Type, const FVector& TeleportLocation)
+{
+    PendingTeleportLocation = TeleportLocation;
+
+    PendingLevelName =
+        (Type == EEndingType::Hidden)
+        ? TEXT("HiddenEnding")
+        : TEXT("NormalEnding");
+
+    UnloadCurrentSubLevel();
+    LoadEndingLevel();
+}
+
+void AEndingFlowManager::UnloadCurrentSubLevel()
+{
+    if (CurrentSubLevelName.IsNone())
+        return;
+
+    UGameplayStatics::UnloadStreamLevel(
+        this,
+        CurrentSubLevelName,
+        FLatentActionInfo(),
+        false
+    );
+
+    CurrentSubLevelName = NAME_None;
+}
+
+void AEndingFlowManager::LoadEndingLevel()
+{
+    FLatentActionInfo LatentInfo;
+    LatentInfo.CallbackTarget = this;
+    LatentInfo.ExecutionFunction = FName("OnEndingLevelLoaded");
+    LatentInfo.UUID = 1;
+    LatentInfo.Linkage = 0;
 
     UGameplayStatics::LoadStreamLevel(
         this,
         PendingLevelName,
         true,
         false,
-        Info
+        LatentInfo
     );
 }
 
 void AEndingFlowManager::OnEndingLevelLoaded()
 {
-    UE_LOG(LogTemp, Log, TEXT("OnEndingLevelLoaded"));
-    AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(UGameplayStatics::GetPlayerCharacter(this, 0));
+    CurrentSubLevelName = PendingLevelName;
+    MovePlayer();
+}
 
-    if (!Player) return;
+void AEndingFlowManager::MovePlayer()
+{
+    AMyPaperCharacter* Player =
+        Cast<AMyPaperCharacter>(
+            UGameplayStatics::GetPlayerCharacter(this, 0)
+        );
 
-    Player->SetActorLocation(PendingTeleportLocation, false, nullptr, ETeleportType::TeleportPhysics);
+    if (!Player)
+        return;
+
+    Player->SetActorLocation(
+        PendingTeleportLocation,
+        false,
+        nullptr,
+        ETeleportType::TeleportPhysics
+    );
 }

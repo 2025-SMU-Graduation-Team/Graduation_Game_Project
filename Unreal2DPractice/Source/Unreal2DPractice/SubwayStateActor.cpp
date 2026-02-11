@@ -1,34 +1,32 @@
 #include "SubwayStateActor.h"
-#include "Kismet/GameplayStatics.h"
+#include "EndingDirector.h"
 #include "Components/BoxComponent.h"
-#include "LevelSequencePlayer.h"
-#include "MyPaperCharacter.h"
+#include "Kismet/GameplayStatics.h"
 
 ASubwayStateActor::ASubwayStateActor()
 {
     CurrentState = ESubwayState::Approaching;
-    ActiveCutscene = nullptr;
 }
 
 void ASubwayStateActor::BeginPlay()
 {
     Super::BeginPlay();
 
-
-    if (!FlowManager)
+    if (!EndingDirector)
     {
         TArray<AActor*> Found;
         UGameplayStatics::GetAllActorsOfClass(
             this,
-            AEndingFlowManager::StaticClass(),
+            AEndingDirector::StaticClass(),
             Found
         );
 
         if (Found.Num() > 0)
         {
-            FlowManager = Cast<AEndingFlowManager>(Found[0]);
+            EndingDirector = Cast<AEndingDirector>(Found[0]);
         }
     }
+
     SetState(CurrentState);
 }
 
@@ -40,11 +38,6 @@ void ASubwayStateActor::SetState(ESubwayState NewState)
         (CurrentState == ESubwayState::DoorsOpen ||
             CurrentState == ESubwayState::Passed);
 
-    UE_LOG(LogTemp, Log,
-        TEXT("[SubwayStateActor] State: %s, Collider enabled: %s"),
-        StateToString(CurrentState),
-        bEnable ? TEXT("true") : TEXT("false"));
-
     if (TriggerBox)
     {
         TriggerBox->SetCollisionEnabled(
@@ -55,73 +48,23 @@ void ASubwayStateActor::SetState(ESubwayState NewState)
 
 void ASubwayStateActor::Interact()
 {
-    if (!CachedPlayer)
+    if (!CachedPlayer || !EndingDirector)
         return;
 
-    if (CurrentState != ESubwayState::DoorsOpen &&
-        CurrentState != ESubwayState::Passed)
-        return;
-
-    PlayEnterCutscene();
-}
-
-void ASubwayStateActor::PlayEnterCutscene()
-{
-    if (!CachedPlayer)
-        return;
-
+    UE_LOG(LogTemp, Log, TEXT("[Interact] CurrentState %s"), StateToString(CurrentState));
     if (CurrentState == ESubwayState::DoorsOpen)
     {
-        ActiveCutscene = DoorsOpenCutscene;
+        EndingDirector->StartNormalEnding(
+            CachedPlayer,
+            NormalTeleportLocation
+        );
     }
     else if (CurrentState == ESubwayState::Passed)
     {
-        ActiveCutscene = PassedCutscene;
-    }
-
-    if (!ActiveCutscene)
-        return;
-
-    ULevelSequencePlayer* SeqPlayer = ActiveCutscene->GetSequencePlayer();
-    if (!SeqPlayer)
-        return;
-
-    CachedPlayer->DisableInput(PC);
-
-    ActiveCutscene->SetBindingByTag(
-        TEXT("Player"),
-        { CachedPlayer }
-    );
-    SeqPlayer->Play();
-}
-
-void ASubwayStateActor::HandleRide()
-{
-    if (CachedPlayer)
-    {
-        CachedPlayer->EnableInput(PC);
-    }
-
-    if (FlowManager)
-    {
-        FlowManager->RequestEnding(EEndingType::Normal);
-    }
-}
-
-void ASubwayStateActor::HandleSkip()
-{
-    if (CachedPlayer)
-    {
-        UE_LOG(LogTemp, Log, TEXT("[SubwayStateActor] CachedPlayer is not null"));
-    }
-    if (CachedPlayer)
-    {
-        CachedPlayer->EnableInput(PC);
-    }
-
-    if (FlowManager)
-    {
-        FlowManager->RequestEnding(EEndingType::Hidden);
+        EndingDirector->StartHiddenEnding(
+            CachedPlayer,
+            HiddenTeleportLocation
+        );
     }
 }
 

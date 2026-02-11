@@ -4,7 +4,7 @@
 #include "GameFramework/Actor.h"
 #include "EndingFlowManager.generated.h"
 
-UENUM()
+UENUM(BlueprintType)
 enum class EEndingType : uint8
 {
     Normal,
@@ -17,14 +17,23 @@ class UNREAL2DPRACTICE_API AEndingFlowManager : public AActor
     GENERATED_BODY()
 
     public:
-    void RequestEnding(EEndingType Type);
+    AEndingFlowManager();
+
+    UFUNCTION(BlueprintCallable)
+    void RequestEnding(EEndingType Type, const FVector& TeleportLocation);
+
+protected:
+    virtual void BeginPlay() override;
 
 private:
+    void LoadEndingLevel();
     UFUNCTION()
     void OnEndingLevelLoaded();
+    void MovePlayer();
+    void UnloadCurrentSubLevel();
 
-    EEndingType PendingEnding;
-
+private:
+    FName CurrentSubLevelName;
     FName PendingLevelName;
     FVector PendingTeleportLocation;
 };

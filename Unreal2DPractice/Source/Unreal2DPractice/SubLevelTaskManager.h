@@ -45,6 +45,8 @@ class UNREAL2DPRACTICE_API USubLevelTaskManager : public UGameInstanceSubsystem
     void RequestTask(UDelayedTaskData* TaskData);
     void OnSubLevelEntered();
 
+    void CloseDoor(AActor* Actor);
+
 private:
     void NotifyWidgets(bool bRunning);
 
@@ -58,7 +60,6 @@ private:
     bool HandleMoveForward(FMoveTask& Task, float Delta);
 
     void OpenDoor(AActor* Actor);
-    void CloseDoor(AActor* Actor);
 
 private:
     TArray<UDelayedTaskData*> PendingTasks;
