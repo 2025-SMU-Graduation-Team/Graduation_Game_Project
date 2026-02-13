@@ -7,8 +7,7 @@ void AEndingDirector::StartNormalEnding(AMyPaperCharacter* Player, FVector Telep
     if (!NormalClass || !Player)
         return;
 
-    ANormalEndingSequence* Seq =
-        GetWorld()->SpawnActor<ANormalEndingSequence>(NormalClass);
+    ANormalEndingSequence* Seq = GetWorld()->SpawnActor<ANormalEndingSequence>(NormalClass);
 
     if (Seq)
     {
@@ -22,8 +21,7 @@ void AEndingDirector::StartHiddenEnding(AMyPaperCharacter* Player, FVector Telep
         return;
     UE_LOG(LogTemp, Log, TEXT("StartHiddenEnding"));
 
-    AHiddenEndingSequence* Seq =
-        GetWorld()->SpawnActor<AHiddenEndingSequence>(HiddenClass);
+    AHiddenEndingSequence* Seq = GetWorld()->SpawnActor<AHiddenEndingSequence>(HiddenClass);
 
     if (Seq)
     {

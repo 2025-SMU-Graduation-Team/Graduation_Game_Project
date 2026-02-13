@@ -23,17 +23,14 @@ class UNREAL2DPRACTICE_API AHiddenEndingSequence : public AActor
     public:
     AHiddenEndingSequence();
 
-    virtual void Tick(float DeltaTime) override;
-
     void StartSequence(AMyPaperCharacter* Player, FVector TeleportLocation);
 
 protected:
     virtual void BeginPlay() override;
 
 private:
-    void CheckInput();
     void StartMove();
-    void UpdateMove(float DeltaTime);
+    void UpdateMove();
     void FinishSequence();
 
     EHiddenEndingState State;
@@ -50,4 +47,6 @@ private:
 
     float MoveElapsed = 0.f;
     float MoveDuration = 2.5f;
+
+    FTimerHandle MoveTimer;
 };

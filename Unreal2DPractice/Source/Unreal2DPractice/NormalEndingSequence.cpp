@@ -35,7 +35,7 @@ void ANormalEndingSequence::StartSequence(AMyPaperCharacter* Player, FVector Tel
     );
 
     StartLocation = CachedPlayer->GetActorLocation();
-    TargetLocation = StartLocation + FVector(0.f, -100.f, 0.f);
+    TargetLocation = StartLocation + FVector(0.f, 110.f, 0.f);
 
     State = ENormalEndingState::Moving;
 }
@@ -69,9 +69,17 @@ void ANormalEndingSequence::UpdateMove(float DeltaTime)
 
 void ANormalEndingSequence::CloseDoor()
 {
-    if (TaskManager && DoorActor)
+    if (TaskManager)
     {
-        TaskManager->CloseDoor(DoorActor);
+        if (AActor* Door = ScreenDoorActor.Get())
+        {
+            TaskManager->CloseDoor(Door);
+        }
+
+        if (AActor* Door = SubwayDoorActor.Get())
+        {
+            TaskManager->CloseDoor(Door);
+        }
     }
 
     StartImagePhase();
@@ -121,7 +129,7 @@ void ANormalEndingSequence::FinishSequence()
     FTimerHandle Handle;
     GetWorld()->GetTimerManager().SetTimer(Handle, [this, PC]()
     {
-            UGameplayStatics::OpenLevel(this, "NormalEndingLevel");
+            UGameplayStatics::OpenLevel(this, "NormalEnding");
 
             if (CachedPlayer)
             {

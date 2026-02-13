@@ -53,7 +53,10 @@ private:
     float ShakeSpeed;
 
     UPROPERTY(EditAnywhere)
-    AActor* DoorActor;
+    TWeakObjectPtr<AActor> ScreenDoorActor;
+
+    UPROPERTY(EditAnywhere)
+    TWeakObjectPtr<AActor> SubwayDoorActor;
 
     UPROPERTY(EditAnywhere)
     USubLevelTaskManager* TaskManager;

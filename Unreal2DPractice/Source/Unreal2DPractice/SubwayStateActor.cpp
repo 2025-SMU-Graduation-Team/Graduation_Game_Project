@@ -2,15 +2,27 @@
 #include "EndingDirector.h"
 #include "Components/BoxComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "MyPaperCharacter.h"
 
 ASubwayStateActor::ASubwayStateActor()
 {
     CurrentState = ESubwayState::Approaching;
+
+    TriggerBox = CreateDefaultSubobject<UBoxComponent>(TEXT("TriggerBox"));
+    RootComponent = TriggerBox;
+
+    TriggerBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+    TriggerBox->SetCollisionResponseToAllChannels(ECR_Ignore);
+    TriggerBox->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+
+    TriggerBox->OnComponentBeginOverlap.AddDynamic(this, &ASubwayStateActor::OnOverlapBegin);
+    TriggerBox->OnComponentEndOverlap.AddDynamic(this, &ASubwayStateActor::OnOverlapEnd);
+
 }
 
 void ASubwayStateActor::BeginPlay()
 {
-    Super::BeginPlay();
+    Super::BeginPlay(); 
 
     if (!EndingDirector)
     {
@@ -30,6 +42,35 @@ void ASubwayStateActor::BeginPlay()
     SetState(CurrentState);
 }
 
+void ASubwayStateActor::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
+    AActor* OtherActor,
+    UPrimitiveComponent* OtherComp,
+    int32 OtherBodyIndex,
+    bool bFromSweep,
+    const FHitResult& SweepResult)
+{
+    AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(OtherActor);
+    if (Player)
+    {
+        Player->SetCurrentSubway(this);
+        UE_LOG(LogTemp, Log, TEXT("Player entered subway trigger"));
+    }
+}
+
+void ASubwayStateActor::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
+    AActor* OtherActor,
+    UPrimitiveComponent* OtherComp,
+    int32 OtherBodyIndex)
+{
+    AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(OtherActor);
+    if (Player)
+    {
+        Player->SetCurrentSubway(nullptr);
+        UE_LOG(LogTemp, Log, TEXT("Player left subway trigger"));
+    }
+}
+
+
 void ASubwayStateActor::SetState(ESubwayState NewState)
 {
     CurrentState = NewState;
@@ -46,23 +87,23 @@ void ASubwayStateActor::SetState(ESubwayState NewState)
     }
 }
 
-void ASubwayStateActor::Interact()
+void ASubwayStateActor::Interact(AMyPaperCharacter* Player)
 {
-    if (!CachedPlayer || !EndingDirector)
+    if (!Player || !EndingDirector)
         return;
 
     UE_LOG(LogTemp, Log, TEXT("[Interact] CurrentState %s"), StateToString(CurrentState));
     if (CurrentState == ESubwayState::DoorsOpen)
     {
         EndingDirector->StartNormalEnding(
-            CachedPlayer,
+            Player,
             NormalTeleportLocation
         );
     }
     else if (CurrentState == ESubwayState::Passed)
     {
         EndingDirector->StartHiddenEnding(
-            CachedPlayer,
+            Player,
             HiddenTeleportLocation
         );
     }

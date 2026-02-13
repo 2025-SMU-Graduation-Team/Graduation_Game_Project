@@ -7,7 +7,7 @@
 
 AHiddenEndingSequence::AHiddenEndingSequence()
 {
-    PrimaryActorTick.bCanEverTick = true;
+    PrimaryActorTick.bCanEverTick = false;
 
     State = EHiddenEndingState::None;
     MoveSpeed = 200.f;
@@ -27,80 +27,58 @@ void AHiddenEndingSequence::StartSequence(AMyPaperCharacter* Player, FVector Tel
     CachedPlayer = Player;
     PendingTeleportLocation = TeleportLocation;
 
-    State = EHiddenEndingState::WaitingInput;
-}
-
-void AHiddenEndingSequence::Tick(float DeltaTime)
-{
-    Super::Tick(DeltaTime);
-
-    if (State == EHiddenEndingState::WaitingInput)
-    {
-        CheckInput();
-    }
-    else if (State == EHiddenEndingState::Moving)
-    {
-        UpdateMove(DeltaTime);
-    }
-}
-
-void AHiddenEndingSequence::CheckInput()
-{
-    APlayerController* PC =
-        UGameplayStatics::GetPlayerController(this, 0);
-
-    if (!PC)
-        return;
-
-    if (PC->IsInputKeyDown(EKeys::W))
-    {
-        UE_LOG(LogTemp, Log, TEXT("[HiddenEnding] CheckInput"));
-        StartMove();
-    }
+    StartMove();
 }
 
 void AHiddenEndingSequence::StartMove()
 {
-    UE_LOG(LogTemp, Log, TEXT("[HiddenEnding] StartMove"));
-
     State = EHiddenEndingState::Moving;
 
     APlayerController* PC =
         UGameplayStatics::GetPlayerController(this, 0);
 
-    if (CachedPlayer && PC)
+    if (!CachedPlayer || !PC)
+        return;
+
+    CachedPlayer->DisableInput(PC);
+
+    if (BackMontage)
     {
-        CachedPlayer->DisableInput(PC);
-
-        if (BackMontage)
-        {
-            CachedPlayer->PlayAnimMontage(BackMontage);
-        }
-
-        StartLocation = CachedPlayer->GetActorLocation();
-        TargetLocation = StartLocation + FVector(0.f, 70.f, 0.f);
-
-        MoveElapsed = 0.f;
+        CachedPlayer->PlayAnimMontage(BackMontage);
     }
+
+    StartLocation = CachedPlayer->GetActorLocation();
+    TargetLocation = StartLocation + FVector(0.f, 70.f, 0.f);
+
+    MoveElapsed = 0.f;
+
+    GetWorld()->GetTimerManager().SetTimer(
+        MoveTimer,
+        this,
+        &AHiddenEndingSequence::UpdateMove,
+        0.016f,
+        true
+    );
 }
 
-void AHiddenEndingSequence::UpdateMove(float DeltaTime)
+
+void AHiddenEndingSequence::UpdateMove()
 {
-    MoveElapsed += DeltaTime;
+    MoveElapsed += 0.016f;
 
     float Alpha = FMath::Clamp(MoveElapsed / MoveDuration, 0.f, 1.f);
-
     Alpha = FMath::InterpEaseInOut(0.f, 1.f, Alpha, 2.f);
 
     FVector NewLoc = FMath::Lerp(StartLocation, TargetLocation, Alpha);
-
     CachedPlayer->SetActorLocation(NewLoc);
 
     if (Alpha >= 1.f)
     {
+        GetWorld()->GetTimerManager().ClearTimer(MoveTimer);
         FinishSequence();
     }
 }
+
 
 void AHiddenEndingSequence::FinishSequence()
 {
