@@ -164,6 +164,15 @@ void AMyPaperCharacter::UpdateAnimation()
 {
 	if (bIsDead) return;
 
+	if (ForcedFlipbook)
+	{
+		if (GetSprite()->GetFlipbook() != ForcedFlipbook)
+		{
+			GetSprite()->SetFlipbook(ForcedFlipbook);
+		}
+		return;
+	}
+
 	if (bIsHidden)
 	{
 		if (HideAnimation && GetSprite()->GetFlipbook() != HideAnimation)
@@ -309,4 +318,14 @@ void AMyPaperCharacter::OnHideReleased(const FInputActionValue& Value)
 void AMyPaperCharacter::SetCurrentSubway(ASubwayStateActor* Subway)
 {
 	CurrentSubway = Subway;
+}
+
+void AMyPaperCharacter::SetForcedFlipbook(UPaperFlipbook* NewFlipbook)
+{
+	ForcedFlipbook = NewFlipbook;
+}
+
+void AMyPaperCharacter::ClearForcedFlipbook()
+{
+	ForcedFlipbook = nullptr;
 }

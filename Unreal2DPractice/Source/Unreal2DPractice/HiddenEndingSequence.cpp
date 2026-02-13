@@ -10,7 +10,6 @@ AHiddenEndingSequence::AHiddenEndingSequence()
     PrimaryActorTick.bCanEverTick = false;
 
     State = EHiddenEndingState::None;
-    MoveSpeed = 200.f;
 }
 
 void AHiddenEndingSequence::BeginPlay()
@@ -27,6 +26,11 @@ void AHiddenEndingSequence::StartSequence(AMyPaperCharacter* Player, FVector Tel
     CachedPlayer = Player;
     PendingTeleportLocation = TeleportLocation;
 
+    if (BackFlipbook)
+    {
+        CachedPlayer->SetForcedFlipbook(BackFlipbook);
+    }
+
     StartMove();
 }
 
@@ -34,21 +38,15 @@ void AHiddenEndingSequence::StartMove()
 {
     State = EHiddenEndingState::Moving;
 
-    APlayerController* PC =
-        UGameplayStatics::GetPlayerController(this, 0);
+    APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
 
     if (!CachedPlayer || !PC)
         return;
 
     CachedPlayer->DisableInput(PC);
 
-    if (BackMontage)
-    {
-        CachedPlayer->PlayAnimMontage(BackMontage);
-    }
-
     StartLocation = CachedPlayer->GetActorLocation();
-    TargetLocation = StartLocation + FVector(0.f, 70.f, 0.f);
+    TargetLocation = StartLocation + FVector(0.f, 100.f, 0.f);
 
     MoveElapsed = 0.f;
 
@@ -61,9 +59,11 @@ void AHiddenEndingSequence::StartMove()
     );
 }
 
-
 void AHiddenEndingSequence::UpdateMove()
 {
+    if (!CachedPlayer)
+        return;
+
     MoveElapsed += 0.016f;
 
     float Alpha = FMath::Clamp(MoveElapsed / MoveDuration, 0.f, 1.f);
@@ -84,8 +84,7 @@ void AHiddenEndingSequence::FinishSequence()
 {
     State = EHiddenEndingState::FadingOut;
 
-    APlayerController* PC =
-        UGameplayStatics::GetPlayerController(this, 0);
+    APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
 
     if (!PC || !PC->PlayerCameraManager)
         return;
@@ -100,10 +99,11 @@ void AHiddenEndingSequence::FinishSequence()
             if (!CachedPlayer)
                 return;
 
+            CachedPlayer->ClearForcedFlipbook();
+
             CachedPlayer->SetActorLocation(PendingTeleportLocation);
 
-            ALevelTransitionManager* Manager =
-                ALevelTransitionManager::Get(GetWorld());
+            ALevelTransitionManager* Manager = ALevelTransitionManager::Get(GetWorld());
 
             if (Manager)
             {

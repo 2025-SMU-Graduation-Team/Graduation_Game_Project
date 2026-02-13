@@ -18,6 +18,7 @@
 
 class AHidingSpot;
 class UPlayerCameraController;
+class UPaperFlipbook;
 
 UCLASS()
 class UNREAL2DPRACTICE_API AMyPaperCharacter : public APaperCharacter
@@ -41,6 +42,9 @@ protected:
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	void SetForcedFlipbook(UPaperFlipbook* NewFlipbook);
+	void ClearForcedFlipbook();
 
 	bool bEnableMovement = true;
 
@@ -152,6 +156,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Animation")
 	class UPaperFlipbook* HideAnimation;
+
+	UPROPERTY()
+	class UPaperFlipbook* ForcedFlipbook = nullptr;
 
 	void UpdateAnimation();
 	void UpdateCharacterDirection(float AxisValue);

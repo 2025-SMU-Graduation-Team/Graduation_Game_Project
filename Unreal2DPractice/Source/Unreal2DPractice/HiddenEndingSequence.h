@@ -40,13 +40,14 @@ private:
     FVector TargetLocation;
     FVector PendingTeleportLocation;
 
-    float MoveSpeed;
-
-    UPROPERTY(EditAnywhere)
-    UAnimMontage* BackMontage;
+    bool bIsMoving = false;
+    float MoveSpeed = 200.f;
 
     float MoveElapsed = 0.f;
     float MoveDuration = 2.5f;
 
     FTimerHandle MoveTimer;
+
+    UPROPERTY(EditDefaultsOnly)
+    class UPaperFlipbook* BackFlipbook;
 };
