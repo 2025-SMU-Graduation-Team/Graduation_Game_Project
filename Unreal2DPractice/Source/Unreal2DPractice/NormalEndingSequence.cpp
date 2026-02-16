@@ -1,20 +1,16 @@
 #include "NormalEndingSequence.h"
 #include "MyPaperCharacter.h"
+#include "NormalEndingWidget.h"
+#include "PaperFlipbook.h"
 #include "Kismet/GameplayStatics.h"
+#include "GameFramework/PlayerController.h"
 #include "Camera/PlayerCameraManager.h"
 #include "TimerManager.h"
-#include "SubLevelTaskManager.h"
+#include "LevelTransitionManager.h"
 
 ANormalEndingSequence::ANormalEndingSequence()
 {
-    PrimaryActorTick.bCanEverTick = true;
-
-    State = ENormalEndingState::None;
-    MoveSpeed = 200.f;
-
-    ShakeDuration = 3.f;
-    ShakeAmplitude = 5.f;
-    ShakeSpeed = 5.f;
+    PrimaryActorTick.bCanEverTick = false;
 }
 
 void ANormalEndingSequence::BeginPlay()
@@ -30,114 +26,142 @@ void ANormalEndingSequence::StartSequence(AMyPaperCharacter* Player, FVector Tel
     CachedPlayer = Player;
     PendingTeleportLocation = TeleportLocation;
 
-    CachedPlayer->DisableInput(
-        UGameplayStatics::GetPlayerController(this, 0)
-    );
-
-    StartLocation = CachedPlayer->GetActorLocation();
-    TargetLocation = StartLocation + FVector(0.f, 110.f, 0.f);
-
-    State = ENormalEndingState::Moving;
-}
-
-void ANormalEndingSequence::Tick(float DeltaTime)
-{
-    Super::Tick(DeltaTime);
-
-    if (State == ENormalEndingState::Moving)
+    if (BackFlipbook)
     {
-        UpdateMove(DeltaTime);
-    }
-    else if (State == ENormalEndingState::ShowingImage)
-    {
-        UpdateCameraShake(DeltaTime);
-    }
-}
-
-void ANormalEndingSequence::UpdateMove(float DeltaTime)
-{
-    FVector Current = CachedPlayer->GetActorLocation();
-    FVector NewLoc = FMath::VInterpConstantTo(Current, TargetLocation, DeltaTime, MoveSpeed);
-
-    CachedPlayer->SetActorLocation(NewLoc);
-
-    if (FVector::Dist(NewLoc, TargetLocation) < 1.f)
-    {
-        CloseDoor();
-    }
-}
-
-void ANormalEndingSequence::CloseDoor()
-{
-    if (TaskManager)
-    {
-        if (AActor* Door = ScreenDoorActor.Get())
-        {
-            TaskManager->CloseDoor(Door);
-        }
-
-        if (AActor* Door = SubwayDoorActor.Get())
-        {
-            TaskManager->CloseDoor(Door);
-        }
+        CachedPlayer->SetForcedFlipbook(BackFlipbook);
     }
 
-    StartImagePhase();
+    StartMove();
 }
 
-void ANormalEndingSequence::StartImagePhase()
+void ANormalEndingSequence::StartMove()
 {
-    State = ENormalEndingState::ShowingImage;
-    ShakeTime = 0.f;
-
-    // show EndingImage
-}
-
-void ANormalEndingSequence::UpdateCameraShake(float DeltaTime)
-{
-    ShakeTime += DeltaTime;
-
-    APlayerCameraManager* Cam =
-        UGameplayStatics::GetPlayerCameraManager(this, 0);
-
-    if (!Cam)
+    APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+    if (!CachedPlayer || !PC)
         return;
 
-    float Offset = FMath::Sin(ShakeTime * ShakeSpeed) * ShakeAmplitude;
+    CachedPlayer->DisableInput(PC);
 
-    FRotator Rot = Cam->GetCameraRotation();
-    Rot.Pitch += Offset * DeltaTime;
+    StartLocation = CachedPlayer->GetActorLocation();
+    TargetLocation = StartLocation + FVector(0.f, 100.f, 0.f);
 
-    Cam->SetManualCameraFade(0.f, FLinearColor::Black, false);
+    MoveElapsed = 0.f;
 
-    if (ShakeTime >= ShakeDuration)
+    GetWorld()->GetTimerManager().SetTimer(
+        MoveTimer,
+        this,
+        &ANormalEndingSequence::UpdateMove,
+        0.016f,
+        true
+    );
+}
+
+void ANormalEndingSequence::UpdateMove()
+{
+    if (!CachedPlayer)
+        return;
+
+    MoveElapsed += 0.016f;
+
+    float Alpha = FMath::Clamp(MoveElapsed / MoveDuration, 0.f, 1.f);
+    Alpha = FMath::InterpEaseInOut(0.f, 1.f, Alpha, 2.f);
+
+    FVector NewLoc = FMath::Lerp(StartLocation, TargetLocation, Alpha);
+    CachedPlayer->SetActorLocation(NewLoc);
+
+    if (Alpha >= 1.f)
     {
-        FinishSequence();
+        GetWorld()->GetTimerManager().ClearTimer(MoveTimer);
+        OnMoveFinished();
     }
+}
+
+void ANormalEndingSequence::OnMoveFinished()
+{
+    APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+    if (!PC || !PC->PlayerCameraManager)
+        return;
+
+    PC->PlayerCameraManager->StartCameraFade(
+        0.f, 1.f, 0.3f, FLinearColor::Black, false, true
+    );
+
+    FTimerHandle FadeHandle;
+
+    GetWorld()->GetTimerManager().SetTimer(FadeHandle, [this, PC]()
+        {
+            if (!CachedPlayer)
+                return;
+
+            CachedPlayer->SetActorLocation(PendingTeleportLocation);
+
+            ALevelTransitionManager* Manager = ALevelTransitionManager::Get(GetWorld());
+            if (Manager)
+            {
+                Manager->ChangeSubLevel(TEXT("NormalEnding"));
+            }
+
+            PC->PlayerCameraManager->StartCameraFade(
+                1.f, 0.f, 0.4f, FLinearColor::Black, false, false
+            );
+
+            ShowEndingWidget();
+
+        }, 0.3f, false);
+}
+
+void ANormalEndingSequence::ShowEndingWidget()
+{
+    APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+    if (!PC)
+        return;
+
+    if (EndingWidgetClass)
+    {
+        ActiveWidget = CreateWidget<UNormalEndingWidget>(PC, EndingWidgetClass);
+        if (ActiveWidget)
+        {
+            ActiveWidget->AddToViewport();
+            ActiveWidget->StartShake(5.f);
+        }
+    }
+
+    FTimerHandle EndHandle;
+
+    GetWorld()->GetTimerManager().SetTimer(
+        EndHandle,
+        this,
+        &ANormalEndingSequence::FinishSequence,
+        5.f,
+        false
+    );
 }
 
 void ANormalEndingSequence::FinishSequence()
 {
-    State = ENormalEndingState::FadingOut;
+    APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+    if (!PC || !PC->PlayerCameraManager)
+        return;
 
-    APlayerController* PC =
-        UGameplayStatics::GetPlayerController(this, 0);
+    if (ActiveWidget)
+    {
+        ActiveWidget->RemoveFromParent();
+    }
 
     PC->PlayerCameraManager->StartCameraFade(
-        0.f, 1.f, 1.f, FLinearColor::Black, false, true
+        0.f, 1.f, 0.3f, FLinearColor::Black, false, true
     );
-    FTimerHandle Handle;
-    GetWorld()->GetTimerManager().SetTimer(Handle, [this, PC]()
-    {
-            UGameplayStatics::OpenLevel(this, "NormalEnding");
 
-            if (CachedPlayer)
+    FTimerHandle FinalHandle;
+
+    GetWorld()->GetTimerManager().SetTimer(FinalHandle, [PC]()
+        {
+            if (PC && PC->PlayerCameraManager)
             {
-                CachedPlayer->SetActorLocation(PendingTeleportLocation);
+                PC->PlayerCameraManager->StartCameraFade(
+                    1.f, 0.f, 0.4f, FLinearColor::Black, false, false
+                );
             }
 
-            PC->PlayerCameraManager->StartCameraFade(
-                0.f, 1.f, 1.f, FLinearColor::Black, false, true
-            );
-    }, 1.f, false);
+        }, 0.3f, false);
 }

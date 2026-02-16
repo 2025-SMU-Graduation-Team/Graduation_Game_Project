@@ -22,7 +22,6 @@ void AHiddenEndingSequence::StartSequence(AMyPaperCharacter* Player, FVector Tel
     if (!Player)
         return;
 
-    UE_LOG(LogTemp, Log, TEXT("HiddenEnding StartSequence"));
     CachedPlayer = Player;
     PendingTeleportLocation = TeleportLocation;
 
@@ -78,7 +77,6 @@ void AHiddenEndingSequence::UpdateMove()
         FinishSequence();
     }
 }
-
 
 void AHiddenEndingSequence::FinishSequence()
 {

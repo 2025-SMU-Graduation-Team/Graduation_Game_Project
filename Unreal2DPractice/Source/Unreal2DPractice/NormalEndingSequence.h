@@ -5,17 +5,8 @@
 #include "NormalEndingSequence.generated.h"
 
 class AMyPaperCharacter;
-class USubLevelTaskManager;
-
-UENUM()
-enum class ENormalEndingState : uint8
-{
-    None,
-    Moving,
-    ClosingDoor,
-    ShowingImage,
-    FadingOut
-};
+class UNormalEndingWidget;
+class UPaperFlipbook;
 
 UCLASS()
 class UNREAL2DPRACTICE_API ANormalEndingSequence : public AActor
@@ -25,42 +16,37 @@ class UNREAL2DPRACTICE_API ANormalEndingSequence : public AActor
     public:
     ANormalEndingSequence();
 
-    virtual void Tick(float DeltaTime) override;
-
     void StartSequence(AMyPaperCharacter* Player, FVector TeleportLocation);
 
 protected:
     virtual void BeginPlay() override;
 
 private:
-    void UpdateMove(float DeltaTime);
-    void CloseDoor();
-    void StartImagePhase();
-    void UpdateCameraShake(float DeltaTime);
+    void StartMove();
+    void UpdateMove();
+    void OnMoveFinished();
+    void ShowEndingWidget();
     void FinishSequence();
 
-    ENormalEndingState State;
+private:
+    UPROPERTY(EditAnywhere)
+    float MoveDuration = 1.0f;
 
-    AMyPaperCharacter* CachedPlayer;
+    UPROPERTY(EditAnywhere)
+    TSubclassOf<UNormalEndingWidget> EndingWidgetClass;
+
+    UPROPERTY(EditAnywhere)
+    TObjectPtr<UPaperFlipbook> BackFlipbook;
+
+private:
+    TObjectPtr<AMyPaperCharacter> CachedPlayer;
+    TObjectPtr<UNormalEndingWidget> ActiveWidget;
+
+    FVector PendingTeleportLocation;
     FVector StartLocation;
     FVector TargetLocation;
-    FVector PendingTeleportLocation;
 
-    float MoveSpeed;
-    float ShakeTime;
-    float ShakeDuration;
-    float ShakeAmplitude;
-    float ShakeSpeed;
+    float MoveElapsed = 0.f;
 
-    UPROPERTY(EditAnywhere)
-    TWeakObjectPtr<AActor> ScreenDoorActor;
-
-    UPROPERTY(EditAnywhere)
-    TWeakObjectPtr<AActor> SubwayDoorActor;
-
-    UPROPERTY(EditAnywhere)
-    USubLevelTaskManager* TaskManager;
-
-    UPROPERTY(EditAnywhere)
-    UTexture2D* EndingImage;
+    FTimerHandle MoveTimer;
 };
