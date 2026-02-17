@@ -87,6 +87,7 @@ void AMyPaperCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		EnhancedInput->BindAction(InteractAction, ETriggerEvent::Started, this, &AMyPaperCharacter::Interact);
 		EnhancedInput->BindAction(SelectSlotAction, ETriggerEvent::Triggered, this, &AMyPaperCharacter::OnSelectSlot);
 		EnhancedInput->BindAction(UseItemAction, ETriggerEvent::Triggered, this, &AMyPaperCharacter::OnUseItem);
+		EnhancedInput->BindAction(EnterCutSceneAction, ETriggerEvent::Triggered, this, &AMyPaperCharacter::EnterCutScene);
 
 		EnhancedInput->BindAction(HideAction, ETriggerEvent::Started, this, &AMyPaperCharacter::OnHidePressed);
 		EnhancedInput->BindAction(HideAction, ETriggerEvent::Completed, this, &AMyPaperCharacter::OnHideReleased);
@@ -129,6 +130,16 @@ void AMyPaperCharacter::Interact(const FInputActionValue& Value)
 	}
 }
 
+void AMyPaperCharacter::EnterCutScene(const FInputActionValue& Value)
+{
+	if (CurrentSubway)
+	{
+		UE_LOG(LogTemp, Log, TEXT("CurrentSubway is vaild"));
+		CurrentSubway->Interact(this);
+	}
+	UE_LOG(LogTemp, Log, TEXT("W key is vaild but currentSubway is null"));
+}
+
 void AMyPaperCharacter::OnSelectSlot(const FInputActionValue& Value)
 {
 	if (!Inventory) return;
@@ -147,14 +158,6 @@ void AMyPaperCharacter::OnUseItem(const FInputActionValue& Value)
 	Inventory->UseSelectedItem();
 }
 
-void AMyPaperCharacter::GoToNextLevel(const FInputActionValue& Value)
-{
-	if (CurrentInteractable)
-	{
-		//CurrentInteractable->GoToNextLevel();
-	}
-}
-
 void AMyPaperCharacter::UpdateCharacterDirection(float AxisValue)
 {
 	if (AxisValue > 0)
@@ -170,6 +173,15 @@ void AMyPaperCharacter::UpdateCharacterDirection(float AxisValue)
 void AMyPaperCharacter::UpdateAnimation()
 {
 	if (bIsDead) return;
+
+	if (ForcedFlipbook)
+	{
+		if (GetSprite()->GetFlipbook() != ForcedFlipbook)
+		{
+			GetSprite()->SetFlipbook(ForcedFlipbook);
+		}
+		return;
+	}
 
 	if (bIsHidden)
 	{
@@ -313,4 +325,19 @@ void AMyPaperCharacter::OnItemChanged(EItemType NewType)
 	EquippedTool = NewType;
 
 	UE_LOG(LogTemp, Log, TEXT("Equipped Tool: %s"), *UEnum::GetValueAsString(NewType));
+}
+
+void AMyPaperCharacter::SetCurrentSubway(ASubwayStateActor* Subway)
+{
+	CurrentSubway = Subway;
+}
+
+void AMyPaperCharacter::SetForcedFlipbook(UPaperFlipbook* NewFlipbook)
+{
+	ForcedFlipbook = NewFlipbook;
+}
+
+void AMyPaperCharacter::ClearForcedFlipbook()
+{
+	ForcedFlipbook = nullptr;
 }

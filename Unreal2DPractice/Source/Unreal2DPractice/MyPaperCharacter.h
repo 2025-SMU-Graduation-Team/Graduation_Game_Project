@@ -9,6 +9,7 @@
 #include "InventoryComponent.h"
 #include "DoorInteractionActor.h"
 #include "InteractableActor.h"
+#include "SubwayStateActor.h"
 #include "MyPaperCharacter.generated.h"
 
 /**
@@ -17,6 +18,7 @@
 
 class AHidingSpot;
 class UPlayerCameraController;
+class UPaperFlipbook;
 
 UCLASS()
 class UNREAL2DPRACTICE_API AMyPaperCharacter : public APaperCharacter
@@ -41,6 +43,9 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	void SetForcedFlipbook(UPaperFlipbook* NewFlipbook);
+	void ClearForcedFlipbook();
+
 	bool bEnableMovement = true;
 
 	// Animation
@@ -63,7 +68,7 @@ public:
 	TObjectPtr<UInputAction> HideAction;
 
 	UPROPERTY(EditAnywhere, Category = "Input")
-	TObjectPtr<UInputAction> NextLevelAction;
+	TObjectPtr<UInputAction> EnterCutSceneAction;
 
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UInputMappingContext> InputMappingContext;
@@ -81,9 +86,11 @@ public:
 	UFUNCTION()
 	void Interact(const FInputActionValue& Value);
 
+	UFUNCTION()
+	void EnterCutScene(const FInputActionValue& Value);
+
 	void OnSelectSlot(const FInputActionValue& Value);
 	void OnUseItem(const FInputActionValue& Value);
-	void GoToNextLevel(const FInputActionValue& Value);
 
 	UFUNCTION()
 	void PlayDeath();
@@ -108,6 +115,8 @@ public:
 	UFUNCTION()
 	void OnHideReleased(const FInputActionValue& Value);
 
+	void SetCurrentSubway(ASubwayStateActor* Subway);
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Hide")
 	bool bIsHidden = false;
 
@@ -122,6 +131,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	AInteractableActor* CurrentInteractable;
+
+	UPROPERTY()
+	ASubwayStateActor* CurrentSubway;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UInventoryComponent* Inventory;
@@ -150,6 +162,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Animation")
 	class UPaperFlipbook* HideAnimation;
+
+	UPROPERTY()
+	class UPaperFlipbook* ForcedFlipbook = nullptr;
 
 	void UpdateAnimation();
 	void UpdateCharacterDirection(float AxisValue);

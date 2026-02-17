@@ -28,7 +28,10 @@ void USubLevelTaskManager::NotifyWidgets(bool bRunning)
         if (!Obj)
             continue;
 
-        ITaskWidgetInterface::Execute_UpdateTaskState(Obj, bRunning);
+        if (Widget && Widget->GetClass()->ImplementsInterface(UTaskWidgetInterface::StaticClass()))
+        {
+            ITaskWidgetInterface::Execute_UpdateTaskState(Obj, bRunning);
+        }
     }
 }
 
