@@ -47,12 +47,15 @@ void AMonsterSpawnManager::RequestEventSpawn()
 
 void AMonsterSpawnManager::ForceDespawnMonster()
 {
-	if (CurrentMonster.IsValid())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[MonsterSpawnManager] ForceDespawn %s"), *GetNameSafe(CurrentMonster.Get()));
-		CurrentMonster->Destroy();
-		CurrentMonster = nullptr;
-	}
+    if (!CurrentMonster.IsValid())
+    {
+        UE_LOG(LogTemp, Log, TEXT("[MonsterSpawnManager] ForceDespawnMonster: no monster"));
+        return;
+    }
+
+    UE_LOG(LogTemp, Warning, TEXT("[MonsterSpawnManager] ForceDespawn %s"), *GetNameSafe(CurrentMonster.Get()));
+    CurrentMonster->Destroy();
+    CurrentMonster = nullptr;
 }
 
 void AMonsterSpawnManager::ScheduleNextSpawn()
@@ -109,11 +112,8 @@ AMyPaperCharacter* AMonsterSpawnManager::GetPlayer() const
 FVector AMonsterSpawnManager::ComputeSpawnLocation(const AMyPaperCharacter* Player, bool bSpawnFromLeft, float SpawnDistance) const
 {
 	FVector Loc = Player->GetActorLocation();
-
-	float Dist = FMath::FRandRange(MinSpawnDistance, MaxSpawnDistance);
-	Loc.X += (bSpawnFromLeft ? -1.f : 1.f) * Dist;
-
-	// 2D 게임 기준: Y/Z는 플레이어와 동일하게 두는 게 가장 안전
+	Loc.X += (bSpawnFromLeft ? -1.f : 1.f) * SpawnDistance;
+	
 	return Loc;
 }
 

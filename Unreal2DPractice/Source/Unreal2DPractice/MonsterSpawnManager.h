@@ -28,9 +28,6 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-	// --------------------
-	// Config
-	// --------------------
 	UPROPERTY(EditAnywhere, Category = "Spawn")
 	TSubclassOf<AMyPaperMonster> MonsterClass;
 
@@ -46,11 +43,10 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Spawn", meta = (ClampMin = "0.0"))
 	float MaxSpawnDistance = 1400.f;
 
-	// (선택) 몬스터 걷는 소리 시작
 	UPROPERTY(EditAnywhere, Category = "Spawn|Sound")
 	USoundBase* MonsterWalkSound = nullptr;
 
-	// (임시) 기존 몬스터 InitTarget에 넘기는 감지 반경
+	// 기존 몬스터 InitTarget에 넘기는 감지 반경
 	UPROPERTY(EditAnywhere, Category = "Spawn")
 	float DetectRadius = 800.f;
 
@@ -59,7 +55,7 @@ public:
 	// Control Room
 	// --------------------
 	// 관제실 내부 여부 (true면 스폰 금지)
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category = "Monster")
 	void SetPlayerInControlRoom(bool bInControlRoom);
 
 	// --------------------
@@ -71,7 +67,7 @@ public:
 	void RequestEventSpawn();
 
 	// 관제실 문 닫힘 등으로 몬스터 즉시 제거하고 싶을 때
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category = "Monster")
 	void ForceDespawnMonster();
 
 private:
