@@ -6,22 +6,20 @@
 #include "GameFramework/Pawn.h"
 #include "Components/AudioComponent.h"
 #include "Sound/SoundBase.h"
-
 #include "MyPaperMonster.generated.h"
 
 
 class UPaperFlipbookComponent;
 class UPaperFlipbook;
-class AMyPaperCharacter; //class APlayer2DCharacter;
+class AMyPaperCharacter;
 class UBoxComponent;
 
 UENUM(BlueprintType)
 enum class EMonsterState : uint8 
 {
-    Idle,       // 대기/순찰
-    Chase,      // 추격
-    Search,     // 수색 (놓친 뒤 주변 탐색)
-    Cooldown    // 잠깐 쉬었다가 Idle 복귀
+    Idle,
+    Walk,  
+    Attack
 };
 
 
@@ -31,30 +29,24 @@ class UNREAL2DPRACTICE_API AMyPaperMonster : public APawn
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this pawn's properties
 	AMyPaperMonster();
 
 	virtual void Tick(float DeltaTime) override;
 
 	void InitTarget(AMyPaperCharacter * InTarget, bool bUseDistance, float InRadius);
-    
-    void SetMoveDirectionX(float DirX); // SpawnManager가 스폰 직후 방향을 고정 설정
+    void SetMoveDirectionX(float DirX);
 
     void StartWalkSound(USoundBase* WalkSound);
 
     UBoxComponent* GetHitBox() const { return HitBox; }
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
     void UpdateMovement(float DeltaTime);
     void SetState(EMonsterState NewState);
-    void FaceToTarget();
-
     void EnableDetection();
 
-	// When Monster and Player overlap, call this function
     UFUNCTION()
     void OnHitBoxOverlap(
         UPrimitiveComponent* OverlappedComp,
@@ -65,11 +57,20 @@ protected:
         const FHitResult& SweepResult
     );
 
+    void StartAttack(AMyPaperCharacter* Player);
+    void ApplyAttackDamage();
+
     UPROPERTY(VisibleAnywhere, Category = "Monster|Visual")
     UPaperFlipbookComponent* Flipbook;
 
-    UPROPERTY(EditAnywhere, Category = "Monster|Anim")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Monster|Anim")
     UPaperFlipbook* FB_Idle;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Monster|Anim")
+    UPaperFlipbook* FB_Walk;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Monster|Anim")
+    UPaperFlipbook* FB_Attack;
 
     UPROPERTY(VisibleAnywhere, Category = "Monster|Collision")
     UBoxComponent* HitBox;
@@ -89,16 +90,14 @@ protected:
     bool bCanDetect = false;
     FTimerHandle DetectionDelayHandle;
 
+    FTimerHandle AttackTimerHandle;
+
     UPROPERTY()
-    AMyPaperCharacter * Target = nullptr;
+    AMyPaperCharacter* Target = nullptr;
 
     EMonsterState State = EMonsterState::Idle;
 
-    // 시야 감지용 LineTrace 채널(필요 시 변경)
-    ECollisionChannel LOSChannel = ECC_Visibility;
-
-    // +1 = 오른쪽으로 직진, -1 = 왼쪽으로 직진
-    float MoveDirX = 1.f;
+    float MoveDirX = 1.f; // +1 = 오른쪽으로 직진, -1 = 왼쪽으로 직진
 private:
     UPROPERTY(VisibleAnywhere, Category = "Sound")
     UAudioComponent* WalkAudioComp;
@@ -109,7 +108,5 @@ private:
     UPROPERTY(EditAnywhere, Category = "Sound")
     USoundBase* ShoutSound;
 
-    UPROPERTY()
     bool bHasKilledPlayer = false;
-
 };
