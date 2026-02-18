@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Camera/CameraShakeBase.h"
+#include "Components/BoxComponent.h"
 #include "EarthquakeEventActor.generated.h"
 
 UCLASS()
@@ -10,11 +11,15 @@ class UNREAL2DPRACTICE_API AEarthquakeEventActor : public AActor
 {
     GENERATED_BODY()
 
-    public:
+public:
     AEarthquakeEventActor();
 
 protected:
     virtual void BeginPlay() override;
+
+    UFUNCTION()
+    void OnTriggerBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+        int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 private:
     void StartPreviewShake();
@@ -39,7 +44,7 @@ private:
     float ShakeScale = 1.0f;
 
     UPROPERTY(EditAnywhere, Category = "Rubble")
-    TSubclassOf<AActor> RubbleActor;
+    TArray<TSubclassOf<AActor>> RubbleActors;
 
     UPROPERTY(EditAnywhere, Category = "Rubble")
     FVector RubbleSpawnPoint;
@@ -50,6 +55,9 @@ private:
     UPROPERTY(EditAnywhere, Category = "Rubble")
     float RubbleSpawnInterval = 0.2f;
 
+    UPROPERTY(VisibleAnywhere)
+    TObjectPtr<UBoxComponent> TriggerBox;
+
 private:
     FTimerHandle PreviewShakeTimer;
     FTimerHandle CollapseStartTimer;
@@ -57,4 +65,6 @@ private:
     FTimerHandle StopShakeTimer;
 
     int32 SpawnedRubbleCount = 0;
+
+    bool bEventStarted = false;
 };

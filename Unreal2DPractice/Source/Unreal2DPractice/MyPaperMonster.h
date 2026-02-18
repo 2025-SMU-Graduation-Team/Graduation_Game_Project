@@ -56,7 +56,7 @@ protected:
 
 	// When Monster and Player overlap, call this function
     UFUNCTION()
-    void OnHitBoxOverlap(
+    virtual void OnHitBoxOverlap(
         UPrimitiveComponent* OverlappedComp,
         AActor* OtherActor,
         UPrimitiveComponent* OtherComp,
@@ -99,6 +99,10 @@ protected:
 
     // +1 = 오른쪽으로 직진, -1 = 왼쪽으로 직진
     float MoveDirX = 1.f;
+
+    UPROPERTY()
+    bool bHasKilledPlayer = false;
+
 private:
     UPROPERTY(VisibleAnywhere, Category = "Sound")
     UAudioComponent* WalkAudioComp;
@@ -108,8 +112,4 @@ private:
 
     UPROPERTY(EditAnywhere, Category = "Sound")
     USoundBase* ShoutSound;
-
-    UPROPERTY()
-    bool bHasKilledPlayer = false;
-
 };
