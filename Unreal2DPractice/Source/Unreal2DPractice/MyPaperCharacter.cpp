@@ -18,7 +18,7 @@ AMyPaperCharacter::AMyPaperCharacter()
 
 	GetCharacterMovement()->GravityScale = 2.0f;
 	GetCharacterMovement()->AirControl = 0.8f;
-	GetCharacterMovement()->MaxWalkSpeed = 400.0f;
+	GetCharacterMovement()->MaxWalkSpeed = 2000.0f;
 	GetCharacterMovement()->JumpZVelocity = 800.0f;
 
 	GetCharacterMovement()->SetPlaneConstraintEnabled(true);
