@@ -48,7 +48,7 @@ protected:
     void EnableDetection();
 
     UFUNCTION()
-    void OnHitBoxOverlap(
+    virtual void OnHitBoxOverlap(
         UPrimitiveComponent* OverlappedComp,
         AActor* OtherActor,
         UPrimitiveComponent* OtherComp,
@@ -97,7 +97,17 @@ protected:
 
     EMonsterState State = EMonsterState::Idle;
 
-    float MoveDirX = 1.f; // +1 = ¿À¸¥ÂÊÀ¸·Î Á÷Áø, -1 = ¿ÞÂÊÀ¸·Î Á÷Áø
+    float MoveDirX = 1.f; // +1 = ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½, -1 = ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+    // ï¿½Ã¾ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ LineTrace Ã¤ï¿½ï¿½(ï¿½Ê¿ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
+    ECollisionChannel LOSChannel = ECC_Visibility;
+
+    // +1 = ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½, -1 = ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+    float MoveDirX = 1.f;
+
+    UPROPERTY()
+    bool bHasKilledPlayer = false;
+
+
 private:
     UPROPERTY(VisibleAnywhere, Category = "Sound")
     UAudioComponent* WalkAudioComp;

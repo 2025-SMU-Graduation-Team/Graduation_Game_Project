@@ -6,19 +6,38 @@
 AEarthquakeEventActor::AEarthquakeEventActor()
 {
     PrimaryActorTick.bCanEverTick = false;
+
+    TriggerBox = CreateDefaultSubobject<UBoxComponent>(TEXT("TriggerBox"));
+    SetRootComponent(TriggerBox);
+
+    TriggerBox->SetCollisionProfileName(TEXT("Trigger"));
 }
 
 void AEarthquakeEventActor::BeginPlay()
 {
     Super::BeginPlay();
 
-    GetWorldTimerManager().SetTimer(
-        PreviewShakeTimer,
-        this,
-        &AEarthquakeEventActor::StartPreviewShake,
-        FirstShakeDelay,
-        false
-    );
+    if (!TriggerBox)
+    {
+        UE_LOG(LogTemp, Error, TEXT("TriggerBox is null"));
+        return;
+    }
+
+    TriggerBox->OnComponentBeginOverlap.AddDynamic(this, &AEarthquakeEventActor::OnTriggerBeginOverlap);
+}
+
+void AEarthquakeEventActor::OnTriggerBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+    if (bEventStarted)
+        return;
+
+    if (OtherActor && OtherActor->IsA(APawn::StaticClass()))
+    {
+        bEventStarted = true;
+
+        GetWorldTimerManager().SetTimer(PreviewShakeTimer, this, &AEarthquakeEventActor::StartPreviewShake,
+            FirstShakeDelay, false);
+    }
 }
 
 void AEarthquakeEventActor::StartPreviewShake()
@@ -65,7 +84,7 @@ void AEarthquakeEventActor::StartCollapse()
 
 void AEarthquakeEventActor::SpawnRubble()
 {
-    if (!RubbleActor)
+    if (RubbleActors.Num() == 0)
     {
         StopShake();
         return;
@@ -78,11 +97,17 @@ void AEarthquakeEventActor::SpawnRubble()
         return;
     }
 
-    GetWorld()->SpawnActor<AActor>(
-        RubbleActor,
-        RubbleSpawnPoint,
-        FRotator::ZeroRotator
-    );
+    int32 Index = FMath::RandRange(0, RubbleActors.Num() - 1);
+    TSubclassOf<AActor> SelectedClass = RubbleActors[Index];
+
+    if (SelectedClass)
+    {
+        GetWorld()->SpawnActor<AActor>(
+            SelectedClass,
+            RubbleSpawnPoint,
+            FRotator::ZeroRotator
+        );
+    }
 
     SpawnedRubbleCount++;
 }
