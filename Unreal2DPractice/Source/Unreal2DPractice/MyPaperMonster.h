@@ -15,10 +15,10 @@ class AMyPaperCharacter;
 class UBoxComponent;
 
 UENUM(BlueprintType)
-enum class EMonsterState : uint8 
+enum class EMonsterState : uint8
 {
     Idle,
-    Walk,  
+    Walk,
     Attack
 };
 
@@ -26,14 +26,14 @@ enum class EMonsterState : uint8
 UCLASS()
 class UNREAL2DPRACTICE_API AMyPaperMonster : public APawn
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
 public:
-	AMyPaperMonster();
+    AMyPaperMonster();
 
-	virtual void Tick(float DeltaTime) override;
+    virtual void Tick(float DeltaTime) override;
 
-	void InitTarget(AMyPaperCharacter * InTarget, bool bUseDistance, float InRadius);
+    void InitTarget(AMyPaperCharacter* InTarget, bool bUseDistance, float InRadius);
     void SetMoveDirectionX(float DirX);
 
     void StartWalkSound(USoundBase* WalkSound);
@@ -41,7 +41,7 @@ public:
     UBoxComponent* GetHitBox() const { return HitBox; }
 
 protected:
-	virtual void BeginPlay() override;
+    virtual void BeginPlay() override;
 
     void UpdateMovement(float DeltaTime);
     void SetState(EMonsterState NewState);
@@ -97,11 +97,6 @@ protected:
 
     EMonsterState State = EMonsterState::Idle;
 
-    float MoveDirX = 1.f; // +1 = ���������� ����, -1 = �������� ����
-    // �þ� ������ LineTrace ä��(�ʿ� �� ����)
-    ECollisionChannel LOSChannel = ECC_Visibility;
-
-    // +1 = ���������� ����, -1 = �������� ����
     float MoveDirX = 1.f;
 
     UPROPERTY()
@@ -117,6 +112,4 @@ private:
 
     UPROPERTY(EditAnywhere, Category = "Sound")
     USoundBase* ShoutSound;
-
-    bool bHasKilledPlayer = false;
 };
