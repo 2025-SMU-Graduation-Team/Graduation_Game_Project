@@ -22,6 +22,9 @@ struct FChaseStage
 	FVector EndLocation;
 
 	UPROPERTY(EditAnywhere)
+	FVector TurnLocation;
+
+	UPROPERTY(EditAnywhere)
 	float MoveDirection = 1.f;
 };
 
@@ -32,6 +35,7 @@ class UNREAL2DPRACTICE_API AEndingChaseManager : public AActor
 	
 public:	
 	AEndingChaseManager();
+
 	void NotifyReachedEnd(AEndingMonster* Monster);
 
 protected:
@@ -54,7 +58,6 @@ private:
 	float FirstSpawnDelay = 5.f;
 
 	FTimerHandle FirstSpawnTimerHandle;
-	bool bFirstSpawnTriggered = false;
 
 	int32 CurrentStageIndex = 0;
 
