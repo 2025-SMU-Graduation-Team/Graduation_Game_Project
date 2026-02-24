@@ -67,6 +67,8 @@ void AEndingChaseManager::SpawnCurrentStage()
 
 void AEndingChaseManager::StartChase()
 {
+	UE_LOG(LogTemp, Log, TEXT("StartChase"));
+
 	CurrentStageIndex = 0;
 	SpawnCurrentStage();
 }

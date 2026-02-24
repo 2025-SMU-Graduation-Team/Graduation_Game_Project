@@ -164,24 +164,16 @@ void AMyPaperMonster::StartWalkSound(USoundBase* InSound)
 	}
 }
 
-void AMyPaperMonster::OnHitBoxOverlap(
-	UPrimitiveComponent* OverlappedComp,
-	AActor* OtherActor,
-	UPrimitiveComponent* OtherComp,
-	int32 OtherBodyIndex,
-	bool bFromSweep,
-	const FHitResult& SweepResult)
+void AMyPaperMonster::OnHitBoxOverlap(UPrimitiveComponent* OverlappedComp,AActor* OtherActor,UPrimitiveComponent* OtherComp,int32 OtherBodyIndex,
+	bool bFromSweep,const FHitResult& SweepResult)
 {
 	if (bHasKilledPlayer) return;
 	if (!bCanDetect) return;
-	if (!OtherActor) return;
 
 	AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(OtherActor);
 	if (!Player) return;
 
-	UE_LOG(LogTemp, Warning, TEXT("[MonsterHit] bCanDetect=%d PlayerHidden=%d"),
-		bCanDetect ? 1 : 0,
-		Player->bIsHidden ? 1 : 0);
+	UE_LOG(LogTemp, Warning, TEXT("[MonsterHit] bCanDetect=%d PlayerHidden=%d"), bCanDetect ? 1 : 0, Player->bIsHidden ? 1 : 0);
 
 	if (Player->bIsHidden)
 	{

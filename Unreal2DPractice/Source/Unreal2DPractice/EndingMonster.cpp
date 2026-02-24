@@ -53,7 +53,6 @@ void AEndingMonster::OnHitBoxOverlap(UPrimitiveComponent* OverlappedComp, AActor
 	SetActorTickEnabled(false);
 
 	Destroy();
-
 }
 
 void AEndingMonster::SetMoveDirection(float Dir)
