@@ -45,24 +45,37 @@ void AMachineActor::Interact()
     }
 
     CurrentPanel = CreateWidget<UUserWidget>(PC, WBPMachine);
+
     if (CurrentPanel)
     {
-        CurrentPanel = CreateWidget<UUserWidget>(PC, WBPMachine);
+        Player->bEnableMovement = false;
 
-        if (CurrentPanel)
+        // Blueprint Widget으로 캐스팅
+        UObject* WidgetObj = CurrentPanel;
+
+        // Blueprint에서 변수 설정 가능하게
+        UFunction* Func = WidgetObj->FindFunction(FName("SetTurnstileRef"));
+
+        if (Func)
         {
-            Player->bEnableMovement = false;
+            struct
+            {
+                AActor* Turnstile;
+            } Params;
 
-            CurrentPanel->AddToViewport();
+            Params.Turnstile = TurnstileRef;
 
-            PC->bShowMouseCursor = true;
-
-            FInputModeGameAndUI InputMode;
-            InputMode.SetWidgetToFocus(CurrentPanel->TakeWidget());
-            InputMode.SetHideCursorDuringCapture(false);
-
-            PC->SetInputMode(InputMode);
+            WidgetObj->ProcessEvent(Func, &Params);
         }
+
+        CurrentPanel->AddToViewport();
+        PC->bShowMouseCursor = true;
+
+        FInputModeGameAndUI InputMode; 
+        InputMode.SetWidgetToFocus(CurrentPanel->TakeWidget()); 
+        InputMode.SetHideCursorDuringCapture(false); 
+
+        PC->SetInputMode(InputMode);
     }
 }
 

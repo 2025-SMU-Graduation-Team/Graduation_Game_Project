@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "InteractableActor.h"
+#include "PaperSpriteActor.h"
 #include "GameFramework/Actor.h"
 #include "MachineActor.generated.h"
 
@@ -24,5 +25,9 @@ protected:
 private:
 	UPROPERTY(EditAnywhere, Category = "Machine")
 	TSubclassOf<UUserWidget> WBPMachine;
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Machine")
+	APaperSpriteActor* TurnstileRef;
 
 };
