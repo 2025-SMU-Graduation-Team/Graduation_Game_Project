@@ -22,6 +22,8 @@ void AEndingMonster::Tick(float DeltaTime)
 
 	if (bEndTriggered) return;
 
+	HandleObstacle(DeltaTime);
+
 	float Distance = FVector::Dist(GetActorLocation(), EndLocation);
 
 	CheckTurnPoint();
@@ -69,6 +71,53 @@ void AEndingMonster::CheckEndPoint()
 			Manager->NotifyReachedEnd(this);
 		}
 	}
+}
+
+void AEndingMonster::HandleObstacle(float DeltaTime)
+{
+	if (!bBreakingObstacle)
+	{
+		if (IsFrontBlocked())
+		{
+			bBreakingObstacle = true;
+			BreakTime = 0.f;
+
+			SetMoveDirectionX(0.f);
+			return;
+		}
+	}
+
+	if (bBreakingObstacle)
+	{
+		BreakTime += DeltaTime;
+
+		FVector Push = FVector(MoveDirection * BreakForce * DeltaTime, 0.f, 0.f);
+		AddActorWorldOffset(Push, true);
+
+		if (!IsFrontBlocked() || BreakTime >= BreakDuration)
+		{
+			bBreakingObstacle = false;
+			BreakTime = 0.f;
+
+			SetMoveDirectionX(MoveDirection);
+		}
+
+		return;
+	}
+
+	AddMovementInput(FVector(MoveDirection, 0.f, 0.f), MoveSpeed * DeltaTime);
+}
+
+bool AEndingMonster::IsFrontBlocked() const
+{
+	FVector Start = GetActorLocation();
+	FVector End = Start + FVector(MoveDirection * 40.f, 0.f, 0.f);
+
+	FHitResult Hit;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+
+	return GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_WorldStatic, Params);
 }
 
 void AEndingMonster::SetMoveDirection(float Dir)

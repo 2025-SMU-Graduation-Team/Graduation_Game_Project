@@ -44,4 +44,16 @@ private:
 
 	void CheckTurnPoint();
 	void CheckEndPoint();
+
+	void HandleObstacle(float DeltaTime);
+	bool IsFrontBlocked() const;
+
+	bool bBreakingObstacle = false;
+	float BreakTime = 0.f;
+
+	UPROPERTY(EditAnywhere, Category = "Obstacle")
+	float BreakDuration = 1.f;
+
+	UPROPERTY(EditAnywhere, Category = "Obstacle")
+	float BreakForce = 300.f;
 };

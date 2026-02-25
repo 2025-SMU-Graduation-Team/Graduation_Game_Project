@@ -102,11 +102,9 @@ void AEarthquakeEventActor::SpawnRubble()
 
     if (SelectedClass)
     {
-        GetWorld()->SpawnActor<AActor>(
-            SelectedClass,
-            RubbleSpawnPoint,
-            FRotator::ZeroRotator
-        );
+        FVector Offset = FVector(FMath::RandRange(-50.f, 50.f), 0.f, FMath::RandRange(0.f, 30.f));
+
+        FVector SpawnLocation = RubbleSpawnPoint + Offset;
     }
 
     SpawnedRubbleCount++;
