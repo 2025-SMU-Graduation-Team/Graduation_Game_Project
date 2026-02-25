@@ -19,6 +19,7 @@ public:
 	void SetMoveDirection(float Dir);
 
 	void SetEndLocation(const FVector& InLocation);
+	void SetTurnLocation(const FVector& InLocation);
 	void SetManager(class AEndingChaseManager* InManager);
 
 protected:
@@ -28,10 +29,31 @@ protected:
 	virtual void OnHitBoxOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
 
+	float MoveDirection = 1.f;
+
 private:
 	FVector EndLocation;
+	FVector TurnLocation;
+
+	UPROPERTY()
 	AEndingChaseManager* Manager = nullptr;
+
 	bool bEndTriggered = false;
 
-	float FastSpeed = 1400.f;
+	float FastSpeed = 600.f;
+
+	void CheckTurnPoint();
+	void CheckEndPoint();
+
+	void HandleObstacle(float DeltaTime);
+	bool IsFrontBlocked() const;
+
+	bool bBreakingObstacle = false;
+	float BreakTime = 0.f;
+
+	UPROPERTY(EditAnywhere, Category = "Obstacle")
+	float BreakDuration = 1.f;
+
+	UPROPERTY(EditAnywhere, Category = "Obstacle")
+	float BreakForce = 300.f;
 };

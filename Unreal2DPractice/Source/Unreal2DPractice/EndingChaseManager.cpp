@@ -1,95 +1,84 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "EndingChaseManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 
 AEndingChaseManager::AEndingChaseManager()
 {
-	PrimaryActorTick.bCanEverTick = false;
-
+    PrimaryActorTick.bCanEverTick = false;
 }
 
 void AEndingChaseManager::BeginPlay()
 {
-	Super::BeginPlay();
-	FWorldDelegates::LevelAddedToWorld.AddUObject(
-		this,
-		&AEndingChaseManager::OnLevelLoaded
-	);
-}
+    Super::BeginPlay();
 
-void AEndingChaseManager::NotifyReachedEnd(AEndingMonster* Monster)
-{
-	if (Monster != ActiveMonster) return;
-
-	if (ActiveMonster)
-	{
-		ActiveMonster->Destroy();
-		ActiveMonster = nullptr;
-	}
-
-	CurrentStageIndex++;
-
-	if (Route.IsValidIndex(CurrentStageIndex))
-	{
-		SpawnCurrentStage();
-	}
-}
-
-void AEndingChaseManager::SpawnCurrentStage()
-{
-	if (!Route.IsValidIndex(CurrentStageIndex)) return;
-	if (!MonsterClass) return;
-
-	const FChaseStage& Stage = Route[CurrentStageIndex];
-
-	if (UGameplayStatics::GetCurrentLevelName(this) != Stage.LevelName.ToString())
-		return;
-
-	FActorSpawnParameters Params;
-	Params.SpawnCollisionHandlingOverride =
-		ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-	ActiveMonster = GetWorld()->SpawnActor<AEndingMonster>(
-		MonsterClass, Stage.SpawnLocation, FRotator::ZeroRotator, Params);
-
-	if (ActiveMonster)
-	{
-		ActiveMonster->SetMoveDirection(Stage.MoveDirection);
-
-		ActiveMonster->SetEndLocation(Stage.EndLocation);
-
-		ActiveMonster->SetManager(this);
-	}
-}
-
-void AEndingChaseManager::StartChase()
-{
-	CurrentStageIndex = 0;
-	SpawnCurrentStage();
+    FWorldDelegates::LevelAddedToWorld.AddUObject(
+        this,
+        &AEndingChaseManager::OnLevelLoaded);
 }
 
 void AEndingChaseManager::OnLevelLoaded(ULevel* InLevel, UWorld* InWorld)
 {
-	if (!Route.IsValidIndex(0)) return;
-	if (bFirstSpawnTriggered) return;
+    if (!Route.IsValidIndex(CurrentStageIndex)) return;
+    if (!MonsterClass) return;
 
-	UE_LOG(LogTemp, Log, TEXT("OnLevelLoaded"));
+    FString LoadedLevelName = InLevel->GetOuter()->GetName();
+    const FChaseStage& Stage = Route[CurrentStageIndex];
 
-	FString LoadedLevelName = InLevel->GetOuter()->GetName();
+    if (!LoadedLevelName.Contains(Stage.LevelName.ToString()))
+        return;
 
-	if (LoadedLevelName.Contains(Route[0].LevelName.ToString()))
-	{
-		bFirstSpawnTriggered = true;
+    GetWorld()->GetTimerManager().SetTimer(
+        FirstSpawnTimerHandle,
+        this,
+        &AEndingChaseManager::StartChase,
+        FirstSpawnDelay,
+        false);
+}
 
-		GetWorld()->GetTimerManager().SetTimer(
-			FirstSpawnTimerHandle,
-			this,
-			&AEndingChaseManager::StartChase,
-			FirstSpawnDelay,
-			false
-		);
-	}
+void AEndingChaseManager::StartChase()
+{
+    SpawnCurrentStage();
+}
+
+void AEndingChaseManager::SpawnCurrentStage()
+{
+    if (!Route.IsValidIndex(CurrentStageIndex)) return;
+    if (!MonsterClass) return;
+
+    const FChaseStage& Stage = Route[CurrentStageIndex];
+
+    FActorSpawnParameters Params;
+    Params.SpawnCollisionHandlingOverride =
+        ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+    ActiveMonster = GetWorld()->SpawnActor<AEndingMonster>(
+        MonsterClass,
+        Stage.SpawnLocation,
+        FRotator::ZeroRotator,
+        Params);
+
+    if (!ActiveMonster) return;
+
+    ActiveMonster->SetMoveDirection(Stage.MoveDirection);
+    ActiveMonster->SetEndLocation(Stage.EndLocation);
+    ActiveMonster->SetTurnLocation(Stage.TurnLocation);
+    ActiveMonster->SetManager(this);
+}
+
+void AEndingChaseManager::NotifyReachedEnd(AEndingMonster* Monster)
+{
+    if (Monster != ActiveMonster) return;
+
+    if (ActiveMonster)
+    {
+        ActiveMonster->Destroy();
+        ActiveMonster = nullptr;
+    }
+
+    CurrentStageIndex++;
+
+    if (Route.IsValidIndex(CurrentStageIndex))
+    {
+        SpawnCurrentStage();
+    }
 }
