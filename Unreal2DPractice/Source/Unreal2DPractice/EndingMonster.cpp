@@ -22,12 +22,9 @@ void AEndingMonster::Tick(float DeltaTime)
 
 	if (bEndTriggered) return;
 
-	HandleObstacle(DeltaTime);
-
-	float Distance = FVector::Dist(GetActorLocation(), EndLocation);
-
 	CheckTurnPoint();
 	CheckEndPoint();
+	HandleObstacle(DeltaTime);
 }
 
 void AEndingMonster::OnHitBoxOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -52,9 +49,17 @@ void AEndingMonster::CheckTurnPoint()
 {
 	const float DistanceX = FMath::Abs(GetActorLocation().X - TurnLocation.X);
 
-	if (DistanceX < 30.f)
+	if (DistanceX < 10.f)
 	{
-		SetMoveDirection(-1.f * MoveDirection);
+		if (!bTurnedAtPoint)
+		{
+			SetMoveDirection(-1.f * MoveDirection);
+			bTurnedAtPoint = true;
+		}
+	}
+	else
+	{
+		bTurnedAtPoint = false;
 	}
 }
 
@@ -75,49 +80,59 @@ void AEndingMonster::CheckEndPoint()
 
 void AEndingMonster::HandleObstacle(float DeltaTime)
 {
+	FHitResult Hit;
+
 	if (!bBreakingObstacle)
 	{
-		if (IsFrontBlocked())
+		if (IsFrontBlocked(Hit))
 		{
 			bBreakingObstacle = true;
 			BreakTime = 0.f;
+			BreakDirection = MoveDirection;
+			CurrentObstacle = Hit.GetActor();
 
-			SetMoveDirectionX(0.f);
 			return;
 		}
-	}
 
-	if (bBreakingObstacle)
-	{
-		BreakTime += DeltaTime;
-
-		FVector Push = FVector(MoveDirection * BreakForce * DeltaTime, 0.f, 0.f);
-		AddActorWorldOffset(Push, true);
-
-		if (!IsFrontBlocked() || BreakTime >= BreakDuration)
-		{
-			bBreakingObstacle = false;
-			BreakTime = 0.f;
-
-			SetMoveDirectionX(MoveDirection);
-		}
-
+		AddMovementInput(FVector(MoveDirection, 0.f, 0.f), 1.f);
 		return;
 	}
 
-	AddMovementInput(FVector(MoveDirection, 0.f, 0.f), MoveSpeed * DeltaTime);
+	BreakTime += DeltaTime;
+
+	if (BreakTime >= BreakDuration)
+	{
+		if (CurrentObstacle && IsValid(CurrentObstacle))
+		{
+			CurrentObstacle->Destroy(); // ÇÑ °³¾¿ ÆÄ±«
+		}
+
+		bBreakingObstacle = false;
+		BreakTime = 0.f;
+		CurrentObstacle = nullptr;
+	}
 }
 
-bool AEndingMonster::IsFrontBlocked() const
+bool AEndingMonster::IsFrontBlocked(FHitResult& OutHit) const
 {
 	FVector Start = GetActorLocation();
 	FVector End = Start + FVector(MoveDirection * 40.f, 0.f, 0.f);
 
-	FHitResult Hit;
+	FVector HalfSize = FVector(20.f, 20.f, 50.f);
+	FCollisionShape Box = FCollisionShape::MakeBox(HalfSize);
+
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(this);
 
-	return GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_WorldStatic, Params);
+	return GetWorld()->SweepSingleByChannel(
+		OutHit,
+		Start,
+		End,
+		FQuat::Identity,
+		ECC_Visibility,
+		Box,
+		Params
+	);
 }
 
 void AEndingMonster::SetMoveDirection(float Dir)

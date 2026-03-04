@@ -46,7 +46,7 @@ private:
 	void CheckEndPoint();
 
 	void HandleObstacle(float DeltaTime);
-	bool IsFrontBlocked() const;
+	bool IsFrontBlocked(FHitResult& OutHit) const;
 
 	bool bBreakingObstacle = false;
 	float BreakTime = 0.f;
@@ -56,4 +56,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Obstacle")
 	float BreakForce = 300.f;
+
+	AActor* CurrentObstacle = nullptr;
+
+	float BreakDirection;
+	bool bTurnedAtPoint = false;
 };
