@@ -24,7 +24,7 @@ void UInventoryComponent::BeginPlay()
 			InventoryWidget = CreateWidget<UItemInventoryWidget>(PC, InventoryWidgetClass);
 			if (InventoryWidget)
 			{
-				InventoryWidget->AddToViewport();
+				InventoryWidget->AddToViewport(100);
 				InventoryWidget->HideConfirmPopup();
 			}
 		}
