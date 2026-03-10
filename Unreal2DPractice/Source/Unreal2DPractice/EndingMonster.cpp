@@ -4,6 +4,7 @@
 #include "EndingMonster.h"
 #include "MyPaperCharacter.h"
 #include "EndingChaseManager.h"
+#include "GameFramework/PawnMovementComponent.h"
 
 AEndingMonster::AEndingMonster()
 {
@@ -18,7 +19,7 @@ void AEndingMonster::BeginPlay()
 
 void AEndingMonster::Tick(float DeltaTime)
 {
-	Super::Tick(DeltaTime);
+	AActor::Tick(DeltaTime);
 
 	if (bEndTriggered) return;
 
@@ -43,6 +44,14 @@ void AEndingMonster::OnHitBoxOverlap(UPrimitiveComponent* OverlappedComp, AActor
 	SetActorTickEnabled(false);
 
 	Destroy();
+}
+
+void AEndingMonster::StopMonster()
+{
+	if (UPawnMovementComponent* MoveComp = GetMovementComponent())
+	{
+		MoveComp->StopMovementImmediately();
+	}
 }
 
 void AEndingMonster::CheckTurnPoint()
@@ -80,59 +89,133 @@ void AEndingMonster::CheckEndPoint()
 
 void AEndingMonster::HandleObstacle(float DeltaTime)
 {
-	FHitResult Hit;
-
-	if (!bBreakingObstacle)
+	if (ObstacleState == EObstacleState::None)
 	{
+		FHitResult Hit;
 		if (IsFrontBlocked(Hit))
 		{
-			bBreakingObstacle = true;
-			BreakTime = 0.f;
-			BreakDirection = MoveDirection;
-			CurrentObstacle = Hit.GetActor();
+			AActor* HitActor = Hit.GetActor();
 
-			return;
+			UE_LOG(LogTemp, Warning, TEXT("Blocked - Actor: %s"),
+				HitActor ? *HitActor->GetName() : TEXT("None"));
+
+			if (HitActor && HitActor->ActorHasTag(TEXT("Breakable")))
+			{
+				CurrentObstacle = HitActor;
+				ObstacleState = EObstacleState::WaitingBeforeBreak;
+				ObstacleTimer = 0.f;
+
+				SetState(EMonsterState::Idle);
+				UE_LOG(LogTemp, Warning, TEXT("Wait before break: %s"), *HitActor->GetName());
+				return;
+			}
 		}
 
-		AddMovementInput(FVector(MoveDirection, 0.f, 0.f), 1.f);
+		SetState(EMonsterState::Walk);
+		AddActorWorldOffset(FVector(MoveDirection * MoveSpeed * DeltaTime, 0.f, 0.f), false);
+
+		FVector Scale = GetActorScale3D();
+		Scale.Y = 1.f;
+		Scale.X = FMath::Abs(Scale.X) * MoveDirection;
+		SetActorScale3D(Scale);
 		return;
 	}
 
-	BreakTime += DeltaTime;
+	ObstacleTimer += DeltaTime;
 
-	if (BreakTime >= BreakDuration)
+	if (ObstacleState == EObstacleState::WaitingBeforeBreak)
 	{
-		if (CurrentObstacle && IsValid(CurrentObstacle))
-		{
-			CurrentObstacle->Destroy(); // ÇÑ °³¾¿ ÆÄ±«
-		}
+		SetState(EMonsterState::Idle);
+		ObstacleTimer += DeltaTime;
 
-		bBreakingObstacle = false;
-		BreakTime = 0.f;
-		CurrentObstacle = nullptr;
+		if (ObstacleTimer >= WaitBeforeBreak)
+		{
+			ObstacleState = EObstacleState::Breaking;
+			ObstacleTimer = 0.f;
+			UE_LOG(LogTemp, Warning, TEXT("Start breaking"));
+		}
+		return;
+	}
+
+	if (ObstacleState == EObstacleState::Breaking)
+	{
+		SetState(EMonsterState::Idle);
+		ObstacleTimer += DeltaTime;
+
+		if (ObstacleTimer >= BreakDuration)
+		{
+			if (CurrentObstacle && IsValid(CurrentObstacle))
+			{
+				const bool bDestroyed = CurrentObstacle->Destroy();
+				UE_LOG(LogTemp, Warning, TEXT("Destroy result: %s"),
+					bDestroyed ? TEXT("true") : TEXT("false"));
+			}
+
+			ObstacleState = EObstacleState::WaitingAfterBreak;
+			ObstacleTimer = 0.f;
+			UE_LOG(LogTemp, Warning, TEXT("Wait after break"));
+		}
+		return;
+	}
+
+	if (ObstacleState == EObstacleState::WaitingAfterBreak)
+	{
+		SetState(EMonsterState::Idle);
+		ObstacleTimer += DeltaTime;
+
+		if (ObstacleTimer >= WaitAfterBreak)
+		{
+			CurrentObstacle = nullptr;
+			ObstacleState = EObstacleState::None;
+			ObstacleTimer = 0.f;
+			UE_LOG(LogTemp, Warning, TEXT("Resume move"));
+		}
+		return;
 	}
 }
 
 bool AEndingMonster::IsFrontBlocked(FHitResult& OutHit) const
 {
-	FVector Start = GetActorLocation();
-	FVector End = Start + FVector(MoveDirection * 40.f, 0.f, 0.f);
+	const FVector Start = GetActorLocation();
+	const FVector End = Start + FVector(MoveDirection * 80.f, 0.f, 0.f);
 
-	FVector HalfSize = FVector(20.f, 20.f, 50.f);
-	FCollisionShape Box = FCollisionShape::MakeBox(HalfSize);
+	const FVector HalfSize(30.f, 20.f, 50.f);
+	const FCollisionShape Box = FCollisionShape::MakeBox(HalfSize);
+
+	FCollisionObjectQueryParams ObjParams;
+	ObjParams.AddObjectTypesToQuery(ECC_WorldDynamic);
+	ObjParams.AddObjectTypesToQuery(ECC_WorldStatic);
 
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(this);
 
-	return GetWorld()->SweepSingleByChannel(
-		OutHit,
+	TArray<FHitResult> Hits;
+	const bool bHit = GetWorld()->SweepMultiByObjectType(
+		Hits,
 		Start,
 		End,
 		FQuat::Identity,
-		ECC_Visibility,
+		ObjParams,
 		Box,
 		Params
 	);
+
+	if (!bHit)
+	{
+		return false;
+	}
+
+	for (const FHitResult& Hit : Hits)
+	{
+		UPrimitiveComponent* HitComp = Hit.GetComponent();
+		if (HitComp && HitComp->ComponentHasTag(TEXT("Breakable")))
+		{
+			OutHit = Hit;
+			return true;
+		}
+	}
+
+	return false;
 }
 
 void AEndingMonster::SetMoveDirection(float Dir)
