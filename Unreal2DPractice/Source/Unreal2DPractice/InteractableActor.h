@@ -18,6 +18,9 @@ public:
 	// Sets default values for this actor's properties
 	AInteractableActor();
 	virtual void Interact();
+	virtual void InteractFromEnterKey();
+	bool CanInteractFromEnterKey() const;
+	FText GetDisplayInteractKey() const;
 
 protected:
 	// Called when the game starts or when spawned
@@ -35,10 +38,16 @@ protected:
 	UUserWidget* ActiveWidget;
 
 	UPROPERTY(EditAnywhere, Category = "Interact")
-	FText InteractKey=FText::FromString("E");
+	FText InteractKey = FText::FromString("E");
 
 	UPROPERTY(EditAnywhere, Category = "Interact")
-	FText InteractText=FText::FromString("Interact");
+	FText InteractText = FText::FromString("Interact");
+
+	UPROPERTY(EditAnywhere, Category = "Interact")
+	bool bAllowEnterKeyInteraction = false;
+
+	UPROPERTY(EditAnywhere, Category = "Interact")
+	FText AlternateInteractKey;
 
 	UPROPERTY()
 	AMyPaperCharacter* CachedPlayer;

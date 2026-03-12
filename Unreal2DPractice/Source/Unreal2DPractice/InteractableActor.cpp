@@ -59,7 +59,7 @@ void AInteractableActor::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent
 
 	if (UInteractWidget* InteractWidget = Cast<UInteractWidget>(ActiveWidget))
 	{
-		InteractWidget->SetInteractInfo(InteractKey, InteractText);
+		InteractWidget->SetInteractInfo(GetDisplayInteractKey(), InteractText);
 	}
 }
 
@@ -110,3 +110,22 @@ void AInteractableActor::Interact()
 	UE_LOG(LogTemp, Warning, TEXT("Base Interact called (no implementation)."));
 }
 
+void AInteractableActor::InteractFromEnterKey()
+{
+	Interact();
+}
+
+bool AInteractableActor::CanInteractFromEnterKey() const
+{
+	return bAllowEnterKeyInteraction;
+}
+
+FText AInteractableActor::GetDisplayInteractKey() const
+{
+	if (bAllowEnterKeyInteraction && !AlternateInteractKey.IsEmpty())
+	{
+		return AlternateInteractKey;
+	}
+
+	return InteractKey;
+}
