@@ -7,15 +7,7 @@
 #include "EndingMonster.generated.h"
 
 class AEndingChaseManager;
-
-UENUM()
-enum class EObstacleState : uint8
-{
-	None,
-	WaitingBeforeBreak,
-	Breaking,
-	WaitingAfterBreak
-};
+class AMyPaperCharacter;
 
 UCLASS()
 class UNREAL2DPRACTICE_API AEndingMonster : public AMyPaperMonster
@@ -38,40 +30,39 @@ protected:
 	virtual void OnHitBoxOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
 
-	void StopMonster();
-
 	float MoveDirection = 1.f;
 
 private:
+	void CheckTurnPoint();
+	void CheckEndPoint();
+	bool HandleObstacle(float DeltaTime);
+	bool TryKillPlayerAhead();
+	bool TryKillPlayer(AMyPaperCharacter* Player);
+	bool IsFrontBlocked(FHitResult& OutHit) const;
+	bool IsBreakableHit(const FHitResult& Hit) const;
+
 	FVector EndLocation;
 	FVector TurnLocation;
 
 	UPROPERTY()
 	AEndingChaseManager* Manager = nullptr;
 
+	UPROPERTY()
+	AActor* CurrentObstacle = nullptr;
+
 	bool bEndTriggered = false;
 	bool bTurnedAtPoint = false;
+	bool bBreakingObstacle = false;
 
 	float FastSpeed = 600.f;
-
-	void CheckTurnPoint();
-	void CheckEndPoint();
-
-	void HandleObstacle(float DeltaTime);
-	bool IsFrontBlocked(FHitResult& OutHit) const;
-
-	EObstacleState ObstacleState = EObstacleState::None;
 	float ObstacleTimer = 0.f;
 
 	UPROPERTY(EditAnywhere, Category = "Obstacle")
 	float WaitBeforeBreak = 0.8f;
 
 	UPROPERTY(EditAnywhere, Category = "Obstacle")
-	float BreakDuration = 1.0f;
+	float BreakDuration = 0.6f;
 
-	UPROPERTY(EditAnywhere, Category = "Obstacle")
-	float WaitAfterBreak = 0.6f;
-
-	UPROPERTY()
-	AActor* CurrentObstacle = nullptr;
+	UPROPERTY(EditAnywhere, Category = "Player")
+	float PlayerDetectDistance = 200.f;
 };

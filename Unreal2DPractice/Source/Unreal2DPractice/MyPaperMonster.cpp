@@ -170,6 +170,8 @@ void AMyPaperMonster::OnHitBoxOverlap(UPrimitiveComponent* OverlappedComp,AActor
 	if (bHasKilledPlayer) return;
 	if (!bCanDetect) return;
 
+	UE_LOG(LogTemp, Log, TEXT("OnHitBoxOverlap"));
+
 	AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(OtherActor);
 	if (!Player) return;
 
@@ -188,6 +190,8 @@ void AMyPaperMonster::StartAttack(AMyPaperCharacter* Player)
 {
 	if (!Player) return;
 	if (bHasKilledPlayer) return;
+
+	UE_LOG(LogTemp, Log, TEXT("StartAttack"));
 
 	bHasKilledPlayer = true;
 	Target = Player;
