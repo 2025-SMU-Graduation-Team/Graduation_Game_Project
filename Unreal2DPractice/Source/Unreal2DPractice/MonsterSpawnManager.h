@@ -8,7 +8,6 @@
 
 class AMyPaperMonster;
 class AMyPaperCharacter;
-class USoundBase;
 
 UENUM(BlueprintType)
 enum class ESpawnReason : uint8
@@ -42,9 +41,6 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Spawn", meta = (ClampMin = "0.0"))
 	float MaxSpawnDistance = 1400.f;
-
-	UPROPERTY(EditAnywhere, Category = "Spawn|Sound")
-	USoundBase* MonsterWalkSound = nullptr;
 
 	// 기존 몬스터 InitTarget에 넘기는 감지 반경
 	UPROPERTY(EditAnywhere, Category = "Spawn")
