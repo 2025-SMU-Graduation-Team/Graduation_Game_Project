@@ -10,6 +10,9 @@
 #include "PlayerCameraController.h"
 #include "CameraLimitVolume.h"
 #include "HidingSpot.h"
+#include "AudioManager.h"
+#include "MyGameInstance.h"
+#include "GameSFXData.h"
 
 
 AMyPaperCharacter::AMyPaperCharacter()
@@ -211,8 +214,24 @@ void AMyPaperCharacter::UpdateAnimation()
 
 void AMyPaperCharacter::PlayDeath()
 {
+	if (bIsDead)
+	{
+		return;
+	}
+
 	bIsDead = true;
 	bEnableMovement = false;
+
+	AAudioManager* AudioManager =
+		Cast<AAudioManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AAudioManager::StaticClass()));
+
+	UMyGameInstance* GI =
+		Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
+
+	if (AudioManager && GI && GI->SFXData && GI->SFXData->PlayerDeathScream)
+	{
+		AudioManager->PlaySFX2D(GI->SFXData->PlayerDeathScream);
+	}
 
 	if (DieAnimation)
 	{
@@ -276,6 +295,17 @@ void AMyPaperCharacter::EnterHide()
 	}
 
 	bIsHidden = true;
+
+	AAudioManager* AudioManager =
+		Cast<AAudioManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AAudioManager::StaticClass()));
+
+	UMyGameInstance* GI =
+		Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
+
+	if (AudioManager && GI && GI->SFXData && GI->SFXData->PlayerHide)
+	{
+		AudioManager->PlaySFX2D(GI->SFXData->PlayerHide);
+	}
 
 	UE_LOG(LogTemp, Log, TEXT("Player is now hiding."));
 }

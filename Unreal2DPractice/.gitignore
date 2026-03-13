@@ -1,6 +1,16 @@
 # Visual Studio 2015 user specific files
 .vs/
 
+# VSCode / # VS Code workspace
+.vscode/
+*.code-workspace
+
+# Codex / VS Code / IntelliSense / C++ tooling
+*.rsp
+compile_commands.json
+compileCommands.json
+*.ipch
+
 # Compiled Object files
 *.slo
 *.lo

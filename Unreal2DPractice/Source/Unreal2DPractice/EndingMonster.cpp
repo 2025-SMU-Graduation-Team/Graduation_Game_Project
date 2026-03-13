@@ -34,7 +34,11 @@ void AEndingMonster::OnHitBoxOverlap(UPrimitiveComponent* OverlappedComp, AActor
 {
 	Super::OnHitBoxOverlap(OverlappedComp, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
 
-	if (bHasKilledPlayer) return;
+	if (bHasKilledPlayer)
+	{
+		SetActorTickEnabled(false);
+		return;
+	}
 
 	AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(OtherActor);
 	if (!Player) return;
@@ -44,8 +48,6 @@ void AEndingMonster::OnHitBoxOverlap(UPrimitiveComponent* OverlappedComp, AActor
 	Player->PlayDeath();
 
 	SetActorTickEnabled(false);
-
-	Destroy();
 }
 
 void AEndingMonster::CheckTurnPoint()

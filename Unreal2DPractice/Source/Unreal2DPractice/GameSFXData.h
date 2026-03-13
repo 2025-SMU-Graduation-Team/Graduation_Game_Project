@@ -18,13 +18,33 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     USoundBase* BtnClickLow;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    USoundBase* BtnClickHigh;
 
     /* Minigame */
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
-    USoundBase* BtnWrong;
+    USoundBase* Mini_BtnWrong;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
-    USoundBase* BeepHigh;
+    USoundBase* Mini_BeepSoundHigh;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    USoundBase* Mini_SubwaySelect;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    USoundBase* Mini_PanelGageup;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    USoundBase* Mini_LineCutting;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    USoundBase* Mini_BtnClick_simple;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    USoundBase* Mini_BtnClick_wrong_long;
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    USoundBase* Mini_BtnClick_wrong_short;
 
     /* Monster */
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
@@ -51,5 +71,20 @@ public:
     USoundBase* PlayerStairWalk;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    USoundBase* PlayerJumpLanding;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    USoundBase* PlayerHide;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
     USoundBase* PlayerPickup;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    USoundBase* PlayerPickupGain;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    USoundBase* PlayerChangeTool;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    USoundBase* PlayerDeathScream;
 };

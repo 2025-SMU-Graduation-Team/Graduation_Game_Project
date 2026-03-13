@@ -10,6 +10,9 @@
 
 #include "MyPaperMonster.h"
 #include "MyPaperCharacter.h"
+#include "MyGameInstance.h"
+#include "AudioManager.h"
+#include "GameSFXData.h"
 
 AMonsterSpawnManager::AMonsterSpawnManager()
 {
@@ -177,13 +180,13 @@ void AMonsterSpawnManager::TrySpawn(ESpawnReason Reason)
 	const float MoveDir = bSpawnFromLeft ? 1.f : -1.f;
 	Monster->SetMoveDirectionX(MoveDir);
 
-	// ---- (임시) 기존 코드 호환: 지금 MyPaperMonster가 InitTarget을 쓰고 있으니 일단 타겟 넘김
-	// 다음 단계에서 "방향 고정 직진"으로 몬스터 이동 로직을 바꿀 예정
 	Monster->InitTarget(Player, true, DetectRadius);
 
-	if (MonsterWalkSound)
+	UMyGameInstance* GI = Cast<UMyGameInstance>(GetGameInstance());
+
+	if (GI && GI->SFXData && GI->SFXData->MonsterWalk)
 	{
-		Monster->StartWalkSound(MonsterWalkSound);
+		Monster->StartWalkSound(GI->SFXData->MonsterWalk);
 	}
 
 	CurrentMonster = Monster;

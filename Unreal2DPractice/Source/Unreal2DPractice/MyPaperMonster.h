@@ -36,7 +36,7 @@ public:
     void InitTarget(AMyPaperCharacter* InTarget, bool bUseDistance, float InRadius);
     void SetMoveDirectionX(float DirX);
 
-    void StartWalkSound(USoundBase* WalkSound);
+    void StartWalkSound(USoundBase* InSound);
 
     UBoxComponent* GetHitBox() const { return HitBox; }
 
@@ -87,9 +87,11 @@ protected:
     UPROPERTY(EditAnywhere, Category = "Detect", meta = (EditCondition = "bDetectByDistance"))
     float DetectRadius = 80.f;
 
+    UPROPERTY(EditAnywhere, Category = "Attack", meta = (ClampMin = "0.0"))
+    float AttackHitDelay = 0.35f;
+
     bool bCanDetect = false;
     FTimerHandle DetectionDelayHandle;
-
     FTimerHandle AttackTimerHandle;
 
     UPROPERTY()
@@ -106,10 +108,4 @@ protected:
 private:
     UPROPERTY(VisibleAnywhere, Category = "Sound")
     UAudioComponent* WalkAudioComp;
-
-    UPROPERTY(EditAnywhere, Category = "Sound")
-    USoundBase* WalkSound;
-
-    UPROPERTY(EditAnywhere, Category = "Sound")
-    USoundBase* ShoutSound;
 };
