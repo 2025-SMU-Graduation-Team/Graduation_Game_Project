@@ -169,4 +169,5 @@ private:
 
 	void UpdateAnimation();
 	void UpdateCharacterDirection(float AxisValue);
+	bool TryInteractFromEnterKey();
 };

@@ -136,8 +136,15 @@ void AMyPaperCharacter::EnterCutScene(const FInputActionValue& Value)
 	{
 		UE_LOG(LogTemp, Log, TEXT("CurrentSubway is vaild"));
 		CurrentSubway->Interact(this);
+		return;
 	}
-	UE_LOG(LogTemp, Log, TEXT("W key is vaild but currentSubway is null"));
+
+	if (TryInteractFromEnterKey())
+	{
+		return;
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("W key is valid but no enter-key interaction target is available"));
 }
 
 void AMyPaperCharacter::OnSelectSlot(const FInputActionValue& Value)
@@ -340,4 +347,15 @@ void AMyPaperCharacter::SetForcedFlipbook(UPaperFlipbook* NewFlipbook)
 void AMyPaperCharacter::ClearForcedFlipbook()
 {
 	ForcedFlipbook = nullptr;
+}
+
+bool AMyPaperCharacter::TryInteractFromEnterKey()
+{
+	if (!CurrentInteractable || !CurrentInteractable->CanInteractFromEnterKey())
+	{
+		return false;
+	}
+
+	CurrentInteractable->InteractFromEnterKey();
+	return true;
 }

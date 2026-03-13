@@ -1,11 +1,17 @@
 #include "SubwayStateActor.h"
-#include "EndingDirector.h"
+#include "Blueprint/UserWidget.h"
 #include "Components/BoxComponent.h"
+#include "EndingDirector.h"
+#include "InteractWidget.h"
 #include "Kismet/GameplayStatics.h"
+#include "LevelChangeActor.h"
+#include "MyGameInstance.h"
 #include "MyPaperCharacter.h"
 
 ASubwayStateActor::ASubwayStateActor()
 {
+    PrimaryActorTick.bCanEverTick = true;
+
     CurrentState = ESubwayState::Approaching;
 
     TriggerBox = CreateDefaultSubobject<UBoxComponent>(TEXT("TriggerBox"));
@@ -17,12 +23,11 @@ ASubwayStateActor::ASubwayStateActor()
 
     TriggerBox->OnComponentBeginOverlap.AddDynamic(this, &ASubwayStateActor::OnOverlapBegin);
     TriggerBox->OnComponentEndOverlap.AddDynamic(this, &ASubwayStateActor::OnOverlapEnd);
-
 }
 
 void ASubwayStateActor::BeginPlay()
 {
-    Super::BeginPlay(); 
+    Super::BeginPlay();
 
     if (!EndingDirector)
     {
@@ -40,6 +45,17 @@ void ASubwayStateActor::BeginPlay()
     }
 
     SetState(CurrentState);
+    UpdateManagedLevelChangeActors();
+}
+
+void ASubwayStateActor::Tick(float DeltaTime)
+{
+    Super::Tick(DeltaTime);
+
+    if (ActiveWidget)
+    {
+        UpdateWidgetPosition();
+    }
 }
 
 void ASubwayStateActor::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
@@ -50,11 +66,14 @@ void ASubwayStateActor::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
     const FHitResult& SweepResult)
 {
     AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(OtherActor);
-    if (Player)
+    if (!Player)
     {
-        Player->SetCurrentSubway(this);
-        UE_LOG(LogTemp, Log, TEXT("Player entered subway trigger"));
+        return;
     }
+
+    Player->SetCurrentSubway(this);
+    ShowInteractWidget(Player);
+    UE_LOG(LogTemp, Log, TEXT("Player entered subway trigger"));
 }
 
 void ASubwayStateActor::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
@@ -63,13 +82,15 @@ void ASubwayStateActor::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
     int32 OtherBodyIndex)
 {
     AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(OtherActor);
-    if (Player)
+    if (!Player)
     {
-        Player->SetCurrentSubway(nullptr);
-        UE_LOG(LogTemp, Log, TEXT("Player left subway trigger"));
+        return;
     }
-}
 
+    Player->SetCurrentSubway(nullptr);
+    HideInteractWidget();
+    UE_LOG(LogTemp, Log, TEXT("Player left subway trigger"));
+}
 
 void ASubwayStateActor::SetState(ESubwayState NewState)
 {
@@ -85,12 +106,32 @@ void ASubwayStateActor::SetState(ESubwayState NewState)
             bEnable ? ECollisionEnabled::QueryOnly : ECollisionEnabled::NoCollision
         );
     }
+
+    if (!bEnable)
+    {
+        HideInteractWidget();
+    }
+
+    if (CurrentState == ESubwayState::Passed)
+    {
+        bLevelChangeLocked = false;
+    }
+
+    UpdateManagedLevelChangeActors();
+}
+
+void ASubwayStateActor::SetLevelChangeLockActive(bool bLocked)
+{
+    bLevelChangeLocked = bLocked;
+    UpdateManagedLevelChangeActors();
 }
 
 void ASubwayStateActor::Interact(AMyPaperCharacter* Player)
 {
     if (!Player || !EndingDirector)
+    {
         return;
+    }
 
     UE_LOG(LogTemp, Log, TEXT("[Interact] CurrentState %s"), StateToString(CurrentState));
     if (CurrentState == ESubwayState::DoorsOpen)
@@ -106,6 +147,84 @@ void ASubwayStateActor::Interact(AMyPaperCharacter* Player)
             Player,
             HiddenTeleportLocation
         );
+    }
+}
+
+void ASubwayStateActor::ShowInteractWidget(AMyPaperCharacter* Player)
+{
+    if (!Player || ActiveWidget)
+    {
+        return;
+    }
+
+    CachedPlayer = Player;
+    PC = Cast<APlayerController>(Player->GetController());
+    if (!PC)
+    {
+        return;
+    }
+
+    UMyGameInstance* GI = GetWorld()->GetGameInstance<UMyGameInstance>();
+    if (!GI || !GI->DefaultInteractWidget)
+    {
+        return;
+    }
+
+    ActiveWidget = CreateWidget<UUserWidget>(PC, GI->DefaultInteractWidget);
+    if (!ActiveWidget)
+    {
+        return;
+    }
+
+    ActiveWidget->AddToViewport();
+    UpdateWidgetPosition();
+
+    if (UInteractWidget* InteractWidget = Cast<UInteractWidget>(ActiveWidget))
+    {
+        InteractWidget->SetInteractInfo(InteractKey, InteractText);
+    }
+}
+
+void ASubwayStateActor::HideInteractWidget()
+{
+    if (ActiveWidget)
+    {
+        ActiveWidget->RemoveFromParent();
+        ActiveWidget = nullptr;
+    }
+
+    CachedPlayer = nullptr;
+    PC = nullptr;
+}
+
+void ASubwayStateActor::UpdateWidgetPosition()
+{
+    if (!CachedPlayer || !PC || !ActiveWidget)
+    {
+        return;
+    }
+
+    FVector WorldPos = CachedPlayer->GetActorLocation();
+    WorldPos += FVector(-100.f, 0.f, 70.f);
+
+    FVector2D ScreenPos;
+    PC->ProjectWorldLocationToScreen(WorldPos, ScreenPos);
+
+    ActiveWidget->SetPositionInViewport(ScreenPos, true);
+}
+
+void ASubwayStateActor::UpdateManagedLevelChangeActors()
+{
+    const bool bShouldEnableLevelChange = !bLevelChangeLocked || CurrentState == ESubwayState::Passed;
+
+    for (ALevelChangeActor* LevelChangeActor : ManagedLevelChangeActors)
+    {
+        if (!LevelChangeActor)
+        {
+            continue;
+        }
+
+        LevelChangeActor->SetLevelChangeEnabled(bShouldEnableLevelChange);
     }
 }
 

@@ -4,7 +4,7 @@
 #include "EndingMonster.h"
 #include "MyPaperCharacter.h"
 #include "EndingChaseManager.h"
-#include "GameFramework/PawnMovementComponent.h"
+#include "Components/BoxComponent.h"
 
 AEndingMonster::AEndingMonster()
 {
@@ -19,13 +19,25 @@ void AEndingMonster::BeginPlay()
 
 void AEndingMonster::Tick(float DeltaTime)
 {
-	AActor::Tick(DeltaTime);
+	if (bEndTriggered)
+	{
+		return;
+	}
 
-	if (bEndTriggered) return;
+	if (TryKillPlayerAhead())
+	{
+		return;
+	}
 
 	CheckTurnPoint();
 	CheckEndPoint();
-	HandleObstacle(DeltaTime);
+
+	if (HandleObstacle(DeltaTime))
+	{
+		return;
+	}
+
+	Super::Tick(DeltaTime);
 }
 
 void AEndingMonster::OnHitBoxOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -37,28 +49,14 @@ void AEndingMonster::OnHitBoxOverlap(UPrimitiveComponent* OverlappedComp, AActor
 	AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(OtherActor);
 	if (!Player) return;
 
-	bHasKilledPlayer = true;
-
-	Player->PlayDeath();
-
-	SetActorTickEnabled(false);
-
-	Destroy();
-}
-
-void AEndingMonster::StopMonster()
-{
-	if (UPawnMovementComponent* MoveComp = GetMovementComponent())
-	{
-		MoveComp->StopMovementImmediately();
-	}
+	TryKillPlayer(Player);
 }
 
 void AEndingMonster::CheckTurnPoint()
 {
 	const float DistanceX = FMath::Abs(GetActorLocation().X - TurnLocation.X);
 
-	if (DistanceX < 10.f)
+	if (DistanceX < 30.f)
 	{
 		if (!bTurnedAtPoint)
 		{
@@ -87,99 +85,128 @@ void AEndingMonster::CheckEndPoint()
 	}
 }
 
-void AEndingMonster::HandleObstacle(float DeltaTime)
+bool AEndingMonster::HandleObstacle(float DeltaTime)
 {
-	if (ObstacleState == EObstacleState::None)
+	FHitResult Hit;
+	const bool bBlocked = IsFrontBlocked(Hit);
+
+	if (!bBreakingObstacle)
 	{
-		FHitResult Hit;
-		if (IsFrontBlocked(Hit))
-		{
-			AActor* HitActor = Hit.GetActor();
-
-			UE_LOG(LogTemp, Warning, TEXT("Blocked - Actor: %s"),
-				HitActor ? *HitActor->GetName() : TEXT("None"));
-
-			if (HitActor && HitActor->ActorHasTag(TEXT("Breakable")))
-			{
-				CurrentObstacle = HitActor;
-				ObstacleState = EObstacleState::WaitingBeforeBreak;
-				ObstacleTimer = 0.f;
-
-				SetState(EMonsterState::Idle);
-				UE_LOG(LogTemp, Warning, TEXT("Wait before break: %s"), *HitActor->GetName());
-				return;
-			}
-		}
-
-		SetState(EMonsterState::Walk);
-		AddActorWorldOffset(FVector(MoveDirection * MoveSpeed * DeltaTime, 0.f, 0.f), false);
-
-		FVector Scale = GetActorScale3D();
-		Scale.Y = 1.f;
-		Scale.X = FMath::Abs(Scale.X) * MoveDirection;
-		SetActorScale3D(Scale);
-		return;
-	}
-
-	ObstacleTimer += DeltaTime;
-
-	if (ObstacleState == EObstacleState::WaitingBeforeBreak)
-	{
-		SetState(EMonsterState::Idle);
-		ObstacleTimer += DeltaTime;
-
-		if (ObstacleTimer >= WaitBeforeBreak)
-		{
-			ObstacleState = EObstacleState::Breaking;
-			ObstacleTimer = 0.f;
-			UE_LOG(LogTemp, Warning, TEXT("Start breaking"));
-		}
-		return;
-	}
-
-	if (ObstacleState == EObstacleState::Breaking)
-	{
-		SetState(EMonsterState::Idle);
-		ObstacleTimer += DeltaTime;
-
-		if (ObstacleTimer >= BreakDuration)
-		{
-			if (CurrentObstacle && IsValid(CurrentObstacle))
-			{
-				const bool bDestroyed = CurrentObstacle->Destroy();
-				UE_LOG(LogTemp, Warning, TEXT("Destroy result: %s"),
-					bDestroyed ? TEXT("true") : TEXT("false"));
-			}
-
-			ObstacleState = EObstacleState::WaitingAfterBreak;
-			ObstacleTimer = 0.f;
-			UE_LOG(LogTemp, Warning, TEXT("Wait after break"));
-		}
-		return;
-	}
-
-	if (ObstacleState == EObstacleState::WaitingAfterBreak)
-	{
-		SetState(EMonsterState::Idle);
-		ObstacleTimer += DeltaTime;
-
-		if (ObstacleTimer >= WaitAfterBreak)
+		if (!bBlocked)
 		{
 			CurrentObstacle = nullptr;
-			ObstacleState = EObstacleState::None;
-			ObstacleTimer = 0.f;
-			UE_LOG(LogTemp, Warning, TEXT("Resume move"));
+			return false;
 		}
-		return;
+
+		CurrentObstacle = Hit.GetActor();
+		bBreakingObstacle = true;
+		ObstacleTimer = 0.f;
+		SetState(EMonsterState::Idle);
+		return true;
 	}
+
+	SetState(EMonsterState::Idle);
+	ObstacleTimer += DeltaTime;
+
+	if (ObstacleTimer < WaitBeforeBreak)
+	{
+		return true;
+	}
+
+	if (CurrentObstacle && IsValid(CurrentObstacle))
+	{
+		const bool bStillBlocked = bBlocked && Hit.GetActor() == CurrentObstacle;
+		if (bStillBlocked || ObstacleTimer >= WaitBeforeBreak + BreakDuration)
+		{
+			CurrentObstacle->Destroy();
+			CurrentObstacle = nullptr;
+			bBreakingObstacle = false;
+			ObstacleTimer = 0.f;
+			return true;
+		}
+
+		return true;
+	}
+
+	bBreakingObstacle = false;
+	ObstacleTimer = 0.f;
+	return true;
+}
+
+bool AEndingMonster::TryKillPlayerAhead()
+{
+	if (bHasKilledPlayer)
+	{
+		return true;
+	}
+
+	if (HitBox)
+	{
+		TArray<AActor*> OverlappingActors;
+		HitBox->GetOverlappingActors(OverlappingActors, AMyPaperCharacter::StaticClass());
+
+		for (AActor* Actor : OverlappingActors)
+		{
+			if (AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(Actor))
+			{
+				if (TryKillPlayer(Player))
+				{
+					return true;
+				}
+			}
+		}
+	}
+
+	const FVector Start = HitBox ? HitBox->GetComponentLocation() : GetActorLocation();
+	const FVector End = Start + FVector(MoveDirection * PlayerDetectDistance, 0.f, 0.f);
+	const FCollisionShape Box = FCollisionShape::MakeBox(FVector(45.f, 60.f, 120.f));
+
+	FCollisionObjectQueryParams ObjParams;
+	ObjParams.AddObjectTypesToQuery(ECC_Pawn);
+
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+
+	TArray<FHitResult> Hits;
+	if (!GetWorld()->SweepMultiByObjectType(Hits, Start, End, FQuat::Identity, ObjParams, Box, Params))
+	{
+		return false;
+	}
+
+	for (const FHitResult& Hit : Hits)
+	{
+		if (AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(Hit.GetActor()))
+		{
+			if (TryKillPlayer(Player))
+			{
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+bool AEndingMonster::TryKillPlayer(AMyPaperCharacter* Player)
+{
+	if (!Player || bHasKilledPlayer || Player->bIsHidden)
+	{
+		return false;
+	}
+
+	bHasKilledPlayer = true;
+	Player->PlayDeath();
+	SetActorTickEnabled(false);
+	Destroy();
+	return true;
 }
 
 bool AEndingMonster::IsFrontBlocked(FHitResult& OutHit) const
 {
-	const FVector Start = GetActorLocation();
-	const FVector End = Start + FVector(MoveDirection * 80.f, 0.f, 0.f);
+	const FVector Start = HitBox ? HitBox->GetComponentLocation() : GetActorLocation();
+	const FVector End = Start + FVector(MoveDirection * 95.f, 0.f, 0.f);
 
-	const FVector HalfSize(30.f, 20.f, 50.f);
+	const FVector HalfSize(36.f, 48.f, 100.f);
 	const FCollisionShape Box = FCollisionShape::MakeBox(HalfSize);
 
 	FCollisionObjectQueryParams ObjParams;
@@ -190,32 +217,51 @@ bool AEndingMonster::IsFrontBlocked(FHitResult& OutHit) const
 	Params.AddIgnoredActor(this);
 
 	TArray<FHitResult> Hits;
-	const bool bHit = GetWorld()->SweepMultiByObjectType(
-		Hits,
-		Start,
-		End,
-		FQuat::Identity,
-		ObjParams,
-		Box,
-		Params
-	);
-
-	if (!bHit)
+	if (!GetWorld()->SweepMultiByObjectType(Hits, Start, End, FQuat::Identity, ObjParams, Box, Params))
 	{
 		return false;
 	}
 
+	float ClosestDistance = TNumericLimits<float>::Max();
+	bool bFoundObstacle = false;
+
 	for (const FHitResult& Hit : Hits)
 	{
-		UPrimitiveComponent* HitComp = Hit.GetComponent();
-		if (HitComp && HitComp->ComponentHasTag(TEXT("Breakable")))
+		if (!IsBreakableHit(Hit))
 		{
+			continue;
+		}
+
+		const AActor* HitActor = Hit.GetActor();
+		if (!HitActor)
+		{
+			continue;
+		}
+
+		const float ForwardDistance = (HitActor->GetActorLocation().X - GetActorLocation().X) * MoveDirection;
+		if (ForwardDistance < 25.f || ForwardDistance > 110.f)
+		{
+			continue;
+		}
+
+		if (ForwardDistance < ClosestDistance)
+		{
+			ClosestDistance = ForwardDistance;
 			OutHit = Hit;
-			return true;
+			bFoundObstacle = true;
 		}
 	}
 
-	return false;
+	return bFoundObstacle;
+}
+
+bool AEndingMonster::IsBreakableHit(const FHitResult& Hit) const
+{
+	const AActor* HitActor = Hit.GetActor();
+	const UPrimitiveComponent* HitComp = Hit.GetComponent();
+
+	return (HitActor && HitActor->ActorHasTag(TEXT("Breakable")))
+		|| (HitComp && HitComp->ComponentHasTag(TEXT("Breakable")));
 }
 
 void AEndingMonster::SetMoveDirection(float Dir)
