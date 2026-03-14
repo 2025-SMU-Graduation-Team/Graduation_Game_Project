@@ -40,6 +40,11 @@ void USubLevelTaskManager::RequestTask(UDelayedTaskData* TaskData)
     if (!TaskData)
         return;
 
+    if (TaskData->SubwayStateActor.IsValid())
+    {
+        TaskData->SubwayStateActor->SetLevelChangeLockActive(true);
+    }
+
     UE_LOG(LogTemp, Warning, TEXT("RequestTask registered"));
     PendingTasks.Add(TaskData);
     NotifyWidgets(true);

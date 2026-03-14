@@ -44,7 +44,19 @@ private:
     float ShakeScale = 1.0f;
 
     UPROPERTY(EditAnywhere, Category = "Rubble")
-    TArray<TSubclassOf<AActor>> RubbleActors;
+    TArray<TSubclassOf<AActor>> BigRubbles;
+
+    UPROPERTY(EditAnywhere, Category = "Rubble")
+    TArray<TSubclassOf<AActor>> SmallRubbles;
+
+    UPROPERTY(EditAnywhere, Category = "Rubble")
+    float BigSpawnRatio = 0.65f;
+
+    UPROPERTY(EditAnywhere, Category = "Rubble")
+    float BigDownImpulse = -1500.f;
+
+    UPROPERTY(EditAnywhere, Category = "Rubble")
+    float SmallDownImpulse = -900.f;
 
     UPROPERTY(EditAnywhere, Category = "Rubble")
     FVector RubbleSpawnPoint;

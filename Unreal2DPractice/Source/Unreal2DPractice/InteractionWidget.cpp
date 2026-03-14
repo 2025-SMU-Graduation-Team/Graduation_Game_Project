@@ -8,6 +8,9 @@
 #include "UISelectedManager.h"
 #include "EngineUtils.h"
 #include "Engine/StaticMeshActor.h"
+#include "AudioManager.h"
+#include "MyGameInstance.h"
+#include "GameSFXData.h"
 
 void UInteractionWidget::NativeConstruct()
 {

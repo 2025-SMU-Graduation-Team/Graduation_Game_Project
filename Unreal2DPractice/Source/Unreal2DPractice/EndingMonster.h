@@ -7,6 +7,7 @@
 #include "EndingMonster.generated.h"
 
 class AEndingChaseManager;
+class AMyPaperCharacter;
 
 UCLASS()
 class UNREAL2DPRACTICE_API AEndingMonster : public AMyPaperMonster
@@ -32,28 +33,36 @@ protected:
 	float MoveDirection = 1.f;
 
 private:
+	void CheckTurnPoint();
+	void CheckEndPoint();
+	bool HandleObstacle(float DeltaTime);
+	bool TryKillPlayerAhead();
+	bool TryKillPlayer(AMyPaperCharacter* Player);
+	bool IsFrontBlocked(FHitResult& OutHit) const;
+	bool IsBreakableHit(const FHitResult& Hit) const;
+
 	FVector EndLocation;
 	FVector TurnLocation;
 
 	UPROPERTY()
 	AEndingChaseManager* Manager = nullptr;
 
+	UPROPERTY()
+	AActor* CurrentObstacle = nullptr;
+
 	bool bEndTriggered = false;
+	bool bTurnedAtPoint = false;
+	bool bBreakingObstacle = false;
 
 	float FastSpeed = 600.f;
-
-	void CheckTurnPoint();
-	void CheckEndPoint();
-
-	void HandleObstacle(float DeltaTime);
-	bool IsFrontBlocked() const;
-
-	bool bBreakingObstacle = false;
-	float BreakTime = 0.f;
+	float ObstacleTimer = 0.f;
 
 	UPROPERTY(EditAnywhere, Category = "Obstacle")
-	float BreakDuration = 1.f;
+	float WaitBeforeBreak = 0.8f;
 
 	UPROPERTY(EditAnywhere, Category = "Obstacle")
-	float BreakForce = 300.f;
+	float BreakDuration = 0.6f;
+
+	UPROPERTY(EditAnywhere, Category = "Player")
+	float PlayerDetectDistance = 200.f;
 };

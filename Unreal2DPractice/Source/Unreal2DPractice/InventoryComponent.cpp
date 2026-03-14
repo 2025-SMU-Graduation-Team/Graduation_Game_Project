@@ -5,6 +5,10 @@
 #include "Blueprint/UserWidget.h"
 #include "GameFramework/PlayerController.h"
 #include "MyPaperCharacter.h"
+#include "AudioManager.h"
+#include "MyGameInstance.h"
+#include "GameSFXData.h"
+#include "Engine/GameInstance.h"
 
 
 UInventoryComponent::UInventoryComponent()
@@ -67,6 +71,17 @@ void UInventoryComponent::ConfirmPickupYes()
 	AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(GetOwner());
 	AddItem(PendingItem);
 
+	AAudioManager* AudioManager =
+		Cast<AAudioManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AAudioManager::StaticClass()));
+
+	UMyGameInstance* GI =
+		Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
+
+	if (AudioManager && GI && GI->SFXData && GI->SFXData->PlayerPickup)
+	{
+		AudioManager->PlaySFX2D(GI->SFXData->PlayerPickup);
+	}
+
 	if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
 	{
 		PC->bShowMouseCursor = false;
@@ -121,6 +136,18 @@ void UInventoryComponent::SelectSlot(int32 Index)
 	}
 
 	SelectedInvenIndex = Index;
+
+	AAudioManager* AudioManager =
+	Cast<AAudioManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AAudioManager::StaticClass()));
+
+	UMyGameInstance* GI =
+	Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
+
+	if (AudioManager && GI && GI->SFXData && GI->SFXData->PlayerChangeTool)
+	{
+		AudioManager->PlaySFX2D(GI->SFXData->PlayerChangeTool);
+	}
+	
 	InventoryWidget->ShowItemInfoPopup(Items[Index].ItemName, Items[Index].ItemDescription);
 }
 
@@ -142,11 +169,34 @@ void UInventoryComponent::UseSelectedItem()
 			InventoryWidget->ShowItemInfoPopup(Item.ItemName, Item.ItemDescription);
 		}
 
+		AAudioManager* AudioManager =
+		Cast<AAudioManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AAudioManager::StaticClass()));
+
+		UMyGameInstance* GI =
+			Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
+
+		if (AudioManager && GI && GI->SFXData && GI->SFXData->PlayerPickupGain)
+		{
+			AudioManager->PlaySFX2D(GI->SFXData->PlayerPickupGain);
+		}
+
 		return; 
 	}
 	InventoryWidget->ShowEquippedItem(Item.Icon);
 	EquippedItemType = Item.ItemType;
 	OnEquipItemChanged.Broadcast(EquippedItemType);
+
+	AAudioManager* AudioManager =
+		Cast<AAudioManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AAudioManager::StaticClass()));
+
+	UMyGameInstance* GI =
+	Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
+
+	if (AudioManager && GI && GI->SFXData && GI->SFXData->PlayerPickupGain)
+	{
+		AudioManager->PlaySFX2D(GI->SFXData->PlayerPickupGain);
+	}
+	
 	UE_LOG(LogTemp, Log, TEXT("Equipped: %s"), *UEnum::GetValueAsString(EquippedItemType));
 }
 

@@ -6,9 +6,9 @@
 #include "Engine/GameInstance.h"
 #include "MyGameInstance.generated.h"
 
-/**
- * 
- */
+class UGameSFXData;
+class UGameBGMData;
+
 UCLASS()
 class UNREAL2DPRACTICE_API UMyGameInstance : public UGameInstance
 {
@@ -17,4 +17,10 @@ class UNREAL2DPRACTICE_API UMyGameInstance : public UGameInstance
 public:
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UUserWidget> DefaultInteractWidget;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio")
+	UGameSFXData* SFXData;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio")
+	UGameBGMData* BGMData;
 };

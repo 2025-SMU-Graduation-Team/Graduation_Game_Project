@@ -5,8 +5,11 @@
 #include "SubwayStateActor.generated.h"
 
 class UBoxComponent;
+class UUserWidget;
 class AEndingDirector;
+class ALevelChangeActor;
 class AMyPaperCharacter;
+class APlayerController;
 
 UENUM()
 enum class ESubwayState : uint8
@@ -22,15 +25,16 @@ class UNREAL2DPRACTICE_API ASubwayStateActor : public AActor
 {
     GENERATED_BODY()
 
-    public:
+public:
     ASubwayStateActor();
 
     void Interact(AMyPaperCharacter* Player);
-
     void SetState(ESubwayState NewState);
+    void SetLevelChangeLockActive(bool bLocked);
 
 protected:
     virtual void BeginPlay() override;
+    virtual void Tick(float DeltaTime) override;
 
     UFUNCTION()
     void OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
@@ -48,6 +52,10 @@ protected:
 
 private:
     const TCHAR* StateToString(ESubwayState State);
+    void ShowInteractWidget(AMyPaperCharacter* Player);
+    void HideInteractWidget();
+    void UpdateWidgetPosition();
+    void UpdateManagedLevelChangeActors();
 
 private:
     UPROPERTY(EditInstanceOnly)
@@ -59,6 +67,25 @@ private:
     UPROPERTY(EditAnywhere, Category = "Subway")
     FVector HiddenTeleportLocation;
 
+    UPROPERTY(EditAnywhere, Category = "Subway")
+    FText InteractKey = FText::FromString("W");
+
+    UPROPERTY(EditAnywhere, Category = "Subway")
+    FText InteractText = FText::FromString("Enter");
+
+    UPROPERTY(EditInstanceOnly, Category = "Subway")
+    TArray<TObjectPtr<ALevelChangeActor>> ManagedLevelChangeActors;
+
+    UPROPERTY()
+    UUserWidget* ActiveWidget = nullptr;
+
+    UPROPERTY()
+    AMyPaperCharacter* CachedPlayer = nullptr;
+
+    UPROPERTY()
+    APlayerController* PC = nullptr;
+
+    bool bLevelChangeLocked = false;
     ESubwayState CurrentState;
 
     UPROPERTY(VisibleAnywhere)

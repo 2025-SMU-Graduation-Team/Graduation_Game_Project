@@ -19,10 +19,32 @@ ALevelChangeActor::ALevelChangeActor()
 	TriggerBox->OnComponentBeginOverlap.AddDynamic(this, &ALevelChangeActor::OnOverlapBegin);
 }
 
+void ALevelChangeActor::SetLevelChangeEnabled(bool bEnabled)
+{
+	bLevelChangeEnabled = bEnabled;
+
+	if (TriggerBox)
+	{
+		TriggerBox->SetCollisionEnabled(
+			bLevelChangeEnabled ? ECollisionEnabled::QueryOnly : ECollisionEnabled::NoCollision
+		);
+	}
+}
+
+bool ALevelChangeActor::IsLevelChangeEnabled() const
+{
+	return bLevelChangeEnabled;
+}
+
 void ALevelChangeActor::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
 	const FHitResult& SweepResult)
 {
+	if (!bLevelChangeEnabled)
+	{
+		return;
+	}
+
     AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(OtherActor);
     if (!Player)
         return;

@@ -15,6 +15,8 @@ class UNREAL2DPRACTICE_API ALevelChangeActor : public AActor
 	
 public:	
 	ALevelChangeActor();
+	void SetLevelChangeEnabled(bool bEnabled);
+	bool IsLevelChangeEnabled() const;
 
 	UPROPERTY(EditAnywhere, Category = "Level")
 	FName NextLevelName;
@@ -33,4 +35,7 @@ protected:
 
 	UPROPERTY()
 	AMyPaperCharacter* CachedPlayer;
+
+private:
+	bool bLevelChangeEnabled = true;
 };
