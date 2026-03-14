@@ -29,6 +29,8 @@ public:
     UPROPERTY()
     UCameraComponent* Camera;
 
+    UPROPERTY(EditAnywhere, Category = "Camera")
+    FVector cameraOffset = FVector::ZeroVector;
 private:
     FVector GetClampedCameraTarget() const;
     float GetHalfViewHeight() const;

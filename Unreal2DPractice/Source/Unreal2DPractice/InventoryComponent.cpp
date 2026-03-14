@@ -161,6 +161,7 @@ void UInventoryComponent::UseSelectedItem()
 	{
 		Item.ItemName = FText::FromString(TEXT("Card"));
 		Item.Icon = CardIcon;
+		Item.ItemType = EItemType::Card;
 
 		UpdateInventoryUI();
 
@@ -182,6 +183,7 @@ void UInventoryComponent::UseSelectedItem()
 
 		return; 
 	}
+
 	InventoryWidget->ShowEquippedItem(Item.Icon);
 	EquippedItemType = Item.ItemType;
 	OnEquipItemChanged.Broadcast(EquippedItemType);
