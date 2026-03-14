@@ -329,7 +329,7 @@ void AMyPaperCharacter::OnHideReleased(const FInputActionValue& Value)
 
 void AMyPaperCharacter::OnItemChanged(EItemType NewType)
 {
-	EquippedTool = NewType;
+	EquippedItem = NewType;
 
 	UE_LOG(LogTemp, Log, TEXT("Equipped Tool: %s"), *UEnum::GetValueAsString(NewType));
 }

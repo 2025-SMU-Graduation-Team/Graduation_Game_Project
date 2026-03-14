@@ -143,7 +143,7 @@ public:
 	void OnItemChanged(EItemType NewType);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item")
-	EItemType EquippedTool = EItemType::None;
+	EItemType EquippedItem = EItemType::None;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UPlayerCameraController* CameraController;

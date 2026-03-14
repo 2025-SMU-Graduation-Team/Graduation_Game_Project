@@ -67,7 +67,7 @@ FVector UPlayerCameraController::GetClampedCameraTarget() const
     const FVector PlayerLoc = GetOwner()->GetActorLocation();
     const FBox Bounds = LimitVolume->GetLimitBounds();
 
-    FVector Result = PlayerLoc;
+    FVector Result = PlayerLoc + cameraOffset;
 
     const float HalfViewWidth = SpringArm->TargetArmLength;
     const float HalfViewHeight = GetHalfViewHeight();
