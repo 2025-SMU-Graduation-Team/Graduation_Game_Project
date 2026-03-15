@@ -6,10 +6,14 @@
 #include "PaperFlipbookComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/AudioComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "PlayerCameraController.h"
 #include "CameraLimitVolume.h"
 #include "HidingSpot.h"
+#include "AudioManager.h"
+#include "MyGameInstance.h"
+#include "GameSFXData.h"
 
 
 AMyPaperCharacter::AMyPaperCharacter()
@@ -31,6 +35,9 @@ AMyPaperCharacter::AMyPaperCharacter()
 
 	Inventory = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
 	CameraController = CreateDefaultSubobject<UPlayerCameraController>(TEXT("CameraController"));
+	WalkAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("WalkAudioComponent"));
+	WalkAudioComponent->SetupAttachment(RootComponent);
+	WalkAudioComponent->bAutoActivate = false;
 }
 
 void AMyPaperCharacter::BeginPlay()
@@ -100,6 +107,7 @@ void AMyPaperCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	UpdateAnimation();
+	UpdateWalkAudio();
 }
 
 void AMyPaperCharacter::Move(const FInputActionValue& Value)
@@ -115,6 +123,17 @@ void AMyPaperCharacter::Move(const FInputActionValue& Value)
 void AMyPaperCharacter::StartJump(const FInputActionValue& Value)
 {
 	Jump();
+
+	AAudioManager* AudioManager =
+		Cast<AAudioManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AAudioManager::StaticClass()));
+
+	UMyGameInstance* GI =
+		Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
+
+	if (AudioManager && GI && GI->SFXData && GI->SFXData->PlayerJumpLanding)
+	{
+		AudioManager->PlaySFX2D(GI->SFXData->PlayerJumpLanding);
+	}
 }
 
 void AMyPaperCharacter::StopJump(const FInputActionValue& Value)
@@ -218,8 +237,42 @@ void AMyPaperCharacter::UpdateAnimation()
 
 void AMyPaperCharacter::PlayDeath()
 {
+	if (bIsDead)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Death] PlayDeath blocked because bIsDead is already true"));
+		return;
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("[Death] PlayDeath called"));
+
 	bIsDead = true;
 	bEnableMovement = false;
+	StopWalkLoop();
+
+	AAudioManager* AudioManager =
+		Cast<AAudioManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AAudioManager::StaticClass()));
+
+	UMyGameInstance* GI =
+		Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
+
+	if (AudioManager && GI && GI->SFXData)
+	{
+		USoundBase* DeathSound = nullptr;
+
+		if (GI->LastDeathCause == EDeathCause::NPC)
+		{
+			DeathSound = GI->SFXData->PlayerDeathNPC;
+		}
+		else
+		{
+			DeathSound = GI->SFXData->PlayerDeathScream;
+		}
+
+		if (DeathSound)
+		{
+			AudioManager->PlaySFX2D(DeathSound);
+		}
+	}
 
 	if (DieAnimation)
 	{
@@ -240,6 +293,7 @@ void AMyPaperCharacter::PlayDeath()
 
 void AMyPaperCharacter::GoToGameOverLevel()
 {
+	UE_LOG(LogTemp, Warning, TEXT("[Death] GoToGameOverLevel called"));
 	UGameplayStatics::OpenLevel(this, FName("GameOver"));
 }
 
@@ -283,6 +337,18 @@ void AMyPaperCharacter::EnterHide()
 	}
 
 	bIsHidden = true;
+	StopWalkLoop();
+
+	AAudioManager* AudioManager =
+		Cast<AAudioManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AAudioManager::StaticClass()));
+
+	UMyGameInstance* GI =
+		Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
+
+	if (AudioManager && GI && GI->SFXData && GI->SFXData->PlayerHide)
+	{
+		AudioManager->PlaySFX2D(GI->SFXData->PlayerHide);
+	}
 
 	UE_LOG(LogTemp, Log, TEXT("Player is now hiding."));
 }
@@ -358,4 +424,59 @@ bool AMyPaperCharacter::TryInteractFromEnterKey()
 
 	CurrentInteractable->InteractFromEnterKey();
 	return true;
+}
+
+void AMyPaperCharacter::UpdateWalkAudio()
+{
+	if (!WalkAudioComponent)
+	{
+		return;
+	}
+
+	const UCharacterMovementComponent* MoveComp = GetCharacterMovement();
+	const bool bShouldPlayWalkLoop =
+		bEnableMovement &&
+		!bIsDead &&
+		!bIsHidden &&
+		MoveComp &&
+		MoveComp->IsMovingOnGround() &&
+		FMath::Abs(GetVelocity().X) > 10.0f;
+
+	if (bShouldPlayWalkLoop)
+	{
+		StartWalkLoop();
+	}
+	else
+	{
+		StopWalkLoop();
+	}
+}
+
+void AMyPaperCharacter::StartWalkLoop()
+{
+	if (!WalkAudioComponent || WalkAudioComponent->IsPlaying())
+	{
+		return;
+	}
+
+	UMyGameInstance* GI =
+		Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
+
+	if (!GI || !GI->SFXData || !GI->SFXData->PlayerWalk)
+	{
+		return;
+	}
+
+	WalkAudioComponent->SetSound(GI->SFXData->PlayerWalk);
+	WalkAudioComponent->Play();
+}
+
+void AMyPaperCharacter::StopWalkLoop()
+{
+	if (!WalkAudioComponent || !WalkAudioComponent->IsPlaying())
+	{
+		return;
+	}
+
+	WalkAudioComponent->Stop();
 }

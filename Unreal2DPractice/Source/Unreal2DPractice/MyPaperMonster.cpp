@@ -219,6 +219,11 @@ void AMyPaperMonster::StartAttack(AMyPaperCharacter* Player)
 
 	UMyGameInstance* GI = Cast<UMyGameInstance>(GetGameInstance());
 
+	if (GI)
+	{
+		GI->LastDeathCause = EDeathCause::Monster;
+	}
+
 	if (AudioManager && GI && GI->SFXData && GI->SFXData->MonsterAttack)
 	{
 		AudioManager->PlaySFX(GI->SFXData->MonsterAttack, GetActorLocation());

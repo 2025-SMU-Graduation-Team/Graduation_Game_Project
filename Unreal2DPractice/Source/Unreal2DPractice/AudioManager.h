@@ -17,12 +17,16 @@ public:
 
 	AAudioManager();
 
+	UFUNCTION(BlueprintCallable)
 	void PlaySFX(USoundBase* Sound, FVector Location);
 
+	UFUNCTION(BlueprintCallable)
 	void PlaySFX2D(USoundBase* Sound);
 
+	UFUNCTION(BlueprintCallable)
 	void PlayBGM(USoundBase* Sound);
 
+	UFUNCTION(BlueprintCallable)
 	void StopBGM();
 
 protected:

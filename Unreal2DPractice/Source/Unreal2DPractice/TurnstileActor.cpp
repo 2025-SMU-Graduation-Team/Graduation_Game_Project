@@ -3,6 +3,11 @@
 
 #include "TurnstileActor.h"
 #include "MyPaperCharacter.h"
+#include "AudioManager.h"
+#include "GameSFXData.h"
+#include "Kismet/GameplayStatics.h"
+#include "MyGameInstance.h"
+#include "TimerManager.h"
 
 // Sets default values
 ATurnstileActor::ATurnstileActor()
@@ -20,8 +25,23 @@ void ATurnstileActor::Interact()
 
     if (Player->EquippedItem == EItemType::Card)  
     {
-        SetActorEnableCollision(false);
-        UE_LOG(LogTemp, Warning, TEXT("Gate opened"));
+        AAudioManager* AudioManager =
+            Cast<AAudioManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AAudioManager::StaticClass()));
+        UMyGameInstance* GI = GetWorld()->GetGameInstance<UMyGameInstance>();
+
+        if (AudioManager && GI && GI->SFXData && GI->SFXData->TurnstileBeep)
+        {
+            AudioManager->PlaySFX2D(GI->SFXData->TurnstileBeep);
+        }
+
+        GetWorldTimerManager().ClearTimer(OpenSoundTimerHandle);
+        GetWorldTimerManager().SetTimer(
+            OpenSoundTimerHandle,
+            this,
+            &ATurnstileActor::PlayOpenSoundAndUnlock,
+            OpenSoundDelay,
+            false
+        );
     }
     else
     {
@@ -34,6 +54,21 @@ void ATurnstileActor::BeginPlay()
 {
 	Super::BeginPlay();
 	
+}
+
+void ATurnstileActor::PlayOpenSoundAndUnlock()
+{
+    AAudioManager* AudioManager =
+        Cast<AAudioManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AAudioManager::StaticClass()));
+    UMyGameInstance* GI = GetWorld()->GetGameInstance<UMyGameInstance>();
+
+    if (AudioManager && GI && GI->SFXData && GI->SFXData->TurnstileOpen)
+    {
+        AudioManager->PlaySFX(GI->SFXData->TurnstileOpen, GetActorLocation());
+    }
+
+    SetActorEnableCollision(false);
+    UE_LOG(LogTemp, Warning, TEXT("Gate opened"));
 }
 
 

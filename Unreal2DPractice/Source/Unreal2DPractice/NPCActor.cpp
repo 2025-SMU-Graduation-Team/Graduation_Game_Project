@@ -11,6 +11,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 #include "MyPaperCharacter.h"
+#include "MyGameInstance.h"
 
 ANPCActor::ANPCActor()
 {
@@ -35,11 +36,16 @@ ANPCActor::ANPCActor()
 	{
 		AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(UGameplayStatics::GetPlayerCharacter(this, 0));
 
-		if (Player)
+	if (Player)
+	{
+		if (UMyGameInstance* GI = Cast<UMyGameInstance>(GetWorld()->GetGameInstance()))
 		{
-			Player->PlayDeath();
+			GI->LastDeathCause = EDeathCause::NPC;
 		}
+
+		Player->PlayDeath();
 	}
+}
 
 void ANPCActor::Interact()
 {

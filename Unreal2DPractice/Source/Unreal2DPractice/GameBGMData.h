@@ -29,4 +29,7 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     USoundBase* GameOverVoice;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    USoundBase* GameOverViolinWithVoice;
 };

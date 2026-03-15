@@ -79,6 +79,20 @@ void UInteractionWidget::DisableAllButtons()
     if (Station_D) Station_D->SetIsEnabled(false);
 }
 
+void UInteractionWidget::PlaySubwaySelectSound()
+{
+    AAudioManager* AudioManager =
+        Cast<AAudioManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AAudioManager::StaticClass()));
+
+    UMyGameInstance* GI =
+        Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
+
+    if (AudioManager && GI && GI->SFXData && GI->SFXData->Mini_SubwaySelect)
+    {
+        AudioManager->PlaySFX2D(GI->SFXData->Mini_SubwaySelect);
+    }
+}
+
 void UInteractionWidget::LockButtons(bool bLock)
 {
     Station_A->SetIsEnabled(!bLock);
@@ -92,6 +106,7 @@ void UInteractionWidget::OnStation_AClicked()
     if (bHasSelected) return;
     UE_LOG(LogTemp, Log, TEXT("Station A clicked"));
     bHasSelected = true;
+    PlaySubwaySelectSound();
 
     HighlightCircle(Circle_A);
     DisableAllButtons();
@@ -111,6 +126,7 @@ void UInteractionWidget::OnStation_BClicked()
     if (bHasSelected) return;
     UE_LOG(LogTemp, Log, TEXT("Station B clicked"));
     bHasSelected = true;
+    PlaySubwaySelectSound();
 
     HighlightCircle(Circle_B);
     DisableAllButtons();
@@ -130,6 +146,7 @@ void UInteractionWidget::OnStation_CClicked()
     if (bHasSelected) return;
     UE_LOG(LogTemp, Log, TEXT("Station C clicked"));
     bHasSelected = true;
+    PlaySubwaySelectSound();
 
     HighlightCircle(Circle_C);
     DisableAllButtons();
@@ -149,6 +166,7 @@ void UInteractionWidget::OnStation_DClicked()
     if (bHasSelected) return;
     UE_LOG(LogTemp, Log, TEXT("Station D clicked"));
     bHasSelected = true;
+    PlaySubwaySelectSound();
 
     HighlightCircle(Circle_D);
     DisableAllButtons();

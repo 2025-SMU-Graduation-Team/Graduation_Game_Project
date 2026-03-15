@@ -19,6 +19,7 @@
 class AHidingSpot;
 class UPlayerCameraController;
 class UPaperFlipbook;
+class UAudioComponent;
 
 UCLASS()
 class UNREAL2DPRACTICE_API AMyPaperCharacter : public APaperCharacter
@@ -149,6 +150,9 @@ public:
 	class UPlayerCameraController* CameraController;
 
 private:
+	UPROPERTY(VisibleAnywhere, Category = "Audio")
+	TObjectPtr<UAudioComponent> WalkAudioComponent;
+
 	UPROPERTY(EditAnywhere, Category = "Animation")
 	class UPaperFlipbook* IdleAnimation;
 
@@ -168,6 +172,9 @@ private:
 	class UPaperFlipbook* ForcedFlipbook = nullptr;
 
 	void UpdateAnimation();
+	void UpdateWalkAudio();
+	void StartWalkLoop();
+	void StopWalkLoop();
 	void UpdateCharacterDirection(float AxisValue);
 	bool TryInteractFromEnterKey();
 };

@@ -63,6 +63,12 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     USoundBase* DoorOpen;
 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    USoundBase* TurnstileBeep;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    USoundBase* TurnstileOpen;
+
     /* Player */
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     USoundBase* PlayerWalk;
@@ -87,4 +93,7 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     USoundBase* PlayerDeathScream;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    USoundBase* PlayerDeathNPC;
 };

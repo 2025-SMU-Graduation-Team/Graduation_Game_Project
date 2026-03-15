@@ -21,5 +21,13 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+private:
+	void PlayOpenSoundAndUnlock();
+
+private:
+	UPROPERTY(EditAnywhere, Category = "Turnstile", meta = (ClampMin = "0.0"))
+	float OpenSoundDelay = 0.08f;
+
+	FTimerHandle OpenSoundTimerHandle;
 
 };

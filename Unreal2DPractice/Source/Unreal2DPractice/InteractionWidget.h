@@ -72,6 +72,7 @@ protected:
 
 	void HighlightCircle(UImage* TargetCircle);
 	void DisableAllButtons();
+	void PlaySubwaySelectSound();
 
 	void LockButtons(bool bLock);
 };

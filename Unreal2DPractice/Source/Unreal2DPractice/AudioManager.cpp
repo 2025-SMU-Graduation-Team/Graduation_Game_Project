@@ -25,12 +25,18 @@ void AAudioManager::BeginPlay()
 		SFXData = GI->SFXData;
 		BGMData = GI->BGMData;
 	}
+
+	UE_LOG(LogTemp, Warning, TEXT("[AudioManager] BeginPlay Name=%s GI=%s SFXData=%s BGMData=%s"),
+		*GetNameSafe(this),
+		*GetNameSafe(GI),
+		*GetNameSafe(SFXData),
+		*GetNameSafe(BGMData));
 }
 
 void AAudioManager::PlaySFX(USoundBase* Sound, FVector Location)
 {
 	if (!Sound) return;
-
+	
 	UGameplayStatics::PlaySoundAtLocation(
 		this,
 		Sound,

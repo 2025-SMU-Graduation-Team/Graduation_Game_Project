@@ -1,6 +1,9 @@
 #include "EndingChaseManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
+#include "AudioManager.h"
+#include "MyGameInstance.h"
+#include "GameBGMData.h"
 
 AEndingChaseManager::AEndingChaseManager()
 {
@@ -37,6 +40,18 @@ void AEndingChaseManager::OnLevelLoaded(ULevel* InLevel, UWorld* InWorld)
 
 void AEndingChaseManager::StartChase()
 {
+    AAudioManager* AudioManager =
+        Cast<AAudioManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AAudioManager::StaticClass()));
+
+    UMyGameInstance* GI =
+        Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
+
+    if (AudioManager && GI && GI->BGMData && GI->BGMData->Chasing)
+    {
+        AudioManager->StopBGM();
+        AudioManager->PlayBGM(GI->BGMData->Chasing);
+    }
+
     SpawnCurrentStage();
 }
 

@@ -7,6 +7,8 @@
 #include "LevelChangeActor.h"
 #include "MyGameInstance.h"
 #include "MyPaperCharacter.h"
+#include "AudioManager.h"
+#include "GameSFXData.h"
 
 ASubwayStateActor::ASubwayStateActor()
 {
@@ -95,6 +97,27 @@ void ASubwayStateActor::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 void ASubwayStateActor::SetState(ESubwayState NewState)
 {
     CurrentState = NewState;
+
+    if (CurrentState == ESubwayState::DoorsOpen)
+    {
+        AAudioManager* AudioManager =
+            Cast<AAudioManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AAudioManager::StaticClass()));
+
+        UMyGameInstance* GI = GetWorld()->GetGameInstance<UMyGameInstance>();
+
+        if (AudioManager && GI && GI->SFXData)
+        {
+            if (GI->SFXData->SubwayBrake)
+            {
+                AudioManager->PlaySFX(GI->SFXData->SubwayBrake, GetActorLocation());
+            }
+
+            if (GI->SFXData->SubwayBell)
+            {
+                AudioManager->PlaySFX(GI->SFXData->SubwayBell, GetActorLocation());
+            }
+        }
+    }
 
     const bool bEnable =
         (CurrentState == ESubwayState::DoorsOpen ||

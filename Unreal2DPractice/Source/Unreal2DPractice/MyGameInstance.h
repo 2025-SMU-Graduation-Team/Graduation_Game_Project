@@ -8,6 +8,15 @@
 
 class UGameSFXData;
 class UGameBGMData;
+class UUserWidget;
+
+UENUM(BlueprintType)
+enum class EDeathCause : uint8
+{
+	None,
+	Monster,
+	NPC
+};
 
 UCLASS()
 class UNREAL2DPRACTICE_API UMyGameInstance : public UGameInstance
@@ -23,4 +32,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio")
 	UGameBGMData* BGMData;
+
+	UPROPERTY(BlueprintReadWrite, Category = "State")
+	EDeathCause LastDeathCause = EDeathCause::None;
 };
