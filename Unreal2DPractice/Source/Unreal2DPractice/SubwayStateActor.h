@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "HiddenEndingReturnInterface.h"
 #include "SubwayStateActor.generated.h"
 
 class UBoxComponent;
@@ -10,6 +11,7 @@ class AEndingDirector;
 class ALevelChangeActor;
 class AMyPaperCharacter;
 class APlayerController;
+class AActor;
 
 UENUM()
 enum class ESubwayState : uint8
@@ -21,7 +23,7 @@ enum class ESubwayState : uint8
 };
 
 UCLASS()
-class UNREAL2DPRACTICE_API ASubwayStateActor : public AActor
+class UNREAL2DPRACTICE_API ASubwayStateActor : public AActor, public IHiddenEndingReturnInterface
 {
     GENERATED_BODY()
 
@@ -31,6 +33,7 @@ public:
     void Interact(AMyPaperCharacter* Player);
     void SetState(ESubwayState NewState);
     void SetLevelChangeLockActive(bool bLocked);
+    virtual void HandleHiddenEndingReturn_Implementation() override;
 
 protected:
     virtual void BeginPlay() override;
@@ -52,6 +55,7 @@ protected:
 
 private:
     const TCHAR* StateToString(ESubwayState State);
+    void RestoreConfiguredDoorsToOpenedState();
     void ShowInteractWidget(AMyPaperCharacter* Player);
     void HideInteractWidget();
     void UpdateWidgetPosition();
@@ -68,6 +72,9 @@ private:
     FVector HiddenTeleportLocation;
 
     UPROPERTY(EditAnywhere, Category = "Subway")
+    FName HiddenEndingFinalTargetLevelName;
+
+    UPROPERTY(EditAnywhere, Category = "Subway")
     FText InteractKey = FText::FromString("W");
 
     UPROPERTY(EditAnywhere, Category = "Subway")
@@ -75,6 +82,9 @@ private:
 
     UPROPERTY(EditInstanceOnly, Category = "Subway")
     TArray<TObjectPtr<ALevelChangeActor>> ManagedLevelChangeActors;
+
+    UPROPERTY(EditInstanceOnly, Category = "Subway")
+    TArray<TObjectPtr<AActor>> ManagedDoorActors;
 
     UPROPERTY()
     UUserWidget* ActiveWidget = nullptr;

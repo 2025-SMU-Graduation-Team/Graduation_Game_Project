@@ -3,6 +3,7 @@
 #include "MyPaperCharacter.h"
 #include "Engine/LevelStreaming.h"
 #include "EngineUtils.h"
+#include "HiddenEndingStateSubsystem.h"
 
 ALevelTransitionManager::ALevelTransitionManager()
 {
@@ -74,6 +75,14 @@ void ALevelTransitionManager::ChangeSubLevel(FName NextLevel)
 		LoadLevel(NextLevel);
 	}
 
+	FName PreviousSubLevel = CurrentSubLevel;
 	CurrentSubLevel = NextLevel;
+
+	if (UHiddenEndingStateSubsystem* HiddenEndingState =
+		GetGameInstance() ? GetGameInstance()->GetSubsystem<UHiddenEndingStateSubsystem>() : nullptr)
+	{
+		HiddenEndingState->NotifySubLevelChanged(PreviousSubLevel, NextLevel);
+	}
+
 	bIsTransitioning = false;
 }

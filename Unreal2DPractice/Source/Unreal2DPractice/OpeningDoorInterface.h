@@ -16,10 +16,13 @@ class IOpeningDoorInterface
 {
     GENERATED_BODY()
 
-    public:
+public:
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
     void OpenDoor();
 
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
     void CloseDoor();
+
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+    void RestoreOpenedState();
 };
