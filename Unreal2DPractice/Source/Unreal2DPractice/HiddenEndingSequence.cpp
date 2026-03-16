@@ -4,9 +4,6 @@
 #include "GameFramework/PlayerController.h"
 #include "TimerManager.h"
 #include "LevelTransitionManager.h"
-#include "AudioManager.h"
-#include "MyGameInstance.h"
-#include "GameBGMData.h"
 
 AHiddenEndingSequence::AHiddenEndingSequence()
 {
@@ -109,17 +106,6 @@ void AHiddenEndingSequence::FinishSequence()
             if (Manager)
             {
                 Manager->ChangeSubLevel(TEXT("HiddenEnding"));
-            }
-
-            AAudioManager* AudioManager =
-                Cast<AAudioManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AAudioManager::StaticClass()));
-            UMyGameInstance* GI =
-                Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
-
-            if (AudioManager && GI && GI->BGMData && GI->BGMData->GameClear)
-            {
-                AudioManager->StopBGM();
-                AudioManager->PlayBGM(GI->BGMData->GameClear);
             }
 
             FTimerHandle ShowHandle;
