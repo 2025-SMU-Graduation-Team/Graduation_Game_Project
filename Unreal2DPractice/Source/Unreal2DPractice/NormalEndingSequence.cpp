@@ -7,6 +7,9 @@
 #include "Camera/PlayerCameraManager.h"
 #include "TimerManager.h"
 #include "LevelTransitionManager.h"
+#include "AudioManager.h"
+#include "MyGameInstance.h"
+#include "GameBGMData.h"
 
 ANormalEndingSequence::ANormalEndingSequence()
 {
@@ -99,6 +102,17 @@ void ANormalEndingSequence::OnMoveFinished()
             if (Manager)
             {
                 Manager->ChangeSubLevel(TEXT("NormalEnding"));
+            }
+
+            AAudioManager* AudioManager =
+                Cast<AAudioManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AAudioManager::StaticClass()));
+            UMyGameInstance* GI =
+                Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
+
+            if (AudioManager && GI && GI->BGMData && GI->BGMData->GameClear)
+            {
+                AudioManager->StopBGM();
+                AudioManager->PlayBGM(GI->BGMData->GameClear);
             }
 
             PC->PlayerCameraManager->StartCameraFade(
