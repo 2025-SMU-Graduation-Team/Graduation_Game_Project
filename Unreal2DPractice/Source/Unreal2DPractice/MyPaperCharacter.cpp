@@ -59,7 +59,7 @@ void AMyPaperCharacter::BeginPlay()
 
 	DefaultSpriteOffset = GetSprite()->GetRelativeLocation();
 
-	if (Inventory)
+	/*if (Inventory)
 	{
 		Inventory->OnEquipItemChanged.RemoveAll(this); 
 
@@ -67,7 +67,7 @@ void AMyPaperCharacter::BeginPlay()
 			this,
 			&AMyPaperCharacter::OnItemChanged
 		);
-	}
+	}*/
 }
 
 void AMyPaperCharacter::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,AActor* OtherActor,UPrimitiveComponent* OtherComp,
@@ -391,13 +391,6 @@ void AMyPaperCharacter::OnHideReleased(const FInputActionValue& Value)
 	if (!bIsHidden) return;
 
 	ExitHide();
-}
-
-void AMyPaperCharacter::OnItemChanged(EItemType NewType)
-{
-	EquippedItem = NewType;
-
-	UE_LOG(LogTemp, Log, TEXT("Equipped Tool: %s"), *UEnum::GetValueAsString(NewType));
 }
 
 void AMyPaperCharacter::SetCurrentSubway(ASubwayStateActor* Subway)
