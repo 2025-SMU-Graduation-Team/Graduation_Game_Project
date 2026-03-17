@@ -91,9 +91,6 @@ public:
 	UFUNCTION()
 	void EnterCutScene(const FInputActionValue& Value);
 
-	void OnSelectSlot(const FInputActionValue& Value);
-	void OnUseItem(const FInputActionValue& Value);
-
 	UFUNCTION()
 	void PlayDeath();
 
@@ -137,15 +134,15 @@ public:
 	UPROPERTY()
 	ASubwayStateActor* CurrentSubway;
 
+	//Inventory
+
+	void OnSelectSlot(const FInputActionValue& Value);
+	void OnUseItem(const FInputActionValue& Value);
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UInventoryComponent* Inventory;
 
-	UFUNCTION()
-	void OnItemChanged(EItemType NewType);
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item")
-	EItemType EquippedItem = EItemType::None;
-
+	// Camera
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UPlayerCameraController* CameraController;
 
