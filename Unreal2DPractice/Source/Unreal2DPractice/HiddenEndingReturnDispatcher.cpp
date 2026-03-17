@@ -2,6 +2,7 @@
 
 #include "HiddenEndingReturnInterface.h"
 #include "HiddenEndingStateSubsystem.h"
+#include "OpeningDoorInterface.h"
 
 AHiddenEndingReturnDispatcher::AHiddenEndingReturnDispatcher()
 {
@@ -12,7 +13,18 @@ void AHiddenEndingReturnDispatcher::BeginPlay()
 {
     Super::BeginPlay();
 
-    if (!ShouldDispatch())
+    const bool bShouldDispatch = ShouldDispatch();
+    UE_LOG(
+        LogTemp,
+        Log,
+        TEXT("[HiddenEndingReturnDispatcher] BeginPlay on %s TriggerMode=%d TargetLevel=%s ShouldDispatch=%s"),
+        *GetName(),
+        static_cast<int32>(TriggerMode),
+        *TargetLevelName.ToString(),
+        bShouldDispatch ? TEXT("true") : TEXT("false")
+    );
+
+    if (!bShouldDispatch)
     {
         return;
     }
@@ -47,9 +59,28 @@ void AHiddenEndingReturnDispatcher::ActivateManagedActors()
             continue;
         }
 
+        UE_LOG(
+            LogTemp,
+            Log,
+            TEXT("[HiddenEndingReturnDispatcher] Activating actor %s from dispatcher %s"),
+            *Actor->GetName(),
+            *GetName()
+        );
+
         Actor->SetActorHiddenInGame(false);
         Actor->SetActorEnableCollision(bEnableCollisionOnActivate);
         Actor->SetActorTickEnabled(bEnableTickOnActivate);
+
+        if (Actor->GetClass()->ImplementsInterface(UOpeningDoorInterface::StaticClass()))
+        {
+            UE_LOG(
+                LogTemp,
+                Log,
+                TEXT("[HiddenEndingReturnDispatcher] Restoring door state for %s"),
+                *Actor->GetName()
+            );
+            IOpeningDoorInterface::Execute_RestoreOpenedState(Actor);
+        }
     }
 }
 
@@ -61,6 +92,14 @@ void AHiddenEndingReturnDispatcher::NotifyManagedActors()
         {
             continue;
         }
+
+        UE_LOG(
+            LogTemp,
+            Log,
+            TEXT("[HiddenEndingReturnDispatcher] Notifying actor %s from dispatcher %s"),
+            *Actor->GetName(),
+            *GetName()
+        );
 
         if (Actor->GetClass()->ImplementsInterface(UHiddenEndingReturnInterface::StaticClass()))
         {

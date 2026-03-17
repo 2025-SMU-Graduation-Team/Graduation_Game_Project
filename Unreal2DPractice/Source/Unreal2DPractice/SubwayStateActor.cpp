@@ -9,6 +9,7 @@
 #include "MyGameInstance.h"
 #include "MyPaperCharacter.h"
 #include "OpeningDoorInterface.h"
+#include "SubLevelTaskManager.h"
 #include "AudioManager.h"
 #include "GameSFXData.h"
 
@@ -49,7 +50,15 @@ void ASubwayStateActor::BeginPlay()
     }
 
     SetState(CurrentState);
-    UpdateManagedLevelChangeActors();
+
+    if (USubLevelTaskManager* TaskManager = GetGameInstance() ? GetGameInstance()->GetSubsystem<USubLevelTaskManager>() : nullptr)
+    {
+        TaskManager->RefreshSubwayLockStates();
+    }
+    else
+    {
+        UpdateManagedLevelChangeActors();
+    }
 }
 
 void ASubwayStateActor::Tick(float DeltaTime)

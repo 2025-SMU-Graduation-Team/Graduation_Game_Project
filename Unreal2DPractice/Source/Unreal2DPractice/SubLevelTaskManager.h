@@ -40,10 +40,11 @@ class UNREAL2DPRACTICE_API USubLevelTaskManager : public UGameInstanceSubsystem
 {
     GENERATED_BODY()
 
-    public:
+public:
     void RegisterWidget(UUserWidget* Widget);
     void RequestTask(UDelayedTaskData* TaskData);
     void OnSubLevelEntered();
+    void RefreshSubwayLockStates();
 
     void CloseDoor(AActor* Actor);
 
