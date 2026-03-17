@@ -26,7 +26,7 @@ private:
 	void UnloadLevel(FName LevelName);
 
 private:
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "LevelTransition", meta = (AllowPrivateAccess = "true"))
 	FName CurrentSubLevel;
 
 	UPROPERTY()

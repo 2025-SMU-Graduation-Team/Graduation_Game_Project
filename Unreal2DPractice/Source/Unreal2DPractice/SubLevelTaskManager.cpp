@@ -1,6 +1,7 @@
 #include "SubLevelTaskManager.h"
 #include "TimerManager.h"
 #include "Engine/World.h"
+#include "EngineUtils.h"
 #include "UISelectedManager.h"
 #include "OpeningDoorInterface.h"
 #include "SubwayStateActor.h"
@@ -40,13 +41,9 @@ void USubLevelTaskManager::RequestTask(UDelayedTaskData* TaskData)
     if (!TaskData)
         return;
 
-    if (TaskData->SubwayStateActor.IsValid())
-    {
-        TaskData->SubwayStateActor->SetLevelChangeLockActive(true);
-    }
-
     UE_LOG(LogTemp, Warning, TEXT("RequestTask registered"));
     PendingTasks.Add(TaskData);
+    RefreshSubwayLockStates();
     NotifyWidgets(true);
 }
 
@@ -60,6 +57,7 @@ void USubLevelTaskManager::OnSubLevelEntered()
     }
 
     PendingTasks.Empty();
+    RefreshSubwayLockStates();
 }
 
 void USubLevelTaskManager::ScheduleTask(UDelayedTaskData* TaskData)
@@ -87,7 +85,10 @@ void USubLevelTaskManager::ScheduleTask(UDelayedTaskData* TaskData)
 void USubLevelTaskManager::ExecuteTask(UDelayedTaskData* TaskData)
 {
     if (!TaskData)
+    {
+        RefreshSubwayLockStates();
         return;
+    }
 
     UE_LOG(LogTemp, Warning, TEXT("ExecuteTask"));
 
@@ -95,6 +96,7 @@ void USubLevelTaskManager::ExecuteTask(UDelayedTaskData* TaskData)
     if (!Actor)
     {
         UE_LOG(LogTemp, Error, TEXT("TargetActor is null"));
+        RefreshSubwayLockStates();
         return;
     }
 
@@ -112,6 +114,7 @@ void USubLevelTaskManager::ExecuteTask(UDelayedTaskData* TaskData)
     NewTask.MoveSpeed = TaskData->MoveSpeed;
 
     ActiveMoveTasks.Add(NewTask);
+    RefreshSubwayLockStates();
 
     if (!GetWorld()->GetTimerManager().IsTimerActive(MoveTickTimerHandle))
     {
@@ -180,6 +183,8 @@ void USubLevelTaskManager::TickMove()
     {
         ActiveMoveTasks.RemoveAt(CompletedTasks[i]);
     }
+
+    RefreshSubwayLockStates();
 
     if (ActiveMoveTasks.Num() == 0)
     {
@@ -276,6 +281,44 @@ bool USubLevelTaskManager::HandleMoveForward(FMoveTask& Task, float Delta)
     }
 
     return false;
+}
+
+void USubLevelTaskManager::RefreshSubwayLockStates()
+{
+    UWorld* World = GetWorld();
+    if (!World)
+    {
+        return;
+    }
+
+    TSet<TWeakObjectPtr<ASubwayStateActor>> LockedSubwayActors;
+
+    for (UDelayedTaskData* TaskData : PendingTasks)
+    {
+        if (IsValid(TaskData) && TaskData->SubwayStateActor.IsValid())
+        {
+            LockedSubwayActors.Add(TaskData->SubwayStateActor.Get());
+        }
+    }
+
+    for (const FMoveTask& Task : ActiveMoveTasks)
+    {
+        if (IsValid(Task.TaskData) && Task.TaskData->SubwayStateActor.IsValid())
+        {
+            LockedSubwayActors.Add(Task.TaskData->SubwayStateActor.Get());
+        }
+    }
+
+    for (TActorIterator<ASubwayStateActor> It(World); It; ++It)
+    {
+        ASubwayStateActor* SubwayStateActor = *It;
+        if (!SubwayStateActor)
+        {
+            continue;
+        }
+
+        SubwayStateActor->SetLevelChangeLockActive(LockedSubwayActors.Contains(SubwayStateActor));
+    }
 }
 
 void USubLevelTaskManager::OpenDoor(AActor* Actor)

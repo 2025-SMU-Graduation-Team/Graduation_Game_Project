@@ -59,19 +59,22 @@ void AConfigurableDoorActor::Tick(float DeltaTime)
 
 void AConfigurableDoorActor::OpenDoor_Implementation()
 {
+    UE_LOG(LogTemp, Log, TEXT("[ConfigurableDoorActor] OpenDoor called on %s"), *GetName());
     TransitionTargetAlpha = 1.f;
     StartTransition();
 }
 
 void AConfigurableDoorActor::CloseDoor_Implementation()
 {
+    UE_LOG(LogTemp, Log, TEXT("[ConfigurableDoorActor] CloseDoor called on %s"), *GetName());
     TransitionTargetAlpha = 0.f;
     StartTransition();
 }
 
 void AConfigurableDoorActor::RestoreOpenedState_Implementation()
 {
-    FinishTransition(1.f);
+    UE_LOG(LogTemp, Log, TEXT("[ConfigurableDoorActor] RestoreOpenedState called on %s"), *GetName());
+    ApplyOpenTransform();
 }
 
 void AConfigurableDoorActor::ApplyClosedTransform()
