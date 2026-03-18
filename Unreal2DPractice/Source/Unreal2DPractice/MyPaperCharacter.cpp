@@ -59,15 +59,15 @@ void AMyPaperCharacter::BeginPlay()
 
 	DefaultSpriteOffset = GetSprite()->GetRelativeLocation();
 
-	/*if (Inventory)
+	if (Inventory)
 	{
 		Inventory->OnEquipItemChanged.RemoveAll(this); 
 
-		Inventory->OnEquipItemChanged.AddDynamic(
+		/*Inventory->OnEquipItemChanged.AddDynamic(
 			this,
 			&AMyPaperCharacter::OnItemChanged
-		);
-	}*/
+		);*/
+	}
 }
 
 void AMyPaperCharacter::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,AActor* OtherActor,UPrimitiveComponent* OtherComp,
