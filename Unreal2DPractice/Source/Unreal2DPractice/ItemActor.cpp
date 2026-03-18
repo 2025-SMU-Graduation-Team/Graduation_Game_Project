@@ -24,8 +24,9 @@ void AItemActor::Interact()
     if (!Player) return;
 
     Player->bEnableMovement = false;
+    Player->Inventory->RequestPickup(this);
 
-    switch (ItemType)
+    /*switch (ItemType)
     {
     case EItemType::Ghost:
         Player->PlayDeath();
@@ -40,7 +41,7 @@ void AItemActor::Interact()
     default:
         Player->Inventory->RequestPickup(this); 
         break;
-    }
+    }*/
 }
 
 
