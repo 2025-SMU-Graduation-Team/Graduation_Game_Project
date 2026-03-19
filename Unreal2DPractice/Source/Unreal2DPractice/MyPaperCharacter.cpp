@@ -63,10 +63,10 @@ void AMyPaperCharacter::BeginPlay()
 	{
 		Inventory->OnEquipItemChanged.RemoveAll(this); 
 
-		Inventory->OnEquipItemChanged.AddDynamic(
+		/*Inventory->OnEquipItemChanged.AddDynamic(
 			this,
 			&AMyPaperCharacter::OnItemChanged
-		);
+		);*/
 	}
 }
 
@@ -391,13 +391,6 @@ void AMyPaperCharacter::OnHideReleased(const FInputActionValue& Value)
 	if (!bIsHidden) return;
 
 	ExitHide();
-}
-
-void AMyPaperCharacter::OnItemChanged(EItemType NewType)
-{
-	EquippedItem = NewType;
-
-	UE_LOG(LogTemp, Log, TEXT("Equipped Tool: %s"), *UEnum::GetValueAsString(NewType));
 }
 
 void AMyPaperCharacter::SetCurrentSubway(ASubwayStateActor* Subway)

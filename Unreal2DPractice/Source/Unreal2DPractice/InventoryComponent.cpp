@@ -69,6 +69,17 @@ void UInventoryComponent::ConfirmPickupYes()
 	if (!PendingItem) return;
 
 	AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(GetOwner());
+
+	if (PendingItem->ItemType == EItemType::Ghost)
+	{
+		InventoryWidget->HideConfirmPopup();
+		PendingItem->Destroy();
+		PendingItem = nullptr;
+
+		Player->PlayDeath();
+		return;
+	}
+
 	AddItem(PendingItem);
 
 	AAudioManager* AudioManager =
@@ -88,13 +99,10 @@ void UInventoryComponent::ConfirmPickupYes()
 		PC->SetInputMode(FInputModeGameOnly());
 	}
 
-	if (InventoryWidget)
-	{
-		InventoryWidget->HideConfirmPopup();
-	}
-
+	InventoryWidget->HideConfirmPopup();
 	PendingItem->Destroy();
 	PendingItem = nullptr;
+
 	Player->bEnableMovement = true; 
 }
 
@@ -121,7 +129,7 @@ void UInventoryComponent::ConfirmPickupNo()
 
 void UInventoryComponent::SelectSlot(int32 Index)
 {
-	InventoryWidget->ShowBorder(Index);
+	//InventoryWidget->ShowBorder(Index);
 
 	if (!Items.IsValidIndex(Index))
 	{
@@ -132,10 +140,25 @@ void UInventoryComponent::SelectSlot(int32 Index)
 	{
 		SelectedInvenIndex = INDEX_NONE;
 		InventoryWidget->HideItemInfoPopup();
+		InventoryWidget->HideAllBorder();
 		return;
 	}
 
 	SelectedInvenIndex = Index;
+
+	if (SelectedInvenIndex != INDEX_NONE)
+	{
+		InventoryWidget->ShowBorder(SelectedInvenIndex);
+		InventoryWidget->ShowItemInfoPopup(
+			Items[SelectedInvenIndex].ItemName,
+			Items[SelectedInvenIndex].ItemDescription
+		);
+	}
+	else
+	{
+		InventoryWidget->HideAllBorder();
+		InventoryWidget->HideItemInfoPopup();
+	}
 
 	AAudioManager* AudioManager =
 	Cast<AAudioManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AAudioManager::StaticClass()));
@@ -148,7 +171,6 @@ void UInventoryComponent::SelectSlot(int32 Index)
 		AudioManager->PlaySFX2D(GI->SFXData->PlayerChangeTool);
 	}
 	
-	InventoryWidget->ShowItemInfoPopup(Items[Index].ItemName, Items[Index].ItemDescription);
 }
 
 void UInventoryComponent::UseSelectedItem()

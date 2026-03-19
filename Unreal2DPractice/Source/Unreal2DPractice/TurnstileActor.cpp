@@ -23,7 +23,7 @@ void ATurnstileActor::Interact()
 
     if (!Player) return;
 
-    if (Player->EquippedItem == EItemType::Card)  
+    if (Player->Inventory->EquippedItemType == EItemType::Card)  
     {
         AAudioManager* AudioManager =
             Cast<AAudioManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AAudioManager::StaticClass()));
