@@ -34,6 +34,21 @@ void UPlayerCameraController::SetLimitVolume(ACameraLimitVolume* NewVolume)
     LimitVolume = NewVolume;
 }
 
+void UPlayerCameraController::ClearLimitVolume(ACameraLimitVolume* VolumeToClear, bool bForceClear)
+{
+    if (LimitVolume != VolumeToClear)
+    {
+        return;
+    }
+
+    if (bKeepLastLimitWhenExited && !bForceClear)
+    {
+        return;
+    }
+
+    LimitVolume = nullptr;
+}
+
 void UPlayerCameraController::TickComponent(
     float DeltaTime,
     ELevelTick TickType,

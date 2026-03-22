@@ -60,7 +60,7 @@ void ACameraLimitVolume::OnOverlapEnd(
 
     if (CameraController)
     {
-        CameraController->SetLimitVolume(nullptr);
+        CameraController->ClearLimitVolume(this);
     }
 }
 
