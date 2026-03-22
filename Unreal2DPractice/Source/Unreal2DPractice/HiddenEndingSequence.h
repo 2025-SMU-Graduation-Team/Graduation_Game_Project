@@ -48,6 +48,9 @@ private:
 
     FTimerHandle MoveTimer;
 
+    UPROPERTY(EditDefaultsOnly, Category = "Ending")
+    FName DestinationLevelName = TEXT("HiddenEnding");
+
     UPROPERTY(EditDefaultsOnly)
     class UPaperFlipbook* BackFlipbook;
 };

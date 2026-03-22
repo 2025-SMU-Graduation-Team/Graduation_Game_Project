@@ -5,6 +5,7 @@
 #include "LevelTransitionManager.generated.h"
 
 class AMyPaperCharacter;
+class ULevel;
 
 UCLASS()
 class UNREAL2DPRACTICE_API ALevelTransitionManager : public AActor
@@ -16,12 +17,14 @@ class UNREAL2DPRACTICE_API ALevelTransitionManager : public AActor
 
 	static ALevelTransitionManager* Get(UWorld* World);
 
-	void ChangeSubLevel(FName LevelName);
+	void ChangeSubLevel(FName LevelName, AMyPaperCharacter* PlayerToTeleport = nullptr, const FVector& TeleportLocation = FVector::ZeroVector);
 
 protected:
 	virtual void BeginPlay() override;
 
 private:
+	void OnLevelLoaded(ULevel* LoadedLevel, UWorld* World);
+	void FinishTransition();
 	void LoadLevel(FName LevelName);
 	void UnloadLevel(FName LevelName);
 
@@ -31,4 +34,16 @@ private:
 
 	UPROPERTY()
 	bool bIsTransitioning;
+
+	UPROPERTY()
+	FName PendingNextLevel;
+
+	UPROPERTY()
+	FName PendingPreviousLevel;
+
+	UPROPERTY()
+	TObjectPtr<AMyPaperCharacter> PendingTeleportPlayer;
+
+	UPROPERTY()
+	FVector PendingTeleportLocation = FVector::ZeroVector;
 };

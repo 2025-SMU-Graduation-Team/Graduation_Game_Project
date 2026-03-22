@@ -100,11 +100,13 @@ void AVerticalTraversalActor::FinishTraversal()
 	{
 		if (ALevelTransitionManager* Manager = ALevelTransitionManager::Get(GetWorld()))
 		{
-			Manager->ChangeSubLevel(TargetLevelName);
+			Manager->ChangeSubLevel(TargetLevelName, TraversingPlayer, TargetTeleportLocation);
 		}
 	}
-
-	TraversingPlayer->SetActorLocation(TargetTeleportLocation);
+	else
+	{
+		TraversingPlayer->SetActorLocation(TargetTeleportLocation);
+	}
 	TraversingPlayer->ClearForcedFlipbook();
 
 	if (bRestoreMovementAfterTraversal)

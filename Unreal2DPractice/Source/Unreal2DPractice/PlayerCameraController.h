@@ -25,12 +25,16 @@ public:
     ) override;
 
     void SetLimitVolume(ACameraLimitVolume* NewVolume);
+    void ClearLimitVolume(ACameraLimitVolume* VolumeToClear, bool bForceClear = false);
 
     UPROPERTY()
     UCameraComponent* Camera;
 
     UPROPERTY(EditAnywhere, Category = "Camera")
     FVector cameraOffset = FVector::ZeroVector;
+
+    UPROPERTY(EditAnywhere, Category = "Camera")
+    bool bKeepLastLimitWhenExited = true;
 private:
     FVector GetClampedCameraTarget() const;
     float GetHalfViewHeight() const;

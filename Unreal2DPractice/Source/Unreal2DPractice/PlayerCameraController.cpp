@@ -32,6 +32,28 @@ void UPlayerCameraController::BeginPlay()
 void UPlayerCameraController::SetLimitVolume(ACameraLimitVolume* NewVolume)
 {
     LimitVolume = NewVolume;
+
+    if (!SpringArm || !LimitVolume)
+    {
+        return;
+    }
+
+    SpringArm->SetWorldLocation(GetClampedCameraTarget());
+}
+
+void UPlayerCameraController::ClearLimitVolume(ACameraLimitVolume* VolumeToClear, bool bForceClear)
+{
+    if (LimitVolume != VolumeToClear)
+    {
+        return;
+    }
+
+    if (bKeepLastLimitWhenExited && !bForceClear)
+    {
+        return;
+    }
+
+    LimitVolume = nullptr;
 }
 
 void UPlayerCameraController::TickComponent(

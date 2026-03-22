@@ -42,6 +42,7 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
+	bool TryStartChaseForLevelName(const FString& LoadedLevelName);
 	void SpawnCurrentStage();
 	void StartChase();
 
@@ -60,6 +61,7 @@ private:
 	FTimerHandle FirstSpawnTimerHandle;
 
 	int32 CurrentStageIndex = 0;
+	bool bHasStartedCurrentStage = false;
 
 	UPROPERTY()
 	AEndingMonster* ActiveMonster = nullptr;

@@ -10,6 +10,7 @@
 #include "InteractionWidget.generated.h"
 
 class UButton;
+class UTexture2D;
 
 UCLASS()
 class UNREAL2DPRACTICE_API UInteractionWidget : public UUserWidget, public ITaskWidgetInterface
@@ -18,6 +19,7 @@ class UNREAL2DPRACTICE_API UInteractionWidget : public UUserWidget, public ITask
 	
 public:
 	virtual void NativeConstruct() override;
+	virtual void NativeDestruct() override;
 
 	virtual void UpdateTaskState_Implementation(bool bTaskRunning) override;
 
@@ -67,12 +69,19 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Task")
 	UDelayedTaskData* StationDData;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Visual")
+	TObjectPtr<UTexture2D> DefaultCircleTexture;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Visual")
+	TObjectPtr<UTexture2D> SelectedCircleTexture;
+
 protected:
 	bool bHasSelected = false;
 
 	void HighlightCircle(UImage* TargetCircle);
 	void DisableAllButtons();
 	void PlaySubwaySelectSound();
+	void SetCircleVisual(UImage* TargetCircle, bool bSelected);
 
 	void LockButtons(bool bLock);
 };

@@ -33,7 +33,5 @@ void ADoorInteractionActor::Interact()
 		);
 	}
 
-	Manager->ChangeSubLevel(TargetLevelName);
-
-	CachedPlayer->SetActorLocation(TargetTeleportLocation);
+	Manager->ChangeSubLevel(TargetLevelName, CachedPlayer, TargetTeleportLocation);
 }
