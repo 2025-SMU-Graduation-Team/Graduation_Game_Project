@@ -147,6 +147,8 @@ public:
 	class UPlayerCameraController* CameraController;
 
 private:
+	bool ResolveInitialCameraLimit();
+
 	UPROPERTY(VisibleAnywhere, Category = "Audio")
 	TObjectPtr<UAudioComponent> WalkAudioComponent;
 
@@ -174,4 +176,6 @@ private:
 	void StopWalkLoop();
 	void UpdateCharacterDirection(float AxisValue);
 	bool TryInteractFromEnterKey();
+
+	bool bPendingInitialCameraLimitResolve = true;
 };

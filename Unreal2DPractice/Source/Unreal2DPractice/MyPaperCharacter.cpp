@@ -57,6 +57,8 @@ void AMyPaperCharacter::BeginPlay()
 		&AMyPaperCharacter::OnOverlapBegin
 	);
 
+	bPendingInitialCameraLimitResolve = !ResolveInitialCameraLimit();
+
 	DefaultSpriteOffset = GetSprite()->GetRelativeLocation();
 
 	if (Inventory)
@@ -106,6 +108,12 @@ void AMyPaperCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 void AMyPaperCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (bPendingInitialCameraLimitResolve)
+	{
+		bPendingInitialCameraLimitResolve = !ResolveInitialCameraLimit();
+	}
+
 	UpdateAnimation();
 	UpdateWalkAudio();
 }
@@ -472,4 +480,34 @@ void AMyPaperCharacter::StopWalkLoop()
 	}
 
 	WalkAudioComponent->Stop();
+}
+
+bool AMyPaperCharacter::ResolveInitialCameraLimit()
+{
+	if (!CameraController || !GetCapsuleComponent())
+	{
+		return false;
+	}
+
+	TArray<AActor*> CameraLimitVolumes;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACameraLimitVolume::StaticClass(), CameraLimitVolumes);
+
+	const FBox PlayerBounds = GetCapsuleComponent()->Bounds.GetBox();
+
+	for (AActor* CameraLimitActor : CameraLimitVolumes)
+	{
+		ACameraLimitVolume* Volume = Cast<ACameraLimitVolume>(CameraLimitActor);
+		if (!Volume)
+		{
+			continue;
+		}
+
+		if (Volume->GetLimitBounds().Intersect(PlayerBounds))
+		{
+			CameraController->SetLimitVolume(Volume);
+			return true;
+		}
+	}
+
+	return false;
 }

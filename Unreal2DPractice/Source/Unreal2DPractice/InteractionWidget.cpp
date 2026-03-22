@@ -11,10 +11,42 @@
 #include "AudioManager.h"
 #include "MyGameInstance.h"
 #include "GameSFXData.h"
+#include "MyPaperCharacter.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Engine/Texture2D.h"
+
+namespace
+{
+    void SetInteractionWidgetMovementLocked(UUserWidget* Widget, bool bLocked)
+    {
+        if (!Widget)
+        {
+            return;
+        }
+
+        AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(Widget->GetOwningPlayerPawn());
+        if (!Player)
+        {
+            return;
+        }
+
+        Player->bEnableMovement = !bLocked;
+
+        if (bLocked)
+        {
+            if (UCharacterMovementComponent* MovementComponent = Player->GetCharacterMovement())
+            {
+                MovementComponent->StopMovementImmediately();
+            }
+        }
+    }
+}
 
 void UInteractionWidget::NativeConstruct()
 {
     Super::NativeConstruct();
+
+    SetInteractionWidgetMovementLocked(this, true);
 
     UUISelectedManager* State = GetGameInstance()->GetSubsystem<UUISelectedManager>();
 
@@ -27,10 +59,10 @@ void UInteractionWidget::NativeConstruct()
     if (Station_D)
         Station_D->OnClicked.AddDynamic(this, &UInteractionWidget::OnStation_DClicked);
 
-    if (Circle_A) Circle_A->SetColorAndOpacity(FLinearColor::Gray);
-    if (Circle_B) Circle_B->SetColorAndOpacity(FLinearColor::Gray);
-    if (Circle_C) Circle_C->SetColorAndOpacity(FLinearColor::Gray);
-    if (Circle_D) Circle_D->SetColorAndOpacity(FLinearColor::Gray);
+    SetCircleVisual(Circle_A, false);
+    SetCircleVisual(Circle_B, false);
+    SetCircleVisual(Circle_C, false);
+    SetCircleVisual(Circle_D, false);
 
     if (State->LastSelectedStation == "StationA") {
         HighlightCircle(Circle_A);
@@ -59,6 +91,12 @@ void UInteractionWidget::NativeConstruct()
     }
 }
 
+void UInteractionWidget::NativeDestruct()
+{
+    SetInteractionWidgetMovementLocked(this, false);
+    Super::NativeDestruct();
+}
+
 void UInteractionWidget::UpdateTaskState_Implementation(bool bTaskRunning)
 {
     LockButtons(bTaskRunning);
@@ -68,7 +106,7 @@ void UInteractionWidget::HighlightCircle(UImage* TargetCircle)
 {
     if (!TargetCircle) return;
 
-    TargetCircle->SetColorAndOpacity(FLinearColor::Yellow);
+    SetCircleVisual(TargetCircle, true);
 }
 
 void UInteractionWidget::DisableAllButtons()
@@ -91,6 +129,24 @@ void UInteractionWidget::PlaySubwaySelectSound()
     {
         AudioManager->PlaySFX2D(GI->SFXData->Mini_SubwaySelect);
     }
+}
+
+void UInteractionWidget::SetCircleVisual(UImage* TargetCircle, bool bSelected)
+{
+    if (!TargetCircle)
+    {
+        return;
+    }
+
+    UTexture2D* TargetTexture = bSelected ? SelectedCircleTexture : DefaultCircleTexture;
+    if (TargetTexture)
+    {
+        TargetCircle->SetBrushFromTexture(TargetTexture, true);
+        TargetCircle->SetColorAndOpacity(FLinearColor::White);
+        return;
+    }
+
+    TargetCircle->SetColorAndOpacity(bSelected ? FLinearColor::Yellow : FLinearColor::Gray);
 }
 
 void UInteractionWidget::LockButtons(bool bLock)
