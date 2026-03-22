@@ -340,7 +340,8 @@ void AMyPaperCharacter::EnterHide()
 	StopWalkLoop();
 
 	AAudioManager* AudioManager =
-		Cast<AAudioManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AAudioManager::StaticClass()));
+		Cast<AAudioManager>(UGameplayStatics::GetActorOfClass(GetWorld(),
+		 AAudioManager::StaticClass()));
 
 	UMyGameInstance* GI =
 		Cast<UMyGameInstance>(GetWorld()->GetGameInstance());

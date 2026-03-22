@@ -124,6 +124,12 @@ FVector AMonsterSpawnManager::ComputeSpawnLocation(const AMyPaperCharacter* Play
 
 void AMonsterSpawnManager::TrySpawn(ESpawnReason Reason)
 {
+	if (!bPlayerInSpawnArea)
+	{
+		UE_LOG(LogTemp, Log, TEXT("[MonsterSpawnManager] Skip spawn (Outside Spawn Area)"));
+		return;
+	}
+	
 	if (bPlayerInControlRoom)
 	{
 		UE_LOG(LogTemp, Log, TEXT("[MonsterSpawnManager] Skip spawn (Control Room)"));
@@ -196,4 +202,11 @@ void AMonsterSpawnManager::TrySpawn(ESpawnReason Reason)
         Reason == ESpawnReason::Random ? TEXT("Random") : TEXT("Event"),
         *SpawnLoc.ToString()
     );
+}
+
+void AMonsterSpawnManager::SetPlayerInSpawnArea(bool bInSpawnArea)
+{
+	bPlayerInSpawnArea = bInSpawnArea;
+
+	UE_LOG(LogTemp, Warning, TEXT("[MonsterSpawnManager] SpawnArea=%d"), bPlayerInSpawnArea ? 1 : 0);
 }

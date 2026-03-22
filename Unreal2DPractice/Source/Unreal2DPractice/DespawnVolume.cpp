@@ -9,17 +9,17 @@ ADespawnVolume::ADespawnVolume()
 	Box = CreateDefaultSubobject<UBoxComponent>(TEXT("Box"));
 	RootComponent = Box;
 
-	Box->SetCollisionEnabled(ECollisionEnabled::QueryOnly); // Overlap Àü¿ë
-	Box->SetCollisionObjectType(ECC_WorldStatic); // º¼·ýÀº °íÁ¤ ÁöÇü Ãë±ÞÀÌ ÀÚ¿¬½º·¯¿ò
+	Box->SetCollisionEnabled(ECollisionEnabled::QueryOnly); // Overlap ï¿½ï¿½ï¿½ï¿½
+	Box->SetCollisionObjectType(ECC_WorldStatic); // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ú¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
-	//Box->SetCollisionResponseToAllChannels(ECR_Ignore); // ±âº»Àº ÀüºÎ ¹«½Ã
-	//Box->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Overlap); // ¸ó½ºÅÍ(´ëºÎºÐ WorldDynamic)¸¸ Àâ±â
+	//Box->SetCollisionResponseToAllChannels(ECR_Ignore); // ï¿½âº»ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+	//Box->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Overlap); // ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½Îºï¿½ WorldDynamic)ï¿½ï¿½ ï¿½ï¿½ï¿½
 	Box->SetCollisionResponseToAllChannels(ECR_Overlap);
 
-	Box->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore); // ÇÃ·¹ÀÌ¾î´Â ¹«½Ã(µð¹ö±ë ³ëÀÌÁî Á¦°Å)
+	Box->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore); // ï¿½Ã·ï¿½ï¿½Ì¾ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
 	Box->SetGenerateOverlapEvents(true);
 
-	Box->SetBoxExtent(FVector(200.f, 200.f, 400.f)); // ±âº» Å©±â(·¹º§¿¡¼­ ´õ Å©°Ô Á¶Á¤ °¡´É)
+	Box->SetBoxExtent(FVector(200.f, 200.f, 400.f)); // ï¿½âº» Å©ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ Å©ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
 }
 
 void ADespawnVolume::BeginPlay()
@@ -53,13 +53,6 @@ void ADespawnVolume::OnBoxBeginOverlap(
 	AMyPaperMonster* Monster = Cast<AMyPaperMonster>(OtherActor);
 	if (!Monster) return;
 
-	//if (OtherComp != Monster->GetHitBox())
-	//{g
-	//	UE_LOG(LogTemp, Warning, TEXT("[DespawnVolume] Not Monster HitBox, ignore"));
-	//	return;
-	//}
-
 	UE_LOG(LogTemp, Warning, TEXT("[DespawnVolume] Despawn monster: %s"), *GetNameSafe(Monster));
 	Monster->Destroy();
 }
-

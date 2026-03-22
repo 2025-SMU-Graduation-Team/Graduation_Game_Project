@@ -72,6 +72,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Monster")
 	void ForceDespawnMonster();
 
+	UFUNCTION(BlueprintCallable, Category = "Monster")
+	void SetPlayerInSpawnArea(bool bInSpawnArea);
+
 private:
 	FTimerHandle TimerHandle_Spawn;
 
@@ -90,4 +93,6 @@ private:
 
 	// 스폰 위치 계산 (좌/우 랜덤)
 	FVector ComputeSpawnLocation(const AMyPaperCharacter* Player, bool bSpawnFromLeft, float SpawnDistance) const;
+
+	bool bPlayerInSpawnArea = false;
 };
