@@ -78,7 +78,7 @@ void AMonsterSpawnManager::ScheduleNextSpawn()
 
 void AMonsterSpawnManager::TrySpawnRandom()
 {
-	// ���� �õ��� ������ ���� (���� ����/���п� �����ϰ� ��� ����)
+	// ���� �õ��� ������ ���� (���� ����/���п� �����ϰ� ���?����)
 	ScheduleNextSpawn();
 
 	TrySpawn(ESpawnReason::Random);
@@ -92,7 +92,7 @@ bool AMonsterSpawnManager::IsMonsterAlive()
 		return true;
 	}
 
-	// 2) Ȥ�� ptr�� ����µ� ���忡 �����ִ� ��� ���
+	// 2) Ȥ�� ptr�� ����µ�?���忡 �����ִ� ���?���?
 	if (!GetWorld()) return false;
 
 	for (TActorIterator<AMyPaperMonster> It(GetWorld()); It; ++It)
@@ -116,21 +116,20 @@ FVector AMonsterSpawnManager::ComputeSpawnLocation(const AMyPaperCharacter* Play
 {
 	FVector Loc = Player->GetActorLocation();
 	Loc.X += (bSpawnFromLeft ? -1.f : 1.f) * SpawnDistance;
-	Loc.Y += -60.f;
+	Loc.Y += SpawnYOffset;
+	Loc.Z += SpawnZOffset;
 
 	return Loc;
 }
 
 void AMonsterSpawnManager::TrySpawn(ESpawnReason Reason)
 {
-	// 1) ������ ���θ� ���� ����
 	if (bPlayerInControlRoom)
 	{
 		UE_LOG(LogTemp, Log, TEXT("[MonsterSpawnManager] Skip spawn (Control Room)"));
 		return;
 	}
 
-	// 2) �̹� ���� ������ ���� ����
 	if (IsMonsterAlive())
 	{
 		UE_LOG(LogTemp, Log, TEXT("[MonsterSpawnManager] Skip spawn (Monster already alive)"));
@@ -150,7 +149,6 @@ void AMonsterSpawnManager::TrySpawn(ESpawnReason Reason)
 		return;
 	}
 
-	// 3) ��/�� ���� ����
 	const bool bSpawnFromLeft = FMath::RandBool();
 
 	const float SpawnDistance = FMath::FRandRange(MinSpawnDistance, MaxSpawnDistance);
@@ -177,7 +175,6 @@ void AMonsterSpawnManager::TrySpawn(ESpawnReason Reason)
 		return;
 	}
 
-	// ���� ���� ���� (���� ���� -> ������ ���� / ������ ���� -> ���� ����)
 	const float MoveDir = bSpawnFromLeft ? 1.f : -1.f;
 	Monster->SetMoveDirectionX(MoveDir);
 
