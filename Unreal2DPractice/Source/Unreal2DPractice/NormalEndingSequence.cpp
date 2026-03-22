@@ -6,10 +6,6 @@
 #include "GameFramework/PlayerController.h"
 #include "Camera/PlayerCameraManager.h"
 #include "TimerManager.h"
-#include "LevelTransitionManager.h"
-#include "AudioManager.h"
-#include "MyGameInstance.h"
-#include "GameBGMData.h"
 
 ANormalEndingSequence::ANormalEndingSequence()
 {
@@ -96,30 +92,8 @@ void ANormalEndingSequence::OnMoveFinished()
             if (!CachedPlayer)
                 return;
 
-            CachedPlayer->SetActorLocation(PendingTeleportLocation);
-
-            ALevelTransitionManager* Manager = ALevelTransitionManager::Get(GetWorld());
-            if (Manager)
-            {
-                Manager->ChangeSubLevel(TEXT("NormalEnding"));
-            }
-
-            AAudioManager* AudioManager =
-                Cast<AAudioManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AAudioManager::StaticClass()));
-            UMyGameInstance* GI =
-                Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
-
-            if (AudioManager && GI && GI->BGMData && GI->BGMData->GameClear)
-            {
-                AudioManager->StopBGM();
-                AudioManager->PlayBGM(GI->BGMData->GameClear);
-            }
-
-            PC->PlayerCameraManager->StartCameraFade(
-                1.f, 0.f, 0.4f, FLinearColor::Black, false, false
-            );
-
-            ShowEndingWidget();
+            CachedPlayer->ClearForcedFlipbook();
+            UGameplayStatics::OpenLevel(this, DestinationLevelName);
 
         }, 0.3f, false);
 }

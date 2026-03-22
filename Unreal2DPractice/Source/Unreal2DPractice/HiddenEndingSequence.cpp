@@ -3,7 +3,6 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerController.h"
 #include "TimerManager.h"
-#include "LevelTransitionManager.h"
 #include "AudioManager.h"
 #include "MyGameInstance.h"
 #include "GameBGMData.h"
@@ -101,38 +100,7 @@ void AHiddenEndingSequence::FinishSequence()
                 return;
 
             CachedPlayer->ClearForcedFlipbook();
-
-            CachedPlayer->SetActorLocation(PendingTeleportLocation);
-
-            ALevelTransitionManager* Manager = ALevelTransitionManager::Get(GetWorld());
-
-            if (Manager)
-            {
-                Manager->ChangeSubLevel(TEXT("HiddenEnding"));
-            }
-
-            AAudioManager* AudioManager =
-                Cast<AAudioManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AAudioManager::StaticClass()));
-            UMyGameInstance* GI =
-                Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
-
-            if (AudioManager && GI && GI->BGMData && GI->BGMData->GameClear)
-            {
-                AudioManager->StopBGM();
-                AudioManager->PlayBGM(GI->BGMData->GameClear);
-            }
-
-            FTimerHandle ShowHandle;
-            GetWorld()->GetTimerManager().SetTimer(ShowHandle, [PC]()
-                {
-                    if (PC && PC->PlayerCameraManager)
-                    {
-                        PC->PlayerCameraManager->StartCameraFade(
-                            1.f, 0.f, 0.4f, FLinearColor::Black, false, false
-                        );
-                    }
-
-                }, 0.3f, false);
+            UGameplayStatics::OpenLevel(this, DestinationLevelName);
 
         }, 0.25f, false);
 

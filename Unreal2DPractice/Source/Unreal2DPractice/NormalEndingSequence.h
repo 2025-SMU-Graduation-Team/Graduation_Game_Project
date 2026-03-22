@@ -38,6 +38,9 @@ private:
     UPROPERTY(EditAnywhere)
     TObjectPtr<UPaperFlipbook> BackFlipbook;
 
+    UPROPERTY(EditDefaultsOnly, Category = "Ending")
+    FName DestinationLevelName = TEXT("Normal");
+
 private:
     TObjectPtr<AMyPaperCharacter> CachedPlayer;
     TObjectPtr<UNormalEndingWidget> ActiveWidget;

@@ -51,11 +51,9 @@ void ALevelChangeActor::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AAct
 
     CachedPlayer = Player;
 
-    CachedPlayer->SetActorLocation(TargetTeleportLocation);
-
     ALevelTransitionManager* Manager = ALevelTransitionManager::Get(GetWorld());
     if (Manager)
     {
-        Manager->ChangeSubLevel(NextLevelName);
+        Manager->ChangeSubLevel(NextLevelName, CachedPlayer, TargetTeleportLocation);
     }
 }

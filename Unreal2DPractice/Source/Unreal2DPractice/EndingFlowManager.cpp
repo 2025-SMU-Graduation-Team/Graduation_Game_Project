@@ -19,10 +19,9 @@ void AEndingFlowManager::RequestEnding(EEndingType Type, const FVector& Teleport
     PendingLevelName =
         (Type == EEndingType::Hidden)
         ? TEXT("HiddenEnding")
-        : TEXT("NormalEnding");
+        : TEXT("Normal");
 
-    UnloadCurrentSubLevel();
-    LoadEndingLevel();
+    UGameplayStatics::OpenLevel(this, PendingLevelName);
 }
 
 void AEndingFlowManager::UnloadCurrentSubLevel()

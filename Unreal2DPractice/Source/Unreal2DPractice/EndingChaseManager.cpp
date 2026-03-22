@@ -4,6 +4,7 @@
 #include "AudioManager.h"
 #include "MyGameInstance.h"
 #include "GameBGMData.h"
+#include "Engine/Level.h"
 
 AEndingChaseManager::AEndingChaseManager()
 {
@@ -17,25 +18,73 @@ void AEndingChaseManager::BeginPlay()
     FWorldDelegates::LevelAddedToWorld.AddUObject(
         this,
         &AEndingChaseManager::OnLevelLoaded);
+
+    UWorld* World = GetWorld();
+    if (!World)
+    {
+        return;
+    }
+
+    for (ULevel* LoadedLevel : World->GetLevels())
+    {
+        if (!LoadedLevel)
+        {
+            continue;
+        }
+
+        const UPackage* LevelPackage = LoadedLevel->GetPackage();
+        if (!LevelPackage)
+        {
+            continue;
+        }
+
+        if (TryStartChaseForLevelName(LevelPackage->GetName()))
+        {
+            break;
+        }
+    }
 }
 
 void AEndingChaseManager::OnLevelLoaded(ULevel* InLevel, UWorld* InWorld)
 {
-    if (!Route.IsValidIndex(CurrentStageIndex)) return;
-    if (!MonsterClass) return;
+    if (!InLevel || InWorld != GetWorld())
+    {
+        return;
+    }
 
-    FString LoadedLevelName = InLevel->GetOuter()->GetName();
+    const UPackage* LevelPackage = InLevel->GetPackage();
+    if (!LevelPackage)
+    {
+        return;
+    }
+
+    TryStartChaseForLevelName(LevelPackage->GetName());
+}
+
+bool AEndingChaseManager::TryStartChaseForLevelName(const FString& LoadedLevelName)
+{
+    if (bHasStartedCurrentStage)
+    {
+        return false;
+    }
+
+    if (!Route.IsValidIndex(CurrentStageIndex)) return false;
+    if (!MonsterClass) return false;
+
     const FChaseStage& Stage = Route[CurrentStageIndex];
 
     if (!LoadedLevelName.Contains(Stage.LevelName.ToString()))
-        return;
+        return false;
 
+    bHasStartedCurrentStage = true;
     GetWorld()->GetTimerManager().SetTimer(
         FirstSpawnTimerHandle,
         this,
         &AEndingChaseManager::StartChase,
         FirstSpawnDelay,
         false);
+
+    return true;
 }
 
 void AEndingChaseManager::StartChase()
@@ -91,9 +140,33 @@ void AEndingChaseManager::NotifyReachedEnd(AEndingMonster* Monster)
     }
 
     CurrentStageIndex++;
+    bHasStartedCurrentStage = false;
 
     if (Route.IsValidIndex(CurrentStageIndex))
     {
-        SpawnCurrentStage();
+        UWorld* World = GetWorld();
+        if (!World)
+        {
+            return;
+        }
+
+        for (ULevel* LoadedLevel : World->GetLevels())
+        {
+            if (!LoadedLevel)
+            {
+                continue;
+            }
+
+            const UPackage* LevelPackage = LoadedLevel->GetPackage();
+            if (!LevelPackage)
+            {
+                continue;
+            }
+
+            if (TryStartChaseForLevelName(LevelPackage->GetName()))
+            {
+                break;
+            }
+        }
     }
 }
