@@ -23,7 +23,7 @@ void AMonsterSpawnManager::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// ¾ÈÀüÀåÄ¡: min/max µÚÁıÇô ÀÖÀ¸¸é ±³Ã¼
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¡: min/max ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ã¼
 	if (MaxSpawnInterval < MinSpawnInterval)
 	{
 		Swap(MaxSpawnInterval, MinSpawnInterval);
@@ -78,7 +78,7 @@ void AMonsterSpawnManager::ScheduleNextSpawn()
 
 void AMonsterSpawnManager::TrySpawnRandom()
 {
-	// ´ÙÀ½ ½Ãµµ´Â ¹«Á¶°Ç ¿¹¾à (½ºÆù ¼º°ø/½ÇÆĞ¿Í ¹«°üÇÏ°Ô °è¼Ó µ·´Ù)
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½Ãµï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½/ï¿½ï¿½ï¿½Ğ¿ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï°ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
 	ScheduleNextSpawn();
 
 	TrySpawn(ESpawnReason::Random);
@@ -86,13 +86,13 @@ void AMonsterSpawnManager::TrySpawnRandom()
 
 bool AMonsterSpawnManager::IsMonsterAlive()
 {
-	// 1) Weak ptr ¸ÕÀú
+	// 1) Weak ptr ï¿½ï¿½ï¿½ï¿½
 	if (CurrentMonster.IsValid())
 	{
 		return true;
 	}
 
-	// 2) È¤½Ã ptrÀÌ ²÷°å´Âµ¥ ¿ùµå¿¡ ³²¾ÆÀÖ´Â °æ¿ì ´ëºñ
+	// 2) È¤ï¿½ï¿½ ptrï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Âµï¿½ ï¿½ï¿½ï¿½å¿¡ ï¿½ï¿½ï¿½ï¿½ï¿½Ö´ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
 	if (!GetWorld()) return false;
 
 	for (TActorIterator<AMyPaperMonster> It(GetWorld()); It; ++It)
@@ -116,20 +116,21 @@ FVector AMonsterSpawnManager::ComputeSpawnLocation(const AMyPaperCharacter* Play
 {
 	FVector Loc = Player->GetActorLocation();
 	Loc.X += (bSpawnFromLeft ? -1.f : 1.f) * SpawnDistance;
-	
+	Loc.Y += -60.f;
+
 	return Loc;
 }
 
 void AMonsterSpawnManager::TrySpawn(ESpawnReason Reason)
 {
-	// 1) °üÁ¦½Ç ³»ºÎ¸é ½ºÆù ±İÁö
+	// 1) ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Î¸ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	if (bPlayerInControlRoom)
 	{
 		UE_LOG(LogTemp, Log, TEXT("[MonsterSpawnManager] Skip spawn (Control Room)"));
 		return;
 	}
 
-	// 2) ÀÌ¹Ì ¸ó½ºÅÍ ÀÖÀ¸¸é ½ºÆù ±İÁö
+	// 2) ï¿½Ì¹ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	if (IsMonsterAlive())
 	{
 		UE_LOG(LogTemp, Log, TEXT("[MonsterSpawnManager] Skip spawn (Monster already alive)"));
@@ -149,7 +150,7 @@ void AMonsterSpawnManager::TrySpawn(ESpawnReason Reason)
 		return;
 	}
 
-	// 3) ÁÂ/¿ì ·£´ı ½ºÆù
+	// 3) ï¿½ï¿½/ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	const bool bSpawnFromLeft = FMath::RandBool();
 
 	const float SpawnDistance = FMath::FRandRange(MinSpawnDistance, MaxSpawnDistance);
@@ -176,7 +177,7 @@ void AMonsterSpawnManager::TrySpawn(ESpawnReason Reason)
 		return;
 	}
 
-	// ¹æÇâ °íÁ¤ ¼¼ÆÃ (¿ŞÂÊ ½ºÆù -> ¿À¸¥ÂÊ ÁøÇà / ¿À¸¥ÂÊ ½ºÆù -> ¿ŞÂÊ ÁøÇà)
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ -> ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ / ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ -> ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
 	const float MoveDir = bSpawnFromLeft ? 1.f : -1.f;
 	Monster->SetMoveDirectionX(MoveDir);
 
