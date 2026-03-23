@@ -46,6 +46,7 @@ public:
 
 	void SetForcedFlipbook(UPaperFlipbook* NewFlipbook);
 	void ClearForcedFlipbook();
+	void RefreshAfterLevelTransition();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool bEnableMovement = true;
