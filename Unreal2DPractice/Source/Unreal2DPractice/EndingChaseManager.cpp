@@ -5,6 +5,7 @@
 #include "MyGameInstance.h"
 #include "GameBGMData.h"
 #include "Engine/Level.h"
+#include "VerticalTraversalActor.h"
 
 AEndingChaseManager::AEndingChaseManager()
 {
@@ -14,6 +15,15 @@ AEndingChaseManager::AEndingChaseManager()
 void AEndingChaseManager::BeginPlay()
 {
     Super::BeginPlay();
+
+    if (!ManagedTraversalActor)
+    {
+        ManagedTraversalActor = Cast<AVerticalTraversalActor>(
+            UGameplayStatics::GetActorOfClass(this, AVerticalTraversalActor::StaticClass())
+        );
+    }
+
+    SetCurrentStageTraversalEnabled(false);
 
     FWorldDelegates::LevelAddedToWorld.AddUObject(
         this,
@@ -77,6 +87,8 @@ bool AEndingChaseManager::TryStartChaseForLevelName(const FString& LoadedLevelNa
         return false;
 
     bHasStartedCurrentStage = true;
+    SetCurrentStageTraversalEnabled(false);
+
     GetWorld()->GetTimerManager().SetTimer(
         FirstSpawnTimerHandle,
         this,
@@ -126,7 +138,9 @@ void AEndingChaseManager::SpawnCurrentStage()
     ActiveMonster->SetMoveDirection(Stage.MoveDirection);
     ActiveMonster->SetEndLocation(Stage.EndLocation);
     ActiveMonster->SetTurnLocation(Stage.TurnLocation);
+    ActiveMonster->SetCanKillHiddenPlayer(CurrentStageIndex > 0);
     ActiveMonster->SetManager(this);
+    SetCurrentStageTraversalEnabled(true);
 }
 
 void AEndingChaseManager::NotifyReachedEnd(AEndingMonster* Monster)
@@ -169,4 +183,14 @@ void AEndingChaseManager::NotifyReachedEnd(AEndingMonster* Monster)
             }
         }
     }
+}
+
+void AEndingChaseManager::SetCurrentStageTraversalEnabled(bool bEnabled)
+{
+    if (!ManagedTraversalActor)
+    {
+        return;
+    }
+
+    ManagedTraversalActor->SetTraversalEnabled(bEnabled);
 }

@@ -18,6 +18,7 @@ public:
 	AEndingMonster();
 
 	void SetMoveDirection(float Dir);
+	void SetCanKillHiddenPlayer(bool bInCanKillHiddenPlayer);
 
 	void SetEndLocation(const FVector& InLocation);
 	void SetTurnLocation(const FVector& InLocation);
@@ -53,12 +54,13 @@ private:
 	bool bEndTriggered = false;
 	bool bTurnedAtPoint = false;
 	bool bBreakingObstacle = false;
+	bool bCanKillHiddenPlayer = false;
 
 	float FastSpeed = 600.f;
 	float ObstacleTimer = 0.f;
 
 	UPROPERTY(EditAnywhere, Category = "Obstacle")
-	float WaitBeforeBreak = 0.8f;
+	float WaitBeforeBreak = 0.5f;
 
 	UPROPERTY(EditAnywhere, Category = "Obstacle")
 	float BreakDuration = 0.6f;

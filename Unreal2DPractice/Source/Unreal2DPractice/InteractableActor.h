@@ -21,6 +21,8 @@ public:
 	virtual void InteractFromEnterKey();
 	bool CanInteractFromEnterKey() const;
 	FText GetDisplayInteractKey() const;
+	void SetInteractionEnabled(bool bEnabled);
+	bool IsInteractionEnabled() const;
 
 protected:
 	// Called when the game starts or when spawned
@@ -67,4 +69,7 @@ protected:
 	void UpdateWidgetPosition();
 
 	APlayerController* PC;
+
+private:
+	bool bInteractionEnabled = true;
 };

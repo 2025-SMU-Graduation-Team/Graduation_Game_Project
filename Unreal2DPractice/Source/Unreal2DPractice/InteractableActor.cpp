@@ -36,7 +36,7 @@ void AInteractableActor::BeginPlay()
 
 void AInteractableActor::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (!TriggerBox || !TriggerBox->IsCollisionEnabled())
+	if (!bInteractionEnabled || !TriggerBox || !TriggerBox->IsCollisionEnabled())
 		return;
 
 	AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(OtherActor);
@@ -117,7 +117,7 @@ void AInteractableActor::InteractFromEnterKey()
 
 bool AInteractableActor::CanInteractFromEnterKey() const
 {
-	return bAllowEnterKeyInteraction;
+	return bInteractionEnabled && bAllowEnterKeyInteraction;
 }
 
 FText AInteractableActor::GetDisplayInteractKey() const
@@ -128,4 +128,64 @@ FText AInteractableActor::GetDisplayInteractKey() const
 	}
 
 	return InteractKey;
+}
+
+void AInteractableActor::SetInteractionEnabled(bool bEnabled)
+{
+	if (bInteractionEnabled == bEnabled)
+	{
+		return;
+	}
+
+	bInteractionEnabled = bEnabled;
+
+	if (TriggerBox)
+	{
+		TriggerBox->SetCollisionEnabled(
+			bInteractionEnabled ? ECollisionEnabled::QueryOnly : ECollisionEnabled::NoCollision
+		);
+	}
+
+	if (!bInteractionEnabled)
+	{
+		if (CachedPlayer && CachedPlayer->CurrentInteractable == this)
+		{
+			CachedPlayer->CurrentInteractable = nullptr;
+		}
+
+		if (ActiveWidget)
+		{
+			ActiveWidget->RemoveFromParent();
+			ActiveWidget = nullptr;
+		}
+
+		CachedPlayer = nullptr;
+		PC = nullptr;
+		return;
+	}
+
+	if (!TriggerBox)
+	{
+		return;
+	}
+
+	TriggerBox->UpdateOverlaps();
+
+	TArray<AActor*> OverlappingActors;
+	TriggerBox->GetOverlappingActors(OverlappingActors, AMyPaperCharacter::StaticClass());
+
+	for (AActor* OverlappingActor : OverlappingActors)
+	{
+		OnOverlapBegin(TriggerBox, OverlappingActor, nullptr, INDEX_NONE, false, FHitResult());
+
+		if (ActiveWidget)
+		{
+			break;
+		}
+	}
+}
+
+bool AInteractableActor::IsInteractionEnabled() const
+{
+	return bInteractionEnabled;
 }

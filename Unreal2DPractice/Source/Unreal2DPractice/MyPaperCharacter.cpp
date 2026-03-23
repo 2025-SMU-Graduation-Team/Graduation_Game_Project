@@ -417,6 +417,21 @@ void AMyPaperCharacter::ClearForcedFlipbook()
 	ForcedFlipbook = nullptr;
 }
 
+void AMyPaperCharacter::RefreshAfterLevelTransition()
+{
+	if (CameraController)
+	{
+		CameraController->SetLimitVolume(nullptr);
+	}
+
+	if (UCapsuleComponent* Capsule = GetCapsuleComponent())
+	{
+		Capsule->UpdateOverlaps();
+	}
+
+	bPendingInitialCameraLimitResolve = !ResolveInitialCameraLimit();
+}
+
 bool AMyPaperCharacter::TryInteractFromEnterKey()
 {
 	if (!CurrentInteractable || !CurrentInteractable->CanInteractFromEnterKey())

@@ -7,6 +7,8 @@
 #include "EndingMonster.h"
 #include "EndingChaseManager.generated.h"
 
+class AVerticalTraversalActor;
+
 USTRUCT(BlueprintType)
 struct FChaseStage
 {
@@ -45,6 +47,7 @@ private:
 	bool TryStartChaseForLevelName(const FString& LoadedLevelName);
 	void SpawnCurrentStage();
 	void StartChase();
+	void SetCurrentStageTraversalEnabled(bool bEnabled);
 
 	void OnLevelLoaded(ULevel* InLevel, UWorld* InWorld);
 
@@ -57,6 +60,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Chase")
 	float FirstSpawnDelay = 5.f;
+
+	UPROPERTY(EditAnywhere, Category = "Chase")
+	TObjectPtr<AVerticalTraversalActor> ManagedTraversalActor = nullptr;
 
 	FTimerHandle FirstSpawnTimerHandle;
 

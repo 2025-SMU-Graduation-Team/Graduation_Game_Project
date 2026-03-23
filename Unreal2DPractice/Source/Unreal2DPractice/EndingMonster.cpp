@@ -189,7 +189,12 @@ bool AEndingMonster::TryKillPlayerAhead()
 
 bool AEndingMonster::TryKillPlayer(AMyPaperCharacter* Player)
 {
-	if (!Player || bHasKilledPlayer || Player->bIsHidden)
+	if (!Player || bHasKilledPlayer)
+	{
+		return false;
+	}
+
+	if (Player->bIsHidden && !bCanKillHiddenPlayer)
 	{
 		return false;
 	}
@@ -268,6 +273,11 @@ void AEndingMonster::SetMoveDirection(float Dir)
 {
 	MoveDirection = Dir;
 	SetMoveDirectionX(Dir);
+}
+
+void AEndingMonster::SetCanKillHiddenPlayer(bool bInCanKillHiddenPlayer)
+{
+	bCanKillHiddenPlayer = bInCanKillHiddenPlayer;
 }
 
 void AEndingMonster::SetEndLocation(const FVector& InLocation)

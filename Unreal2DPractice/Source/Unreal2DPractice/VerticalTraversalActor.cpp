@@ -16,6 +16,16 @@ AVerticalTraversalActor::AVerticalTraversalActor()
 	InteractText = FText::FromString("Climb");
 }
 
+void AVerticalTraversalActor::BeginPlay()
+{
+	Super::BeginPlay();
+}
+
+void AVerticalTraversalActor::SetTraversalEnabled(bool bEnabled)
+{
+	SetInteractionEnabled(bEnabled);
+}
+
 void AVerticalTraversalActor::Interact()
 {
 	if (bIsTraversing || !CachedPlayer)
