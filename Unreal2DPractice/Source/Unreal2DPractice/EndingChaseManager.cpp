@@ -138,6 +138,7 @@ void AEndingChaseManager::SpawnCurrentStage()
     ActiveMonster->SetMoveDirection(Stage.MoveDirection);
     ActiveMonster->SetEndLocation(Stage.EndLocation);
     ActiveMonster->SetTurnLocation(Stage.TurnLocation);
+    ActiveMonster->SetCanKillHiddenPlayer(CurrentStageIndex > 0);
     ActiveMonster->SetManager(this);
     SetCurrentStageTraversalEnabled(true);
 }
