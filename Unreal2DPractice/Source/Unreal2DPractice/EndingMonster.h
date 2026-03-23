@@ -58,7 +58,7 @@ private:
 	float ObstacleTimer = 0.f;
 
 	UPROPERTY(EditAnywhere, Category = "Obstacle")
-	float WaitBeforeBreak = 0.8f;
+	float WaitBeforeBreak = 0.5f;
 
 	UPROPERTY(EditAnywhere, Category = "Obstacle")
 	float BreakDuration = 0.6f;
