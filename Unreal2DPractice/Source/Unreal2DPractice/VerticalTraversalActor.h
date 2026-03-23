@@ -14,8 +14,10 @@ class UNREAL2DPRACTICE_API AVerticalTraversalActor : public AInteractableActor
 
 public:
 	AVerticalTraversalActor();
+	void SetTraversalEnabled(bool bEnabled);
 
 protected:
+	virtual void BeginPlay() override;
 	virtual void Interact() override;
 	virtual void Tick(float DeltaTime) override;
 
