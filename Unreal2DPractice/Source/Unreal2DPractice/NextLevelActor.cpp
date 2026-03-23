@@ -7,11 +7,6 @@
 #include "LevelSequencePlayer.h"
 #include "MovieSceneSequencePlayer.h"
 
-void ANextLevelActor::Interact()
-{
-	GoToNextLevel();
-}
-
 void ANextLevelActor::GoToNextLevel()
 {
 	if (CutScene)
@@ -40,4 +35,5 @@ void ANextLevelActor::MoveToNextLevel()
 	if (NextLevelName.IsNone()) return;
 
 	UGameplayStatics::OpenLevel(this, NextLevelName);
+
 }
