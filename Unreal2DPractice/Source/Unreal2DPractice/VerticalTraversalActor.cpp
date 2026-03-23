@@ -96,17 +96,41 @@ void AVerticalTraversalActor::FinishTraversal()
 		return;
 	}
 
+	bool bHandledByLevelTransition = false;
+
 	if (!TargetLevelName.IsNone())
 	{
 		if (ALevelTransitionManager* Manager = ALevelTransitionManager::Get(GetWorld()))
 		{
 			Manager->ChangeSubLevel(TargetLevelName, TraversingPlayer, TargetTeleportLocation);
+			bHandledByLevelTransition = true;
+		}
+		else
+		{
+			UE_LOG(
+				LogTemp,
+				Warning,
+				TEXT("VerticalTraversalActor '%s' could not find LevelTransitionManager. Falling back to direct teleport."),
+				*GetName()
+			);
 		}
 	}
-	else
+
+	if (!bHandledByLevelTransition)
 	{
-		TraversingPlayer->SetActorLocation(TargetTeleportLocation);
+		if (UCharacterMovementComponent* MovementComponent = TraversingPlayer->GetCharacterMovement())
+		{
+			MovementComponent->StopMovementImmediately();
+		}
+
+		TraversingPlayer->SetActorLocation(
+			TargetTeleportLocation,
+			false,
+			nullptr,
+			ETeleportType::TeleportPhysics
+		);
 	}
+
 	TraversingPlayer->ClearForcedFlipbook();
 
 	if (bRestoreMovementAfterTraversal)

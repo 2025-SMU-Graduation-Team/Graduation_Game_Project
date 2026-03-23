@@ -15,6 +15,9 @@ class UNREAL2DPRACTICE_API ANextLevelActor : public AInteractableActor
 	GENERATED_BODY()
 	
 public:
+	virtual void Interact() override;
+
+	UFUNCTION(BlueprintCallable, Category = "Stage")
 	void GoToNextLevel();
 
 protected:
@@ -26,5 +29,7 @@ protected:
 
 protected:
 	void PlayCutScene();
+
+	UFUNCTION()
 	void MoveToNextLevel();
 };
