@@ -4,7 +4,6 @@
 #include "Engine/LevelStreaming.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
-#include "HiddenEndingStateSubsystem.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Misc/PackageName.h"
 
@@ -137,12 +136,6 @@ void ALevelTransitionManager::FinishTransition(FName NextLevel, AMyPaperCharacte
 			ETeleportType::TeleportPhysics
 		);
 		PlayerToTeleport->RefreshAfterLevelTransition();
-	}
-
-	if (UHiddenEndingStateSubsystem* HiddenEndingState =
-		GetGameInstance() ? GetGameInstance()->GetSubsystem<UHiddenEndingStateSubsystem>() : nullptr)
-	{
-		HiddenEndingState->NotifySubLevelChanged(PreviousSubLevel, CurrentSubLevel);
 	}
 
 	bIsTransitioning = false;
