@@ -2,13 +2,11 @@
 #include "Blueprint/UserWidget.h"
 #include "Components/BoxComponent.h"
 #include "EndingDirector.h"
-#include "HiddenEndingStateSubsystem.h"
 #include "InteractWidget.h"
 #include "Kismet/GameplayStatics.h"
 #include "LevelChangeActor.h"
 #include "MyGameInstance.h"
 #include "MyPaperCharacter.h"
-#include "OpeningDoorInterface.h"
 #include "SubLevelTaskManager.h"
 #include "AudioManager.h"
 #include "GameSFXData.h"
@@ -160,12 +158,6 @@ void ASubwayStateActor::SetLevelChangeLockActive(bool bLocked)
     UpdateManagedLevelChangeActors();
 }
 
-void ASubwayStateActor::HandleHiddenEndingReturn_Implementation()
-{
-    SetState(ESubwayState::Passed);
-    RestoreConfiguredDoorsToOpenedState();
-}
-
 void ASubwayStateActor::Interact(AMyPaperCharacter* Player)
 {
     if (!Player || !EndingDirector)
@@ -183,12 +175,6 @@ void ASubwayStateActor::Interact(AMyPaperCharacter* Player)
     }
     else if (CurrentState == ESubwayState::Passed)
     {
-        if (UHiddenEndingStateSubsystem* HiddenEndingState =
-            GetGameInstance() ? GetGameInstance()->GetSubsystem<UHiddenEndingStateSubsystem>() : nullptr)
-        {
-            HiddenEndingState->BeginHiddenEndingReturnFlow(HiddenEndingFinalTargetLevelName);
-        }
-
         EndingDirector->StartHiddenEnding(
             Player,
             HiddenTeleportLocation
@@ -271,22 +257,6 @@ void ASubwayStateActor::UpdateManagedLevelChangeActors()
         }
 
         LevelChangeActor->SetLevelChangeEnabled(bShouldEnableLevelChange);
-    }
-}
-
-void ASubwayStateActor::RestoreConfiguredDoorsToOpenedState()
-{
-    for (AActor* DoorActor : ManagedDoorActors)
-    {
-        if (!DoorActor)
-        {
-            continue;
-        }
-
-        if (DoorActor->GetClass()->ImplementsInterface(UOpeningDoorInterface::StaticClass()))
-        {
-            IOpeningDoorInterface::Execute_RestoreOpenedState(DoorActor);
-        }
     }
 }
 

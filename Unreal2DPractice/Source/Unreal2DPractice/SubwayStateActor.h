@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "HiddenEndingReturnInterface.h"
 #include "SubwayStateActor.generated.h"
 
 class UBoxComponent;
@@ -23,7 +22,7 @@ enum class ESubwayState : uint8
 };
 
 UCLASS()
-class UNREAL2DPRACTICE_API ASubwayStateActor : public AActor, public IHiddenEndingReturnInterface
+class UNREAL2DPRACTICE_API ASubwayStateActor : public AActor
 {
     GENERATED_BODY()
 
@@ -33,7 +32,6 @@ public:
     void Interact(AMyPaperCharacter* Player);
     void SetState(ESubwayState NewState);
     void SetLevelChangeLockActive(bool bLocked);
-    virtual void HandleHiddenEndingReturn_Implementation() override;
 
 protected:
     virtual void BeginPlay() override;
@@ -55,7 +53,6 @@ protected:
 
 private:
     const TCHAR* StateToString(ESubwayState State);
-    void RestoreConfiguredDoorsToOpenedState();
     void ShowInteractWidget(AMyPaperCharacter* Player);
     void HideInteractWidget();
     void UpdateWidgetPosition();
