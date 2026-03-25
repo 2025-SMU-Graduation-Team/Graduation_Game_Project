@@ -80,6 +80,8 @@ public:
 	UFUNCTION()
 	void Move(const FInputActionValue& Value);
 
+	virtual bool CanJumpInternal_Implementation() const override;
+
 	UFUNCTION()
 	void StartJump(const FInputActionValue& Value);
 

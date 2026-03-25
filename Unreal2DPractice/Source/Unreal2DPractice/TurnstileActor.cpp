@@ -45,7 +45,12 @@ void ATurnstileActor::Interact()
     }
     else
     {
-        UE_LOG(LogTemp, Warning, TEXT("Need a card"));
+        UPlayerMessageWidget* Widget = CreateWidget<UPlayerMessageWidget>(GetWorld(), PlayerMessageWidgetClass);
+        if (Widget)
+        {
+            Widget->SetMessage("Guess I need a card.");
+            Widget->AddToViewport();
+        }
     }
 }
 
