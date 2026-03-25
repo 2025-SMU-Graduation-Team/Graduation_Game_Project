@@ -13,6 +13,12 @@ class UNREAL2DPRACTICE_API UGameBGMData : public UDataAsset
 public:
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    USoundBase* MainMenu;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    USoundBase* IntroCutScene;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
     USoundBase* BasicBackground;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
