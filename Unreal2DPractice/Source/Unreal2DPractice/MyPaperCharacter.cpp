@@ -22,7 +22,7 @@ AMyPaperCharacter::AMyPaperCharacter()
 
 	GetCharacterMovement()->GravityScale = 2.0f;
 	GetCharacterMovement()->AirControl = 0.8f;
-	GetCharacterMovement()->MaxWalkSpeed = 2000.0f;
+	GetCharacterMovement()->MaxWalkSpeed = 600.0f;
 	GetCharacterMovement()->JumpZVelocity = 800.0f;
 
 	GetCharacterMovement()->SetPlaneConstraintEnabled(true);
@@ -128,8 +128,32 @@ void AMyPaperCharacter::Move(const FInputActionValue& Value)
 	
 }
 
+bool AMyPaperCharacter::CanJumpInternal_Implementation() const
+{
+	if(!Super::CanJumpInternal_Implementation()) return false;
+
+	const UCharacterMovementComponent* MoveComp = GetCharacterMovement();
+	if (!MoveComp) return false;
+
+	if (!MoveComp->IsMovingOnGround())
+		return true;
+
+	const FVector floorNormal = MoveComp->CurrentFloor.HitResult.ImpactNormal;
+	float slope = FVector::DotProduct(floorNormal, FVector::UpVector);
+
+	if (slope < 0.75f)
+	{
+		return false;
+	}
+
+	return true;
+}
+
 void AMyPaperCharacter::StartJump(const FInputActionValue& Value)
 {
+	if (!CanJump())
+		return;
+
 	Jump();
 
 	AAudioManager* AudioManager =

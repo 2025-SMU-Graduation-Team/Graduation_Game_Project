@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "InteractableActor.h"
+#include "PlayerMessageWidget.h"
 #include "TurnstileActor.generated.h"
 
 UCLASS()
@@ -24,10 +25,13 @@ protected:
 private:
 	void PlayOpenSoundAndUnlock();
 
-private:
 	UPROPERTY(EditAnywhere, Category = "Turnstile", meta = (ClampMin = "0.0"))
 	float OpenSoundDelay = 0.08f;
 
 	FTimerHandle OpenSoundTimerHandle;
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+	TSubclassOf<UPlayerMessageWidget> PlayerMessageWidgetClass;
 
 };
