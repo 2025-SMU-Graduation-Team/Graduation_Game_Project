@@ -106,6 +106,8 @@ void AVerticalTraversalActor::FinishTraversal()
 		return;
 	}
 
+	const bool bUsesLevelTransition = !TargetLevelName.IsNone();
+
 	if (!TargetLevelName.IsNone())
 	{
 		if (ALevelTransitionManager* Manager = ALevelTransitionManager::Get(GetWorld()))
@@ -119,7 +121,9 @@ void AVerticalTraversalActor::FinishTraversal()
 	}
 	TraversingPlayer->ClearForcedFlipbook();
 
-	if (bRestoreMovementAfterTraversal)
+	// When a streamed level transition is involved, LevelTransitionManager owns
+	// the fade lifecycle and is responsible for restoring movement.
+	if (!bUsesLevelTransition && bRestoreMovementAfterTraversal)
 	{
 		TraversingPlayer->bEnableMovement = true;
 	}

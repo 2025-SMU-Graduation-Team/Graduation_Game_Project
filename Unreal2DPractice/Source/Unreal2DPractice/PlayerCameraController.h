@@ -26,6 +26,7 @@ public:
 
     void SetLimitVolume(ACameraLimitVolume* NewVolume);
     void ClearLimitVolume(ACameraLimitVolume* VolumeToClear, bool bForceClear = false);
+    void RefreshCameraPosition();
 
     UPROPERTY()
     UCameraComponent* Camera;

@@ -15,6 +15,7 @@ class UNREAL2DPRACTICE_API ACameraLimitVolume : public AActor
     ACameraLimitVolume();
 
     FBox GetLimitBounds() const;
+    bool ContainsWorldLocation(const FVector& WorldLocation) const;
 
 protected:
     virtual void BeginPlay() override;

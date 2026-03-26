@@ -41,6 +41,11 @@ void USubLevelTaskManager::RequestTask(UDelayedTaskData* TaskData)
     if (!TaskData)
         return;
 
+    if (ASubwayStateActor* SubwayStateActor = ResolveSubwayStateActor(TaskData))
+    {
+        SubwayStateActor->SetReservationActive(true);
+    }
+
     UE_LOG(LogTemp, Warning, TEXT("RequestTask registered"));
     PendingTasks.Add(TaskData);
     RefreshSubwayLockStates();
@@ -231,9 +236,9 @@ void USubLevelTaskManager::HandleMoveToTarget(FMoveTask& Task)
 
 void USubLevelTaskManager::HandleWaiting(FMoveTask& Task, float Delta)
 {
-    if (Task.TaskData->SubwayStateActor.IsValid())
+    if (ASubwayStateActor* SubwayStateActor = ResolveSubwayStateActor(Task.TaskData))
     {
-        Task.TaskData->SubwayStateActor->SetState(ESubwayState::DoorsOpen);
+        SubwayStateActor->SetState(ESubwayState::DoorsOpen);
     }
 
     Task.WaitRemaining -= Delta;
@@ -264,18 +269,18 @@ bool USubLevelTaskManager::HandleMoveForward(FMoveTask& Task, float Delta)
         Task.MoveDirection * Task.MoveSpeed * Delta
     );
 
-    if (Task.TaskData->SubwayStateActor.IsValid())
+    if (ASubwayStateActor* SubwayStateActor = ResolveSubwayStateActor(Task.TaskData))
     {
-        Task.TaskData->SubwayStateActor->SetState(ESubwayState::Leaving);
+        SubwayStateActor->SetState(ESubwayState::Leaving);
     }
 
     Task.ForwardMoveRemaining -= Delta;
 
     if (Task.ForwardMoveRemaining <= 0.f)
     {
-        if (Task.TaskData->SubwayStateActor.IsValid())
+        if (ASubwayStateActor* SubwayStateActor = ResolveSubwayStateActor(Task.TaskData))
         {
-            Task.TaskData->SubwayStateActor->SetState(ESubwayState::Passed);
+            SubwayStateActor->SetState(ESubwayState::Passed);
         }
         return true;
     }
@@ -295,17 +300,27 @@ void USubLevelTaskManager::RefreshSubwayLockStates()
 
     for (UDelayedTaskData* TaskData : PendingTasks)
     {
-        if (IsValid(TaskData) && TaskData->SubwayStateActor.IsValid())
+        if (!IsValid(TaskData))
         {
-            LockedSubwayActors.Add(TaskData->SubwayStateActor.Get());
+            continue;
+        }
+
+        if (ASubwayStateActor* SubwayStateActor = ResolveSubwayStateActor(TaskData))
+        {
+            LockedSubwayActors.Add(SubwayStateActor);
         }
     }
 
     for (const FMoveTask& Task : ActiveMoveTasks)
     {
-        if (IsValid(Task.TaskData) && Task.TaskData->SubwayStateActor.IsValid())
+        if (!IsValid(Task.TaskData))
         {
-            LockedSubwayActors.Add(Task.TaskData->SubwayStateActor.Get());
+            continue;
+        }
+
+        if (ASubwayStateActor* SubwayStateActor = ResolveSubwayStateActor(Task.TaskData))
+        {
+            LockedSubwayActors.Add(SubwayStateActor);
         }
     }
 
@@ -319,6 +334,66 @@ void USubLevelTaskManager::RefreshSubwayLockStates()
 
         SubwayStateActor->SetLevelChangeLockActive(LockedSubwayActors.Contains(SubwayStateActor));
     }
+}
+
+ASubwayStateActor* USubLevelTaskManager::ResolveSubwayStateActor(UDelayedTaskData* TaskData) const
+{
+    if (!IsValid(TaskData))
+    {
+        return nullptr;
+    }
+
+    if (TaskData->SubwayStateActor.IsValid())
+    {
+        return TaskData->SubwayStateActor.Get();
+    }
+
+    UWorld* World = GetWorld();
+    if (!World)
+    {
+        return nullptr;
+    }
+
+    AActor* ReferenceActor = TaskData->SubwayDoorActor.Get();
+    if (!ReferenceActor)
+    {
+        ReferenceActor = TaskData->TargetActor.Get();
+    }
+
+    if (!ReferenceActor)
+    {
+        return nullptr;
+    }
+
+    ASubwayStateActor* ClosestSubwayStateActor = nullptr;
+    float ClosestDistanceSq = TNumericLimits<float>::Max();
+    const FVector ReferenceLocation = ReferenceActor->GetActorLocation();
+
+    for (TActorIterator<ASubwayStateActor> It(World); It; ++It)
+    {
+        ASubwayStateActor* Candidate = *It;
+        if (!Candidate)
+        {
+            continue;
+        }
+
+        const float DistanceSq = FVector::DistSquared(ReferenceLocation, Candidate->GetActorLocation());
+        if (DistanceSq < ClosestDistanceSq)
+        {
+            ClosestDistanceSq = DistanceSq;
+            ClosestSubwayStateActor = Candidate;
+        }
+    }
+
+    if (ClosestSubwayStateActor)
+    {
+        TaskData->SubwayStateActor = ClosestSubwayStateActor;
+        UE_LOG(LogTemp, Warning, TEXT("[SubLevelTaskManager] Auto-linked SubwayStateActor '%s' for task '%s'"),
+            *GetNameSafe(ClosestSubwayStateActor),
+            *GetNameSafe(TaskData));
+    }
+
+    return ClosestSubwayStateActor;
 }
 
 void USubLevelTaskManager::OpenDoor(AActor* Actor)

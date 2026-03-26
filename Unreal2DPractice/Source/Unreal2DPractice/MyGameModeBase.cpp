@@ -6,6 +6,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerController.h"
 #include "SubLevelTaskManager.h"
+#include "Camera/PlayerCameraManager.h"
+#include "Misc/PackageName.h"
 
 AMyGameModeBase::AMyGameModeBase()
 {
@@ -29,25 +31,32 @@ void AMyGameModeBase::BeginPlay()
         PC->Possess(ExistingPlayer);
         UE_LOG(LogTemp, Log, TEXT("Possessed existing PaperCharacter: %s"), *ExistingPlayer->GetName());
     }
+
+    if (PC && PC->PlayerCameraManager)
+    {
+        PC->PlayerCameraManager->StartCameraFade(
+            1.f, 0.f, 0.f, FLinearColor::Black, false, false
+        );
+    }
 }
 
 void AMyGameModeBase::OnLevelLoaded(ULevel* LoadedLevel, UWorld* World)
 {
-    if (LoadedLevel && LoadedLevel->GetOuter() && LoadedLevel->GetOuter()->GetName() == "Subway")
+    if (!LoadedLevel || !World)
     {
+        return;
+    }
 
-        if (!LoadedLevel || !World) return;
+    const FString LevelName = LoadedLevel->GetOutermost()->GetName();
+    const FString ShortLevelName = FPackageName::GetShortName(LevelName);
+    UE_LOG(LogTemp, Warning, TEXT("Level Added: %s"), *LevelName);
 
-        FString LevelName = LoadedLevel->GetOutermost()->GetName();
-        UE_LOG(LogTemp, Warning, TEXT("Level Added: %s"), *LevelName);
-
-        if (LevelName.Contains(TEXT("Subway")))
+    if (ShortLevelName == TEXT("Subway"))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Subway Loaded Detected!"));
+        if (USubLevelTaskManager* TaskManager = GetGameInstance()->GetSubsystem<USubLevelTaskManager>())
         {
-            UE_LOG(LogTemp, Warning, TEXT("Subway Loaded Detected!"));
-            if (USubLevelTaskManager* TaskManager = GetGameInstance()->GetSubsystem<USubLevelTaskManager>())
-            {
-                TaskManager->OnSubLevelEntered();
-            }
+            TaskManager->OnSubLevelEntered();
         }
     }
 }

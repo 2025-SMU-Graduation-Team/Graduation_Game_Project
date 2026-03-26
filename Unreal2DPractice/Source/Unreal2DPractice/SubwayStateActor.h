@@ -30,6 +30,8 @@ public:
     ASubwayStateActor();
 
     void Interact(AMyPaperCharacter* Player);
+    void ClearInteractionState();
+    void SetReservationActive(bool bActive);
     void SetState(ESubwayState NewState);
     void SetLevelChangeLockActive(bool bLocked);
 
@@ -53,6 +55,7 @@ protected:
 
 private:
     const TCHAR* StateToString(ESubwayState State);
+    void AutoAssignManagedLevelChangeActors();
     void ShowInteractWidget(AMyPaperCharacter* Player);
     void HideInteractWidget();
     void UpdateWidgetPosition();
@@ -80,6 +83,9 @@ private:
     UPROPERTY(EditInstanceOnly, Category = "Subway")
     TArray<TObjectPtr<ALevelChangeActor>> ManagedLevelChangeActors;
 
+    UPROPERTY(EditAnywhere, Category = "Subway")
+    float AutoAssignLevelChangeRadius = 1200.f;
+
     UPROPERTY(EditInstanceOnly, Category = "Subway")
     TArray<TObjectPtr<AActor>> ManagedDoorActors;
 
@@ -92,6 +98,7 @@ private:
     UPROPERTY()
     APlayerController* PC = nullptr;
 
+    bool bHasReservation = false;
     bool bLevelChangeLocked = false;
     ESubwayState CurrentState;
 

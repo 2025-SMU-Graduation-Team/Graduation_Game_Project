@@ -68,3 +68,19 @@ FBox ACameraLimitVolume::GetLimitBounds() const
 {
     return Box->Bounds.GetBox();
 }
+
+bool ACameraLimitVolume::ContainsWorldLocation(const FVector& WorldLocation) const
+{
+    if (!Box)
+    {
+        return false;
+    }
+
+    const FVector LocalPoint = Box->GetComponentTransform().InverseTransformPosition(WorldLocation);
+    const FVector Extent = Box->GetScaledBoxExtent();
+
+    return
+        FMath::Abs(LocalPoint.X) <= Extent.X &&
+        FMath::Abs(LocalPoint.Y) <= Extent.Y &&
+        FMath::Abs(LocalPoint.Z) <= Extent.Z;
+}
