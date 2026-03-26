@@ -179,7 +179,6 @@ void ALevelTransitionManager::FinishTransition(FName NextLevel, AMyPaperCharacte
 			ETeleportType::TeleportPhysics
 		);
 		PlayerToTeleport->RefreshAfterLevelTransition();
-		PlayerToTeleport->bEnableMovement = true;
 	}
 
 	if (NextLevel == FName(TEXT("Subway")))
@@ -203,22 +202,56 @@ void ALevelTransitionManager::FinishTransition(FName NextLevel, AMyPaperCharacte
 		}
 	}
 
-	if (APlayerController* PC = GetPrimaryPlayerController())
+	APlayerController* PC = GetPrimaryPlayerController();
+	if (!PC || !PC->PlayerCameraManager || TransitionFadeDuration <= 0.f)
 	{
-		if (PC->PlayerCameraManager)
-		{
-			PC->PlayerCameraManager->StartCameraFade(
-				1.f,
-				0.f,
-				TransitionFadeDuration,
-				FLinearColor::Black,
-				false,
-				false
-			);
-		}
+		CompleteTransition(PlayerToTeleport);
+		return;
 	}
 
-	bIsTransitioning = false;
+	FTimerHandle FadeInTimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(
+		FadeInTimerHandle,
+		FTimerDelegate::CreateWeakLambda(this, [this, PlayerToTeleport]()
+		{
+			if (APlayerController* InnerPC = GetPrimaryPlayerController())
+			{
+				if (InnerPC->PlayerCameraManager)
+				{
+					InnerPC->PlayerCameraManager->StopCameraFade();
+					InnerPC->PlayerCameraManager->StartCameraFade(
+						1.f,
+						0.f,
+						TransitionFadeDuration,
+						FLinearColor::Black,
+						false,
+						false
+					);
+				}
+			}
+
+			FTimerHandle FadeCompleteTimerHandle;
+			GetWorld()->GetTimerManager().SetTimer(
+				FadeCompleteTimerHandle,
+				FTimerDelegate::CreateWeakLambda(this, [this, PlayerToTeleport]()
+				{
+					if (APlayerController* CompletePC = GetPrimaryPlayerController())
+					{
+						if (CompletePC->PlayerCameraManager)
+						{
+							CompletePC->PlayerCameraManager->StopCameraFade();
+						}
+					}
+
+					CompleteTransition(PlayerToTeleport);
+				}),
+				TransitionFadeDuration,
+				false
+			);
+		}),
+		FadeInStartDelay,
+		false
+	);
 }
 
 bool ALevelTransitionManager::IsPersistentLevelTarget(FName LevelName) const
@@ -239,4 +272,14 @@ FName ALevelTransitionManager::GetPersistentLevelName() const
 APlayerController* ALevelTransitionManager::GetPrimaryPlayerController() const
 {
 	return GetWorld() ? UGameplayStatics::GetPlayerController(GetWorld(), 0) : nullptr;
+}
+
+void ALevelTransitionManager::CompleteTransition(AMyPaperCharacter* PlayerToTeleport)
+{
+	if (PlayerToTeleport)
+	{
+		PlayerToTeleport->bEnableMovement = true;
+	}
+
+	bIsTransitioning = false;
 }

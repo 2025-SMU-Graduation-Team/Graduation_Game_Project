@@ -26,6 +26,7 @@ protected:
 private:
 	void BeginFadeTransition(FName NextLevel, AMyPaperCharacter* PlayerToTeleport, const FVector& TeleportLocation);
 	void FinishTransition(FName NextLevel, AMyPaperCharacter* PlayerToTeleport, const FVector& TeleportLocation);
+	void CompleteTransition(AMyPaperCharacter* PlayerToTeleport);
 	void LoadLevel(FName LevelName);
 	void UnloadLevel(FName LevelName);
 	bool IsPersistentLevelTarget(FName LevelName) const;
@@ -41,4 +42,7 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "LevelTransition")
 	float TransitionFadeDuration = 0.2f;
+
+	UPROPERTY(EditAnywhere, Category = "LevelTransition")
+	float FadeInStartDelay = 0.02f;
 };
