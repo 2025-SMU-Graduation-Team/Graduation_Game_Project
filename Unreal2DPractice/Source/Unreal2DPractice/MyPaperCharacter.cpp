@@ -57,6 +57,7 @@ void AMyPaperCharacter::BeginPlay()
 		&AMyPaperCharacter::OnOverlapBegin
 	);
 
+	GetCapsuleComponent()->UpdateOverlaps();
 	bPendingInitialCameraLimitResolve = !ResolveInitialCameraLimit();
 
 	DefaultSpriteOffset = GetSprite()->GetRelativeLocation();
@@ -524,7 +525,7 @@ void AMyPaperCharacter::StopWalkLoop()
 
 bool AMyPaperCharacter::ResolveInitialCameraLimit()
 {
-	if (!CameraController || !GetCapsuleComponent())
+	if (!CameraController)
 	{
 		return false;
 	}
@@ -532,7 +533,7 @@ bool AMyPaperCharacter::ResolveInitialCameraLimit()
 	TArray<AActor*> CameraLimitVolumes;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACameraLimitVolume::StaticClass(), CameraLimitVolumes);
 
-	const FBox PlayerBounds = GetCapsuleComponent()->Bounds.GetBox();
+	const FVector PlayerLocation = GetActorLocation();
 
 	for (AActor* CameraLimitActor : CameraLimitVolumes)
 	{
@@ -542,7 +543,7 @@ bool AMyPaperCharacter::ResolveInitialCameraLimit()
 			continue;
 		}
 
-		if (Volume->GetLimitBounds().Intersect(PlayerBounds))
+		if (Volume->ContainsWorldLocation(PlayerLocation))
 		{
 			CameraController->SetLimitVolume(Volume);
 			return true;

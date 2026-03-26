@@ -27,18 +27,15 @@ void UPlayerCameraController::BeginPlay()
     SpringArm->bEnableCameraLag = false;
     SpringArm->bEnableCameraRotationLag = false;
     SpringArm->bDoCollisionTest = false;
+
+    RefreshCameraPosition();
 }
 
 void UPlayerCameraController::SetLimitVolume(ACameraLimitVolume* NewVolume)
 {
     LimitVolume = NewVolume;
 
-    if (!SpringArm || !LimitVolume)
-    {
-        return;
-    }
-
-    SpringArm->SetWorldLocation(GetClampedCameraTarget());
+    RefreshCameraPosition();
 }
 
 void UPlayerCameraController::ClearLimitVolume(ACameraLimitVolume* VolumeToClear, bool bForceClear)
@@ -64,10 +61,24 @@ void UPlayerCameraController::TickComponent(
 {
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-    if (!SpringArm || !LimitVolume) return;
+    RefreshCameraPosition();
+}
+
+void UPlayerCameraController::RefreshCameraPosition()
+{
+    if (!SpringArm || !LimitVolume)
+    {
+        return;
+    }
 
     const FVector ClampedTarget = GetClampedCameraTarget();
     SpringArm->SetWorldLocation(ClampedTarget);
+    SpringArm->UpdateComponentToWorld();
+
+    if (Camera)
+    {
+        Camera->UpdateComponentToWorld();
+    }
 }
 
 float UPlayerCameraController::GetHalfViewHeight() const
