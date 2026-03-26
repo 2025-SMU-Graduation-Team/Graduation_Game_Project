@@ -66,13 +66,19 @@ void UPlayerCameraController::TickComponent(
 
 void UPlayerCameraController::RefreshCameraPosition()
 {
-    if (!SpringArm || !LimitVolume)
+    if (!SpringArm)
     {
         return;
     }
 
-    const FVector ClampedTarget = GetClampedCameraTarget();
-    SpringArm->SetWorldLocation(ClampedTarget);
+    FVector TargetLocation = GetOwner()->GetActorLocation() + cameraOffset;
+
+    if (LimitVolume)
+    {
+        TargetLocation = GetClampedCameraTarget();
+    }
+
+    SpringArm->SetWorldLocation(TargetLocation);
     SpringArm->UpdateComponentToWorld();
 
     if (Camera)

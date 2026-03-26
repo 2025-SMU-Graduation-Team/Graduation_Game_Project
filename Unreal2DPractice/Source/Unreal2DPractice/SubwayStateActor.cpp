@@ -10,6 +10,7 @@
 #include "SubLevelTaskManager.h"
 #include "AudioManager.h"
 #include "GameSFXData.h"
+#include "EngineUtils.h"
 
 ASubwayStateActor::ASubwayStateActor()
 {
@@ -31,6 +32,8 @@ ASubwayStateActor::ASubwayStateActor()
 void ASubwayStateActor::BeginPlay()
 {
     Super::BeginPlay();
+
+    AutoAssignManagedLevelChangeActors();
 
     if (!EndingDirector)
     {
@@ -56,6 +59,44 @@ void ASubwayStateActor::BeginPlay()
     else
     {
         UpdateManagedLevelChangeActors();
+    }
+}
+
+void ASubwayStateActor::AutoAssignManagedLevelChangeActors()
+{
+    if (ManagedLevelChangeActors.Num() > 0 || !GetWorld())
+    {
+        return;
+    }
+
+    const float MaxDistanceSq = FMath::Square(AutoAssignLevelChangeRadius);
+
+    for (TActorIterator<ALevelChangeActor> It(GetWorld()); It; ++It)
+    {
+        ALevelChangeActor* Candidate = *It;
+        if (!Candidate)
+        {
+            continue;
+        }
+
+        const float DistanceSq = FVector::DistSquared(GetActorLocation(), Candidate->GetActorLocation());
+        if (DistanceSq <= MaxDistanceSq)
+        {
+            ManagedLevelChangeActors.Add(Candidate);
+        }
+    }
+
+    if (ManagedLevelChangeActors.Num() > 0)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[SubwayStateActor] Auto-linked %d LevelChangeActor(s) for '%s'"),
+            ManagedLevelChangeActors.Num(),
+            *GetName());
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[SubwayStateActor] No LevelChangeActor linked to '%s'. Assign ManagedLevelChangeActors or move one within %.0f units."),
+            *GetName(),
+            AutoAssignLevelChangeRadius);
     }
 }
 
@@ -144,11 +185,12 @@ void ASubwayStateActor::SetState(ESubwayState NewState)
         HideInteractWidget();
     }
 
-    if (CurrentState == ESubwayState::Passed)
-    {
-        bLevelChangeLocked = false;
-    }
+    UpdateManagedLevelChangeActors();
+}
 
+void ASubwayStateActor::SetReservationActive(bool bActive)
+{
+    bHasReservation = bActive;
     UpdateManagedLevelChangeActors();
 }
 
@@ -247,7 +289,7 @@ void ASubwayStateActor::UpdateWidgetPosition()
 
 void ASubwayStateActor::UpdateManagedLevelChangeActors()
 {
-    const bool bShouldEnableLevelChange = !bLevelChangeLocked || CurrentState == ESubwayState::Passed;
+    const bool bShouldEnableLevelChange = !bHasReservation && !bLevelChangeLocked;
 
     for (ALevelChangeActor* LevelChangeActor : ManagedLevelChangeActors)
     {

@@ -49,6 +49,7 @@ public:
     void CloseDoor(AActor* Actor);
 
 private:
+    class ASubwayStateActor* ResolveSubwayStateActor(UDelayedTaskData* TaskData) const;
     void NotifyWidgets(bool bRunning);
 
     void ScheduleTask(UDelayedTaskData* TaskData);

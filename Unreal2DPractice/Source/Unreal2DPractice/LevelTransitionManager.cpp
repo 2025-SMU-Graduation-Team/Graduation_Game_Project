@@ -6,6 +6,10 @@
 #include "EngineUtils.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Misc/PackageName.h"
+#include "SubLevelTaskManager.h"
+#include "GameFramework/PlayerController.h"
+#include "Camera/PlayerCameraManager.h"
+#include "TimerManager.h"
 
 ALevelTransitionManager::ALevelTransitionManager()
 {
@@ -38,9 +42,9 @@ void ALevelTransitionManager::LoadLevel(FName LevelName)
 {
 	if (ULevelStreaming* StreamingLevel = UGameplayStatics::GetStreamingLevel(this, LevelName))
 	{
+		StreamingLevel->bShouldBlockOnLoad = true;
 		StreamingLevel->SetShouldBeLoaded(true);
 		StreamingLevel->SetShouldBeVisible(true);
-		StreamingLevel->bShouldBlockOnLoad = false;
 		return;
 	}
 
@@ -48,7 +52,7 @@ void ALevelTransitionManager::LoadLevel(FName LevelName)
 		this,
 		LevelName,
 		true,
-		false,
+		true,
 		FLatentActionInfo()
 	);
 }
@@ -97,18 +101,57 @@ void ALevelTransitionManager::ChangeSubLevel(FName NextLevel, AMyPaperCharacter*
 	}
 
 	bIsTransitioning = true;
+	BeginFadeTransition(SanitizedNextLevel, PlayerToTeleport, TeleportLocation);
+}
 
-	if (CurrentSubLevel != NAME_None && CurrentSubLevel != SanitizedNextLevel)
+void ALevelTransitionManager::BeginFadeTransition(FName NextLevel, AMyPaperCharacter* PlayerToTeleport, const FVector& TeleportLocation)
+{
+	if (PlayerToTeleport)
 	{
-		UnloadLevel(CurrentSubLevel);
+		PlayerToTeleport->bEnableMovement = false;
+
+		if (UCharacterMovementComponent* MovementComponent = PlayerToTeleport->GetCharacterMovement())
+		{
+			MovementComponent->StopMovementImmediately();
+		}
 	}
 
-	if (SanitizedNextLevel != NAME_None)
+	APlayerController* PC = GetPrimaryPlayerController();
+	if (!PC || !PC->PlayerCameraManager || TransitionFadeDuration <= 0.f)
 	{
-		LoadLevel(SanitizedNextLevel);
+		if (NextLevel != NAME_None)
+		{
+			LoadLevel(NextLevel);
+		}
+
+		FinishTransition(NextLevel, PlayerToTeleport, TeleportLocation);
+		return;
 	}
 
-	FinishTransition(SanitizedNextLevel, PlayerToTeleport, TeleportLocation);
+	PC->PlayerCameraManager->StartCameraFade(
+		0.f,
+		1.f,
+		TransitionFadeDuration,
+		FLinearColor::Black,
+		false,
+		true
+	);
+
+	FTimerHandle FadeTimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(
+		FadeTimerHandle,
+		FTimerDelegate::CreateWeakLambda(this, [this, NextLevel, PlayerToTeleport, TeleportLocation]()
+		{
+			if (NextLevel != NAME_None)
+			{
+				LoadLevel(NextLevel);
+			}
+
+			FinishTransition(NextLevel, PlayerToTeleport, TeleportLocation);
+		}),
+		TransitionFadeDuration,
+		false
+	);
 }
 
 void ALevelTransitionManager::FinishTransition(FName NextLevel, AMyPaperCharacter* PlayerToTeleport, const FVector& TeleportLocation)
@@ -136,6 +179,43 @@ void ALevelTransitionManager::FinishTransition(FName NextLevel, AMyPaperCharacte
 			ETeleportType::TeleportPhysics
 		);
 		PlayerToTeleport->RefreshAfterLevelTransition();
+		PlayerToTeleport->bEnableMovement = true;
+	}
+
+	if (NextLevel == FName(TEXT("Subway")))
+	{
+		if (UGameInstance* GI = GetGameInstance())
+		{
+			if (USubLevelTaskManager* TaskManager = GI->GetSubsystem<USubLevelTaskManager>())
+			{
+				TaskManager->OnSubLevelEntered();
+			}
+		}
+	}
+
+	if (PreviousSubLevel != NAME_None && PreviousSubLevel != NextLevel)
+	{
+		UnloadLevel(PreviousSubLevel);
+
+		if (UWorld* World = GetWorld())
+		{
+			World->FlushLevelStreaming(EFlushLevelStreamingType::Visibility);
+		}
+	}
+
+	if (APlayerController* PC = GetPrimaryPlayerController())
+	{
+		if (PC->PlayerCameraManager)
+		{
+			PC->PlayerCameraManager->StartCameraFade(
+				1.f,
+				0.f,
+				TransitionFadeDuration,
+				FLinearColor::Black,
+				false,
+				false
+			);
+		}
 	}
 
 	bIsTransitioning = false;
@@ -154,4 +234,9 @@ FName ALevelTransitionManager::GetPersistentLevelName() const
 	}
 
 	return FName(*FPackageName::GetShortName(GetWorld()->PersistentLevel->GetOutermost()->GetName()));
+}
+
+APlayerController* ALevelTransitionManager::GetPrimaryPlayerController() const
+{
+	return GetWorld() ? UGameplayStatics::GetPlayerController(GetWorld(), 0) : nullptr;
 }
