@@ -21,6 +21,9 @@ struct FChaseStage
 	FVector SpawnLocation;
 
 	UPROPERTY(EditAnywhere)
+	FVector SpawnOffset = FVector::ZeroVector;
+
+	UPROPERTY(EditAnywhere)
 	FVector EndLocation;
 
 	UPROPERTY(EditAnywhere)
@@ -28,6 +31,9 @@ struct FChaseStage
 
 	UPROPERTY(EditAnywhere)
 	float MoveDirection = 1.f;
+
+	UPROPERTY(EditAnywhere)
+	FVector MonsterScale = FVector(2.5f, 2.5f, 2.5f);
 };
 
 UCLASS()

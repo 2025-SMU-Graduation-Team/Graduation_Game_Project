@@ -129,12 +129,13 @@ void AEndingChaseManager::SpawnCurrentStage()
 
     ActiveMonster = GetWorld()->SpawnActor<AEndingMonster>(
         MonsterClass,
-        Stage.SpawnLocation,
+        Stage.SpawnLocation + Stage.SpawnOffset,
         FRotator::ZeroRotator,
         Params);
 
     if (!ActiveMonster) return;
 
+    ActiveMonster->SetActorScale3D(Stage.MonsterScale);
     ActiveMonster->SetMoveDirection(Stage.MoveDirection);
     ActiveMonster->SetEndLocation(Stage.EndLocation);
     ActiveMonster->SetTurnLocation(Stage.TurnLocation);

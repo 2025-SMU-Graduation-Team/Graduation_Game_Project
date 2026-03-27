@@ -199,10 +199,7 @@ bool AEndingMonster::TryKillPlayer(AMyPaperCharacter* Player)
 		return false;
 	}
 
-	bHasKilledPlayer = true;
-	Player->PlayDeath();
-	SetActorTickEnabled(false);
-	Destroy();
+	StartAttack(Player);
 	return true;
 }
 
