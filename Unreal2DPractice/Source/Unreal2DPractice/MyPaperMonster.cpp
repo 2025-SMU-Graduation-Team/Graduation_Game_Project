@@ -96,6 +96,7 @@ void AMyPaperMonster::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	UpdateMovement(DeltaTime);
+	TryAttackOverlappingPlayer();
 }
 
 void AMyPaperMonster::UpdateMovement(float DeltaTime)
@@ -186,6 +187,31 @@ void AMyPaperMonster::OnHitBoxOverlap(UPrimitiveComponent* OverlappedComp,AActor
 	}
 
 	StartAttack(Player);
+}
+
+bool AMyPaperMonster::TryAttackOverlappingPlayer()
+{
+	if (bHasKilledPlayer || !bCanDetect || !HitBox)
+	{
+		return false;
+	}
+
+	TArray<AActor*> OverlappingActors;
+	HitBox->GetOverlappingActors(OverlappingActors, AMyPaperCharacter::StaticClass());
+
+	for (AActor* Actor : OverlappingActors)
+	{
+		AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(Actor);
+		if (!Player || Player->bIsHidden)
+		{
+			continue;
+		}
+
+		StartAttack(Player);
+		return true;
+	}
+
+	return false;
 }
 
 void AMyPaperMonster::StartAttack(AMyPaperCharacter* Player)
