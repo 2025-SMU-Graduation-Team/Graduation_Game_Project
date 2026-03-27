@@ -46,6 +46,7 @@ protected:
     void UpdateMovement(float DeltaTime);
     void SetState(EMonsterState NewState);
     void EnableDetection();
+    bool TryAttackOverlappingPlayer();
 
     UFUNCTION()
     virtual void OnHitBoxOverlap(
