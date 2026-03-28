@@ -38,6 +38,7 @@ void AMyGameModeBase::BeginPlay()
 
     if (PC && PC->PlayerCameraManager)
     {
+        PC->PlayerCameraManager->StopCameraFade();
         PC->PlayerCameraManager->StartCameraFade(
             1.f, 0.f, 0.f, FLinearColor::Black, false, false
         );
