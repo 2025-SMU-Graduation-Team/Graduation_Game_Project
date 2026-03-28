@@ -86,23 +86,11 @@ void AHiddenEndingSequence::FinishSequence()
 
     APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
 
-    if (!PC || !PC->PlayerCameraManager)
+    if (!PC || !CachedPlayer)
         return;
 
-    PC->PlayerCameraManager->StartCameraFade(
-        0.f, 1.f, 0.25f, FLinearColor::Black, false, true
-    );
-
-    FTimerHandle FadeHandle;
-    GetWorld()->GetTimerManager().SetTimer(FadeHandle, [this, PC]()
-        {
-            if (!CachedPlayer)
-                return;
-
-            CachedPlayer->ClearForcedFlipbook();
-            UGameplayStatics::OpenLevel(this, DestinationLevelName);
-
-        }, 0.25f, false);
+    CachedPlayer->ClearForcedFlipbook();
+    UGameplayStatics::OpenLevel(this, DestinationLevelName);
 
     if (CachedPlayer && PC)
     {

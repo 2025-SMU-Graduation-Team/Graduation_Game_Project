@@ -4,7 +4,6 @@
 #include "PaperFlipbook.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerController.h"
-#include "Camera/PlayerCameraManager.h"
 #include "TimerManager.h"
 
 ANormalEndingSequence::ANormalEndingSequence()
@@ -78,24 +77,11 @@ void ANormalEndingSequence::UpdateMove()
 void ANormalEndingSequence::OnMoveFinished()
 {
     APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
-    if (!PC || !PC->PlayerCameraManager)
+    if (!PC || !CachedPlayer)
         return;
 
-    PC->PlayerCameraManager->StartCameraFade(
-        0.f, 1.f, 0.3f, FLinearColor::Black, false, true
-    );
-
-    FTimerHandle FadeHandle;
-
-    GetWorld()->GetTimerManager().SetTimer(FadeHandle, [this, PC]()
-        {
-            if (!CachedPlayer)
-                return;
-
-            CachedPlayer->ClearForcedFlipbook();
-            UGameplayStatics::OpenLevel(this, DestinationLevelName);
-
-        }, 0.3f, false);
+    CachedPlayer->ClearForcedFlipbook();
+    UGameplayStatics::OpenLevel(this, DestinationLevelName);
 }
 
 void ANormalEndingSequence::ShowEndingWidget()
