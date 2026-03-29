@@ -236,9 +236,12 @@ void USubLevelTaskManager::HandleMoveToTarget(FMoveTask& Task)
 
 void USubLevelTaskManager::HandleWaiting(FMoveTask& Task, float Delta)
 {
-    if (ASubwayStateActor* SubwayStateActor = ResolveSubwayStateActor(Task.TaskData))
+    if (Task.TaskData && Task.TaskData->bIsAnswer)
     {
-        SubwayStateActor->SetState(ESubwayState::DoorsOpen);
+        if (ASubwayStateActor* SubwayStateActor = ResolveSubwayStateActor(Task.TaskData))
+        {
+            SubwayStateActor->SetState(ESubwayState::DoorsOpen);
+        }
     }
 
     Task.WaitRemaining -= Delta;
@@ -254,7 +257,7 @@ void USubLevelTaskManager::HandleWaiting(FMoveTask& Task, float Delta)
     if (Task.WaitRemaining > 0.f)
         return;
 
-    Task.ForwardMoveRemaining = 15.f;
+    Task.ForwardMoveRemaining = 80.f;
     Task.Phase = EMovePhase::MovingForward;
 }
 
@@ -278,9 +281,12 @@ bool USubLevelTaskManager::HandleMoveForward(FMoveTask& Task, float Delta)
 
     if (Task.ForwardMoveRemaining <= 0.f)
     {
-        if (ASubwayStateActor* SubwayStateActor = ResolveSubwayStateActor(Task.TaskData))
+        if (Task.TaskData && Task.TaskData->bIsAnswer)
         {
-            SubwayStateActor->SetState(ESubwayState::Passed);
+            if (ASubwayStateActor* SubwayStateActor = ResolveSubwayStateActor(Task.TaskData))
+            {
+                SubwayStateActor->SetState(ESubwayState::Passed);
+            }
         }
         return true;
     }
