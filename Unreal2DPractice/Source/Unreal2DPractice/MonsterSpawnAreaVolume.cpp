@@ -2,6 +2,7 @@
 
 #include "Components/BoxComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "TimerManager.h"
 #include "MonsterSpawnManager.h"
 #include "MyPaperCharacter.h"
 
@@ -38,6 +39,23 @@ void AMonsterSpawnAreaVolume::BeginPlay()
 	{
 		Box->OnComponentBeginOverlap.AddDynamic(this, &AMonsterSpawnAreaVolume::OnBoxBeginOverlap);
 		Box->OnComponentEndOverlap.AddDynamic(this, &AMonsterSpawnAreaVolume::OnBoxEndOverlap);
+	}
+
+	GetWorldTimerManager().SetTimerForNextTick(this, &AMonsterSpawnAreaVolume::CheckInitialPlayerOverlap);
+}
+
+void AMonsterSpawnAreaVolume::CheckInitialPlayerOverlap()
+{
+	AMyPaperCharacter* Player = Cast<AMyPaperCharacter>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
+	if (!Player || !SpawnManager || !Box)
+	{
+		return;
+	}
+
+	if (Box->IsOverlappingActor(Player))
+	{
+		SpawnManager->SetPlayerInSpawnArea(true);
+		UE_LOG(LogTemp, Warning, TEXT("[MonsterSpawnAreaVolume] Player already inside spawn area at startup"));
 	}
 }
 

@@ -18,6 +18,8 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+	void CheckInitialPlayerOverlap();
+
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	UBoxComponent* Box;
 
