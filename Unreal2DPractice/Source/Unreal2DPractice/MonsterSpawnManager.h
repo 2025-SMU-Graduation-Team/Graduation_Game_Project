@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "PlayerMessageWidget.h"
 #include "MonsterSpawnManager.generated.h"
 
 class AMyPaperMonster;
@@ -74,6 +75,10 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Monster")
 	void SetPlayerInSpawnArea(bool bInSpawnArea);
+
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+	TSubclassOf<UPlayerMessageWidget> PlayerMessageWidgetClass;
 
 private:
 	FTimerHandle TimerHandle_Spawn;

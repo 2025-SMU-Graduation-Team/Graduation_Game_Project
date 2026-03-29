@@ -195,6 +195,21 @@ void AMonsterSpawnManager::TrySpawn(ESpawnReason Reason)
 
 	CurrentMonster = Monster;
 
+	UPlayerMessageWidget* Widget = CreateWidget<UPlayerMessageWidget>(GetWorld(), PlayerMessageWidgetClass);
+	if (Widget)
+	{
+		if (MoveDir > 0)
+		{
+			Widget->SetMessage("...!");
+		}
+		else
+		{
+			Widget->SetMessage("!...");
+		}
+
+		Widget->AddToViewport();
+	}
+
 	UE_LOG(LogTemp, Warning,
         TEXT("[MonsterSpawnManager] Spawned (%s) Dist=%.0f Reason=%s Loc=%s"),
         bSpawnFromLeft ? TEXT("Left->Right") : TEXT("Right->Left"),
