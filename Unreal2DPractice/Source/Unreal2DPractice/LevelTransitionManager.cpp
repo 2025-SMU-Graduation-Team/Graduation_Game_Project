@@ -7,17 +7,23 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Misc/PackageName.h"
 #include "SubLevelTaskManager.h"
+#include "TimerManager.h"
 
 ALevelTransitionManager::ALevelTransitionManager()
 {
 	PrimaryActorTick.bCanEverTick = false;
 	CurrentSubLevel = NAME_None;
 	bIsTransitioning = false;
+	PendingNextLevel = NAME_None;
+	PendingPreviousLevel = NAME_None;
+	bFinishTransitionQueued = false;
 }
 
 void ALevelTransitionManager::BeginPlay()
 {
 	Super::BeginPlay();
+
+	FWorldDelegates::LevelAddedToWorld.AddUObject(this, &ALevelTransitionManager::OnLevelLoaded);
 }
 
 ALevelTransitionManager* ALevelTransitionManager::Get(UWorld* World)
@@ -37,19 +43,11 @@ ALevelTransitionManager* ALevelTransitionManager::Get(UWorld* World)
 
 void ALevelTransitionManager::LoadLevel(FName LevelName)
 {
-	if (ULevelStreaming* StreamingLevel = UGameplayStatics::GetStreamingLevel(this, LevelName))
-	{
-		StreamingLevel->bShouldBlockOnLoad = true;
-		StreamingLevel->SetShouldBeLoaded(true);
-		StreamingLevel->SetShouldBeVisible(true);
-		return;
-	}
-
 	UGameplayStatics::LoadStreamLevel(
 		this,
 		LevelName,
 		true,
-		true,
+		false,
 		FLatentActionInfo()
 	);
 }
@@ -92,70 +90,107 @@ void ALevelTransitionManager::ChangeSubLevel(FName NextLevel, AMyPaperCharacter*
 				nullptr,
 				ETeleportType::TeleportPhysics
 			);
-			PlayerToTeleport->RefreshAfterLevelTransition();
+			PlayerToTeleport->bEnableMovement = true;
 		}
 		return;
 	}
 
 	bIsTransitioning = true;
+	PendingPreviousLevel = CurrentSubLevel;
+	PendingNextLevel = SanitizedNextLevel;
+	PendingTeleportPlayer = PlayerToTeleport;
+	PendingTeleportLocation = TeleportLocation;
 
-	if (PlayerToTeleport)
+	if (PendingTeleportPlayer)
 	{
-		PlayerToTeleport->bEnableMovement = false;
+		PendingTeleportPlayer->bEnableMovement = false;
 
-		if (UCharacterMovementComponent* MovementComponent = PlayerToTeleport->GetCharacterMovement())
+		if (UCharacterMovementComponent* MovementComponent = PendingTeleportPlayer->GetCharacterMovement())
 		{
 			MovementComponent->StopMovementImmediately();
 		}
 	}
 
-	if (SanitizedNextLevel != NAME_None)
+	if (PendingNextLevel != NAME_None)
 	{
-		LoadLevel(SanitizedNextLevel);
+		LoadLevel(PendingNextLevel);
+		return;
 	}
 
-	FinishTransition(SanitizedNextLevel, PlayerToTeleport, TeleportLocation);
+	FinishTransition();
 }
 
-void ALevelTransitionManager::FinishTransition(FName NextLevel, AMyPaperCharacter* PlayerToTeleport, const FVector& TeleportLocation)
+void ALevelTransitionManager::OnLevelLoaded(ULevel* LoadedLevel, UWorld* World)
 {
-	const FName PreviousSubLevel = CurrentSubLevel;
-
-	if (UWorld* World = GetWorld())
+	if (!bIsTransitioning || World != GetWorld() || !LoadedLevel || PendingNextLevel.IsNone())
 	{
-		World->FlushLevelStreaming(EFlushLevelStreamingType::Full);
+		return;
 	}
 
-	CurrentSubLevel = NextLevel;
-
-	if (PlayerToTeleport)
+	const UPackage* LevelPackage = LoadedLevel->GetPackage();
+	if (!LevelPackage)
 	{
-		if (UCharacterMovementComponent* MovementComponent = PlayerToTeleport->GetCharacterMovement())
+		return;
+	}
+
+	if (!LevelPackage->GetName().Contains(PendingNextLevel.ToString()))
+	{
+		return;
+	}
+
+	QueueFinishTransition();
+}
+
+void ALevelTransitionManager::QueueFinishTransition()
+{
+	if (bFinishTransitionQueued || !GetWorld())
+	{
+		return;
+	}
+
+	bFinishTransitionQueued = true;
+	GetWorld()->GetTimerManager().SetTimerForNextTick(
+		FTimerDelegate::CreateWeakLambda(this, [this]()
+		{
+			bFinishTransitionQueued = false;
+
+			if (!bIsTransitioning)
+			{
+				return;
+			}
+
+			FinishTransition();
+		})
+	);
+}
+
+void ALevelTransitionManager::FinishTransition()
+{
+	const FName PreviousSubLevel = PendingPreviousLevel;
+	CurrentSubLevel = PendingNextLevel;
+
+	if (PendingTeleportPlayer)
+	{
+		if (UCharacterMovementComponent* MovementComponent = PendingTeleportPlayer->GetCharacterMovement())
 		{
 			MovementComponent->StopMovementImmediately();
 		}
 
-		PlayerToTeleport->SetActorLocation(
-			TeleportLocation,
+		PendingTeleportPlayer->SetActorLocation(
+			PendingTeleportLocation,
 			false,
 			nullptr,
 			ETeleportType::TeleportPhysics
 		);
-		PlayerToTeleport->RefreshAfterLevelTransition();
-		PlayerToTeleport->bEnableMovement = true;
+		PendingTeleportPlayer->bEnableMovement = true;
 	}
 
 	if (PreviousSubLevel != NAME_None && PreviousSubLevel != CurrentSubLevel)
 	{
 		UnloadLevel(PreviousSubLevel);
-
-		if (UWorld* World = GetWorld())
-		{
-			World->FlushLevelStreaming(EFlushLevelStreamingType::Visibility);
-		}
 	}
 
-	if (NextLevel == FName(TEXT("Subway")))
+	if (CurrentSubLevel == FName(TEXT("Subway")))
 	{
 		if (UGameInstance* GI = GetGameInstance())
 		{
@@ -166,12 +201,23 @@ void ALevelTransitionManager::FinishTransition(FName NextLevel, AMyPaperCharacte
 		}
 	}
 
+	PendingPreviousLevel = NAME_None;
+	PendingNextLevel = NAME_None;
+	PendingTeleportPlayer = nullptr;
+	PendingTeleportLocation = FVector::ZeroVector;
+	bFinishTransitionQueued = false;
 	bIsTransitioning = false;
 }
 
 bool ALevelTransitionManager::IsPersistentLevelTarget(FName LevelName) const
 {
-	return LevelName.IsNone() || LevelName == GetPersistentLevelName();
+	if (LevelName.IsNone())
+	{
+		return true;
+	}
+
+	return NormalizeLevelNameForComparison(LevelName.ToString()) ==
+		NormalizeLevelNameForComparison(GetPersistentLevelName().ToString());
 }
 
 FName ALevelTransitionManager::GetPersistentLevelName() const
@@ -182,4 +228,27 @@ FName ALevelTransitionManager::GetPersistentLevelName() const
 	}
 
 	return FName(*FPackageName::GetShortName(GetWorld()->PersistentLevel->GetOutermost()->GetName()));
+}
+
+FString ALevelTransitionManager::NormalizeLevelNameForComparison(const FString& LevelName) const
+{
+	FString NormalizedName = FPackageName::GetShortName(LevelName);
+
+	if (NormalizedName.StartsWith(TEXT("UEDPIE_")))
+	{
+		int32 FirstUnderscoreIndex = INDEX_NONE;
+		int32 SecondUnderscoreIndex = INDEX_NONE;
+
+		if (NormalizedName.FindChar(TEXT('_'), FirstUnderscoreIndex))
+		{
+			SecondUnderscoreIndex = NormalizedName.Find(TEXT("_"), ESearchCase::CaseSensitive, ESearchDir::FromStart, FirstUnderscoreIndex + 1);
+		}
+
+		if (SecondUnderscoreIndex != INDEX_NONE && SecondUnderscoreIndex + 1 < NormalizedName.Len())
+		{
+			NormalizedName = NormalizedName.RightChop(SecondUnderscoreIndex + 1);
+		}
+	}
+
+	return NormalizedName;
 }
