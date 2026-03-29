@@ -5,7 +5,6 @@
 #include "LevelTransitionManager.generated.h"
 
 class AMyPaperCharacter;
-class ULevel;
 
 UCLASS()
 class UNREAL2DPRACTICE_API ALevelTransitionManager : public AActor
@@ -23,10 +22,11 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
-	void FinishTransition();
-	void OnLevelLoaded(ULevel* LoadedLevel, UWorld* World);
+	void FinishTransition(FName NextLevel, AMyPaperCharacter* PlayerToTeleport, const FVector& TeleportLocation);
 	void LoadLevel(FName LevelName);
 	void UnloadLevel(FName LevelName);
+	bool IsPersistentLevelTarget(FName LevelName) const;
+	FName GetPersistentLevelName() const;
 
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "LevelTransition", meta = (AllowPrivateAccess = "true"))
@@ -34,16 +34,4 @@ private:
 
 	UPROPERTY()
 	bool bIsTransitioning;
-
-	UPROPERTY()
-	FName PendingNextLevel;
-
-	UPROPERTY()
-	FName PendingPreviousLevel;
-
-	UPROPERTY()
-	TObjectPtr<AMyPaperCharacter> PendingTeleportPlayer;
-
-	UPROPERTY()
-	FVector PendingTeleportLocation = FVector::ZeroVector;
 };
