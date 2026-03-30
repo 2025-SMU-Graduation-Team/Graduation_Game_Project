@@ -219,7 +219,7 @@ void USubLevelTaskManager::HandleMoveToTarget(FMoveTask& Task)
         {
             OpenDoor(Task.TaskData->SubwayDoorActor.Get());
             OpenDoor(Task.TaskData->ScreenDoorActor.Get());
-            Task.WaitRemaining = Task.TaskData->Delay * 2.f;
+            Task.WaitRemaining = Task.TaskData->Delay * 240.f;
         }
         else
         {
