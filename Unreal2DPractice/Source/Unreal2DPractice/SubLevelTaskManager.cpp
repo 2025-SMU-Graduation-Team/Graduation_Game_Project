@@ -55,6 +55,7 @@ void USubLevelTaskManager::RequestTask(UDelayedTaskData* TaskData)
 void USubLevelTaskManager::OnSubLevelEntered()
 {
     UE_LOG(LogTemp, Warning, TEXT("OnSubLevelEntered. PendingTasks: %d"), PendingTasks.Num());
+    CachedSubwayStateActors.Empty();
 
     for (UDelayedTaskData* Task : PendingTasks)
     {
@@ -70,11 +71,12 @@ void USubLevelTaskManager::ScheduleTask(UDelayedTaskData* TaskData)
     if (!TaskData || !GetWorld())
         return;
 
+    FTimerHandle ExecuteTaskHandle;
     FTimerDelegate Delegate =
         FTimerDelegate::CreateUObject(this, &USubLevelTaskManager::ExecuteTask, TaskData);
 
     GetWorld()->GetTimerManager().SetTimer(
-        ExecuteTaskTimerHandle,
+        ExecuteTaskHandle,
         Delegate,
         TaskData->Delay,
         false
@@ -349,24 +351,30 @@ ASubwayStateActor* USubLevelTaskManager::ResolveSubwayStateActor(UDelayedTaskDat
         return nullptr;
     }
 
-    if (TaskData->SubwayStateActor.IsValid())
+    if (const TWeakObjectPtr<ASubwayStateActor>* CachedSubwayStateActor = CachedSubwayStateActors.Find(TaskData))
     {
-        return TaskData->SubwayStateActor.Get();
+        if (CachedSubwayStateActor->IsValid())
+        {
+            return CachedSubwayStateActor->Get();
+        }
+
+        CachedSubwayStateActors.Remove(TaskData);
     }
 
-    UWorld* World = GetWorld();
-    if (!World)
+    if (ASubwayStateActor* AssignedSubwayStateActor = ResolveAssignedSubwayStateActor(TaskData))
+    {
+        CachedSubwayStateActors.Add(TaskData, AssignedSubwayStateActor);
+        return AssignedSubwayStateActor;
+    }
+
+    AActor* ReferenceActor = ResolveReferenceActor(TaskData);
+    if (!ReferenceActor)
     {
         return nullptr;
     }
 
-    AActor* ReferenceActor = TaskData->SubwayDoorActor.Get();
-    if (!ReferenceActor)
-    {
-        ReferenceActor = TaskData->TargetActor.Get();
-    }
-
-    if (!ReferenceActor)
+    UWorld* World = GetWorld();
+    if (!World)
     {
         return nullptr;
     }
@@ -393,13 +401,70 @@ ASubwayStateActor* USubLevelTaskManager::ResolveSubwayStateActor(UDelayedTaskDat
 
     if (ClosestSubwayStateActor)
     {
-        TaskData->SubwayStateActor = ClosestSubwayStateActor;
+        CachedSubwayStateActors.Add(TaskData, ClosestSubwayStateActor);
         UE_LOG(LogTemp, Warning, TEXT("[SubLevelTaskManager] Auto-linked SubwayStateActor '%s' for task '%s'"),
             *GetNameSafe(ClosestSubwayStateActor),
             *GetNameSafe(TaskData));
     }
 
     return ClosestSubwayStateActor;
+}
+
+ASubwayStateActor* USubLevelTaskManager::ResolveAssignedSubwayStateActor(const UDelayedTaskData* TaskData) const
+{
+    if (!IsValid(TaskData))
+    {
+        return nullptr;
+    }
+
+    UWorld* World = GetWorld();
+    if (!World)
+    {
+        return nullptr;
+    }
+
+    const FSoftObjectPath AssignedPath = TaskData->SubwayStateActor.ToSoftObjectPath();
+    if (AssignedPath.IsNull())
+    {
+        return nullptr;
+    }
+
+    const FString AssignedPathString = AssignedPath.ToString();
+    const FString AssignedSubPath = AssignedPath.GetSubPathString();
+
+    for (TActorIterator<ASubwayStateActor> It(World); It; ++It)
+    {
+        ASubwayStateActor* Candidate = *It;
+        if (!Candidate)
+        {
+            continue;
+        }
+
+        const FString CandidatePath = Candidate->GetPathName();
+        if (CandidatePath == AssignedPathString ||
+            (!AssignedSubPath.IsEmpty() && CandidatePath.EndsWith(AssignedSubPath)))
+        {
+            return Candidate;
+        }
+    }
+
+    return nullptr;
+}
+
+AActor* USubLevelTaskManager::ResolveReferenceActor(const UDelayedTaskData* TaskData) const
+{
+    if (!IsValid(TaskData))
+    {
+        return nullptr;
+    }
+
+    AActor* ReferenceActor = TaskData->SubwayDoorActor.Get();
+    if (!ReferenceActor)
+    {
+        ReferenceActor = TaskData->TargetActor.Get();
+    }
+
+    return ReferenceActor;
 }
 
 void USubLevelTaskManager::OpenDoor(AActor* Actor)

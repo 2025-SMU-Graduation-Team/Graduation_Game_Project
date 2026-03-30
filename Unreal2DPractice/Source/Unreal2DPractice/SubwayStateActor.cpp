@@ -146,7 +146,16 @@ void ASubwayStateActor::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 
 void ASubwayStateActor::SetState(ESubwayState NewState)
 {
+    const ESubwayState PreviousState = CurrentState;
     CurrentState = NewState;
+
+    if (PreviousState != CurrentState)
+    {
+        UE_LOG(LogTemp, Log, TEXT("[SubwayStateActor] '%s' state changed: %s -> %s"),
+            *GetName(),
+            StateToString(PreviousState),
+            StateToString(CurrentState));
+    }
 
     if (CurrentState == ESubwayState::DoorsOpen)
     {

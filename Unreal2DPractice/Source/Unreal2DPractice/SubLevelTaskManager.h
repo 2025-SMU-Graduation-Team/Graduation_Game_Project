@@ -50,6 +50,8 @@ public:
 
 private:
     class ASubwayStateActor* ResolveSubwayStateActor(UDelayedTaskData* TaskData) const;
+    class ASubwayStateActor* ResolveAssignedSubwayStateActor(const UDelayedTaskData* TaskData) const;
+    AActor* ResolveReferenceActor(const UDelayedTaskData* TaskData) const;
     void NotifyWidgets(bool bRunning);
 
     void ScheduleTask(UDelayedTaskData* TaskData);
@@ -66,9 +68,9 @@ private:
 private:
     TArray<UDelayedTaskData*> PendingTasks;
     TArray<FMoveTask> ActiveMoveTasks;
+    mutable TMap<const UDelayedTaskData*, TWeakObjectPtr<ASubwayStateActor>> CachedSubwayStateActors;
 
     TArray<TScriptInterface<UTaskWidgetInterface>> RegisteredWidgets;
 
-    FTimerHandle ExecuteTaskTimerHandle;
     FTimerHandle MoveTickTimerHandle;
 };
