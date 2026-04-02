@@ -6,6 +6,8 @@
 #include "GameFramework/GameModeBase.h"
 #include "MyGameModeBase.generated.h"
 
+class AAudioManager;
+
 /**
  * 
  */
@@ -19,4 +21,9 @@ public:
 	
 protected:
 	virtual void BeginPlay() override;
+	void OnLevelLoaded(ULevel* LoadedLevel, UWorld* World);
+	void EnsureAudioManager();
+
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	TSubclassOf<AAudioManager> AudioManagerClass;
 };

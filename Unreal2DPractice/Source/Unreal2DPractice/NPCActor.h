@@ -1,0 +1,52 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
+#include "Blueprint/UserWidget.h"
+#include "Components/WidgetComponent.h"
+#include "PaperSpriteComponent.h"
+#include "InteractableActor.h"
+#include "NPCActor.generated.h"
+
+class UPaperFlipbookComponent;
+
+/**
+ * 
+ */
+UCLASS()
+class UNREAL2DPRACTICE_API ANPCActor : public AInteractableActor
+{
+	GENERATED_BODY()
+	
+public:
+	ANPCActor();
+
+	virtual void Interact() override;
+protected:
+	
+	virtual void BeginPlay() override;
+
+public:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UPaperFlipbookComponent* Sprite;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UWidgetComponent* TalkWidgetComponent;
+
+	UPROPERTY(EditAnywhere, Category = "Interaction")
+	bool bKillPlayer = false;
+
+private:
+	bool bCanInteract;
+
+	UPROPERTY(EditAnywhere, Category = "Dialogue")
+	FText DialogueText;
+
+	UPROPERTY(EditAnywhere, Category = "UI")
+	TSubclassOf<UUserWidget> TalkWidgetClass;
+
+	void KillPlayer();
+
+};
