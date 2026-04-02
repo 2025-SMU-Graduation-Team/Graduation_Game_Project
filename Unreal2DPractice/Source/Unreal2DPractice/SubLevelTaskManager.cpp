@@ -4,8 +4,39 @@
 #include "EngineUtils.h"
 #include "UISelectedManager.h"
 #include "OpeningDoorInterface.h"
+#include "LevelChangeActor.h"
 #include "SubwayStateActor.h"
 #include "DelayedTaskData.h"
+#include "Components/SceneComponent.h"
+#include "Misc/PackageName.h"
+
+namespace
+{
+template <typename SoftPtrType>
+FTaskActorBinding MakeBinding(const SoftPtrType& SoftPtr)
+{
+    FTaskActorBinding Binding;
+    const FSoftObjectPath Path = SoftPtr.ToSoftObjectPath();
+    Binding.ObjectPath = Path;
+    Binding.FullPath = Path.ToString();
+    Binding.SubPath = Path.GetSubPathString();
+    Binding.AssetPath = Path.GetAssetPathString();
+    Binding.AssetName = FPackageName::GetShortName(Binding.AssetPath);
+
+    FString LeftPart;
+    FString RightPart;
+    if (Binding.SubPath.Split(TEXT("."), &LeftPart, &RightPart, ESearchCase::CaseSensitive, ESearchDir::FromEnd))
+    {
+        Binding.ActorName = RightPart;
+    }
+    else
+    {
+        Binding.ActorName = Binding.SubPath;
+    }
+
+    return Binding;
+}
+}
 
 void USubLevelTaskManager::RegisterWidget(UUserWidget* Widget)
 {
@@ -41,21 +72,51 @@ void USubLevelTaskManager::RequestTask(UDelayedTaskData* TaskData)
     if (!TaskData)
         return;
 
-    if (ASubwayStateActor* SubwayStateActor = ResolveSubwayStateActor(TaskData))
+    CaptureTaskBindings(TaskData);
+
+    if (HasLoadedSubwayStateActors())
     {
-        SubwayStateActor->SetReservationActive(true);
+        SetReservationActiveForTask(TaskData, true);
     }
 
     UE_LOG(LogTemp, Warning, TEXT("RequestTask registered"));
     PendingTasks.Add(TaskData);
-    RefreshSubwayLockStates();
+
+    if (HasLoadedSubwayStateActors())
+    {
+        RefreshSubwayLockStates();
+    }
+
     NotifyWidgets(true);
 }
 
 void USubLevelTaskManager::OnSubLevelEntered()
 {
-    UE_LOG(LogTemp, Warning, TEXT("OnSubLevelEntered. PendingTasks: %d"), PendingTasks.Num());
+    UWorld* World = GetWorld();
+    if (!World)
+    {
+        return;
+    }
+
+    if (bSubLevelEnteredProcessingQueued)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[SubLevelTaskManager] OnSubLevelEntered already queued. PendingTasks=%d"), PendingTasks.Num());
+        return;
+    }
+
+    bSubLevelEnteredProcessingQueued = true;
+    UE_LOG(LogTemp, Warning, TEXT("[SubLevelTaskManager] Queue OnSubLevelEntered. PendingTasks=%d"), PendingTasks.Num());
+    World->GetTimerManager().SetTimerForNextTick(this, &USubLevelTaskManager::ProcessSubLevelEntered);
+}
+
+void USubLevelTaskManager::ProcessSubLevelEntered()
+{
+    bSubLevelEnteredProcessingQueued = false;
+
+    UE_LOG(LogTemp, Warning, TEXT("[SubLevelTaskManager] ProcessSubLevelEntered. PendingTasks=%d"), PendingTasks.Num());
     CachedSubwayStateActors.Empty();
+    CachedTargetActors.Empty();
+    CachedDoorActors.Empty();
 
     for (UDelayedTaskData* Task : PendingTasks)
     {
@@ -66,10 +127,58 @@ void USubLevelTaskManager::OnSubLevelEntered()
     RefreshSubwayLockStates();
 }
 
+void USubLevelTaskManager::SetReservationActiveForTask(UDelayedTaskData* TaskData, bool bActive)
+{
+    if (!IsValid(TaskData))
+    {
+        return;
+    }
+
+    if (ASubwayStateActor* SubwayStateActor = ResolveSubwayStateActor(TaskData))
+    {
+        SubwayStateActor->SetReservationActive(bActive);
+    }
+}
+
+void USubLevelTaskManager::CaptureTaskBindings(const UDelayedTaskData* TaskData)
+{
+    if (!IsValid(TaskData))
+    {
+        return;
+    }
+
+    FDelayedTaskBindings& Bindings = CapturedTaskBindings.FindOrAdd(TaskData);
+    Bindings.TargetActor = MakeBinding(TaskData->TargetActor);
+    Bindings.ScreenDoorActor = MakeBinding(TaskData->ScreenDoorActor);
+    Bindings.SubwayDoorActor = MakeBinding(TaskData->SubwayDoorActor);
+    Bindings.SubwayStateActor = MakeBinding(TaskData->SubwayStateActor);
+}
+
+bool USubLevelTaskManager::HasLoadedSubwayStateActors() const
+{
+    UWorld* World = GetWorld();
+    if (!World)
+    {
+        return false;
+    }
+
+    for (TActorIterator<ASubwayStateActor> It(World); It; ++It)
+    {
+        if (*It)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void USubLevelTaskManager::ScheduleTask(UDelayedTaskData* TaskData)
 {
     if (!TaskData || !GetWorld())
         return;
+
+    UE_LOG(LogTemp, Warning, TEXT("[SubLevelTaskManager] ScheduleTask task=%p delay=%.2f"), TaskData, TaskData->Delay);
 
     FTimerHandle ExecuteTaskHandle;
     FTimerDelegate Delegate =
@@ -97,14 +206,24 @@ void USubLevelTaskManager::ExecuteTask(UDelayedTaskData* TaskData)
         return;
     }
 
-    UE_LOG(LogTemp, Warning, TEXT("ExecuteTask"));
+    UE_LOG(LogTemp, Warning, TEXT("[SubLevelTaskManager] ExecuteTask task=%p"), TaskData);
 
-    AActor* Actor = TaskData->TargetActor.Get();
+    AActor* Actor = ResolveTargetActor(TaskData);
     if (!Actor)
     {
-        UE_LOG(LogTemp, Error, TEXT("TargetActor is null"));
+        UE_LOG(LogTemp, Error, TEXT("[SubLevelTaskManager] Failed to resolve target actor for task '%s'"), *GetNameSafe(TaskData));
+        SetReservationActiveForTask(TaskData, false);
         RefreshSubwayLockStates();
         return;
+    }
+
+    if (USceneComponent* RootComponent = Actor->GetRootComponent();
+        RootComponent && RootComponent->Mobility != EComponentMobility::Movable)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[SubLevelTaskManager] Promoting target actor '%s' root mobility from %d to Movable"),
+            *GetNameSafe(Actor),
+            static_cast<int32>(RootComponent->Mobility));
+        RootComponent->SetMobility(EComponentMobility::Movable);
     }
 
     if (!TaskData->StartLocation.IsZero())
@@ -188,6 +307,11 @@ void USubLevelTaskManager::TickMove()
 
     for (int32 i = CompletedTasks.Num() - 1; i >= 0; --i)
     {
+        const FMoveTask& CompletedTask = ActiveMoveTasks[CompletedTasks[i]];
+        if (IsValid(CompletedTask.TaskData))
+        {
+            SetReservationActiveForTask(CompletedTask.TaskData, false);
+        }
         ActiveMoveTasks.RemoveAt(CompletedTasks[i]);
     }
 
@@ -219,8 +343,12 @@ void USubLevelTaskManager::HandleMoveToTarget(FMoveTask& Task)
 
         if (Task.TaskData->bIsAnswer)
         {
-            OpenDoor(Task.TaskData->SubwayDoorActor.Get());
-            OpenDoor(Task.TaskData->ScreenDoorActor.Get());
+            TArray<AActor*> DoorActors;
+            ResolveDoorActors(Task.TaskData, DoorActors);
+            for (AActor* DoorActor : DoorActors)
+            {
+                OpenDoor(DoorActor);
+            }
             Task.WaitRemaining = Task.TaskData->Delay * 240.f;
         }
         else
@@ -253,13 +381,18 @@ void USubLevelTaskManager::HandleWaiting(FMoveTask& Task, float Delta)
 
     if (Task.TaskData->bIsAnswer)
     {
-        CloseDoor(Task.TaskData->SubwayDoorActor.Get());
+        TArray<AActor*> DoorActors;
+        ResolveDoorActors(Task.TaskData, DoorActors);
+        for (AActor* DoorActor : DoorActors)
+        {
+            CloseDoor(DoorActor);
+        }
     }
 
     if (Task.WaitRemaining > 0.f)
         return;
 
-    Task.ForwardMoveRemaining = 80.f;
+    Task.ForwardMoveRemaining = 50.f;
     Task.Phase = EMovePhase::MovingForward;
 }
 
@@ -298,6 +431,11 @@ bool USubLevelTaskManager::HandleMoveForward(FMoveTask& Task, float Delta)
 
 void USubLevelTaskManager::RefreshSubwayLockStates()
 {
+    if (bSubLevelEnteredProcessingQueued)
+    {
+        return;
+    }
+
     UWorld* World = GetWorld();
     if (!World)
     {
@@ -361,10 +499,22 @@ ASubwayStateActor* USubLevelTaskManager::ResolveSubwayStateActor(UDelayedTaskDat
         CachedSubwayStateActors.Remove(TaskData);
     }
 
-    if (ASubwayStateActor* AssignedSubwayStateActor = ResolveAssignedSubwayStateActor(TaskData))
+    if (const FDelayedTaskBindings* Bindings = CapturedTaskBindings.Find(TaskData))
     {
-        CachedSubwayStateActors.Add(TaskData, AssignedSubwayStateActor);
-        return AssignedSubwayStateActor;
+        if (Bindings->SubwayStateActor.IsBound())
+        {
+            if (AActor* BoundActor = ResolveActorFromBinding(Bindings->SubwayStateActor))
+            {
+                if (ASubwayStateActor* BoundSubwayStateActor = Cast<ASubwayStateActor>(BoundActor))
+                {
+                    CachedSubwayStateActors.Add(TaskData, BoundSubwayStateActor);
+                    return BoundSubwayStateActor;
+                }
+            }
+
+            UE_LOG(LogTemp, Warning, TEXT("[SubLevelTaskManager] Failed to resolve explicit SubwayStateActor binding for task '%s'"), *GetNameSafe(TaskData));
+            return nullptr;
+        }
     }
 
     AActor* ReferenceActor = ResolveReferenceActor(TaskData);
@@ -402,17 +552,248 @@ ASubwayStateActor* USubLevelTaskManager::ResolveSubwayStateActor(UDelayedTaskDat
     if (ClosestSubwayStateActor)
     {
         CachedSubwayStateActors.Add(TaskData, ClosestSubwayStateActor);
-        UE_LOG(LogTemp, Warning, TEXT("[SubLevelTaskManager] Auto-linked SubwayStateActor '%s' for task '%s'"),
-            *GetNameSafe(ClosestSubwayStateActor),
-            *GetNameSafe(TaskData));
     }
 
     return ClosestSubwayStateActor;
 }
 
-ASubwayStateActor* USubLevelTaskManager::ResolveAssignedSubwayStateActor(const UDelayedTaskData* TaskData) const
+AActor* USubLevelTaskManager::ResolveTargetActor(const UDelayedTaskData* TaskData) const
 {
     if (!IsValid(TaskData))
+    {
+        return nullptr;
+    }
+
+    if (const TWeakObjectPtr<AActor>* CachedTargetActor = CachedTargetActors.Find(TaskData))
+    {
+        if (CachedTargetActor->IsValid())
+        {
+            return CachedTargetActor->Get();
+        }
+
+        CachedTargetActors.Remove(TaskData);
+    }
+
+    if (const FDelayedTaskBindings* Bindings = CapturedTaskBindings.Find(TaskData))
+    {
+        if (Bindings->TargetActor.IsBound())
+        {
+            if (AActor* BoundTargetActor = ResolveActorFromBinding(Bindings->TargetActor))
+            {
+                CachedTargetActors.Add(TaskData, BoundTargetActor);
+                return BoundTargetActor;
+            }
+
+            UE_LOG(LogTemp, Warning, TEXT("[SubLevelTaskManager] Failed to resolve explicit target binding for task '%s'"), *GetNameSafe(TaskData));
+            return nullptr;
+        }
+    }
+
+    UWorld* World = GetWorld();
+    if (!World)
+    {
+        return nullptr;
+    }
+
+    FVector ReferenceLocation = !TaskData->StartLocation.IsZero()
+        ? TaskData->StartLocation
+        : TaskData->TargetTransform;
+
+    if (ReferenceLocation.IsNearlyZero())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[SubLevelTaskManager] No valid reference location for target actor of task '%s'"), *GetNameSafe(TaskData));
+        return nullptr;
+    }
+
+    AActor* BestCandidate = nullptr;
+    float BestScore = TNumericLimits<float>::Max();
+
+    for (TActorIterator<AActor> It(World); It; ++It)
+    {
+        AActor* Candidate = *It;
+        if (!Candidate ||
+            Candidate->IsA<ASubwayStateActor>() ||
+            Candidate->IsA<ALevelChangeActor>() ||
+            Candidate->IsA<APawn>() ||
+            Candidate->GetClass()->ImplementsInterface(UOpeningDoorInterface::StaticClass()))
+        {
+            continue;
+        }
+
+        const float DistanceSq = FVector::DistSquared(Candidate->GetActorLocation(), ReferenceLocation);
+        float Score = DistanceSq;
+        const FString CandidateName = Candidate->GetName();
+
+        if (CandidateName.Contains(TEXT("Subway"), ESearchCase::IgnoreCase) ||
+            CandidateName.Contains(TEXT("Train"), ESearchCase::IgnoreCase))
+        {
+            Score *= 0.1f;
+        }
+
+        if (const USceneComponent* RootComponent = Candidate->GetRootComponent();
+            RootComponent && RootComponent->Mobility == EComponentMobility::Movable)
+        {
+            Score *= 0.5f;
+        }
+
+        if (Score < BestScore)
+        {
+            BestScore = Score;
+            BestCandidate = Candidate;
+        }
+    }
+
+    if (BestCandidate)
+    {
+        CachedTargetActors.Add(TaskData, BestCandidate);
+        UE_LOG(LogTemp, Warning, TEXT("[SubLevelTaskManager] Resolved target actor '%s' for task '%s'"),
+            *GetNameSafe(BestCandidate),
+            *GetNameSafe(TaskData));
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[SubLevelTaskManager] Could not find target actor for task '%s' near %s"),
+            *GetNameSafe(TaskData),
+            *ReferenceLocation.ToCompactString());
+    }
+
+    return BestCandidate;
+}
+
+void USubLevelTaskManager::ResolveDoorActors(const UDelayedTaskData* TaskData, TArray<AActor*>& OutDoorActors) const
+{
+    OutDoorActors.Reset();
+
+    if (!IsValid(TaskData))
+    {
+        return;
+    }
+
+    if (const TArray<TWeakObjectPtr<AActor>>* CachedDoors = CachedDoorActors.Find(TaskData))
+    {
+        for (const TWeakObjectPtr<AActor>& CachedDoor : *CachedDoors)
+        {
+            if (CachedDoor.IsValid())
+            {
+                OutDoorActors.Add(CachedDoor.Get());
+            }
+        }
+
+        if (OutDoorActors.Num() > 0)
+        {
+            return;
+        }
+
+        CachedDoorActors.Remove(TaskData);
+    }
+
+    TArray<TWeakObjectPtr<AActor>> ResolvedDoors;
+
+    if (const FDelayedTaskBindings* Bindings = CapturedTaskBindings.Find(TaskData))
+    {
+        if (AActor* SubwayDoorActor = ResolveActorFromBinding(Bindings->SubwayDoorActor))
+        {
+            OutDoorActors.Add(SubwayDoorActor);
+            ResolvedDoors.Add(SubwayDoorActor);
+        }
+
+        if (AActor* ScreenDoorActor = ResolveActorFromBinding(Bindings->ScreenDoorActor))
+        {
+            if (!OutDoorActors.Contains(ScreenDoorActor))
+            {
+                OutDoorActors.Add(ScreenDoorActor);
+                ResolvedDoors.Add(ScreenDoorActor);
+            }
+        }
+    }
+
+    if (OutDoorActors.Num() == 0)
+    {
+        if (const FDelayedTaskBindings* Bindings = CapturedTaskBindings.Find(TaskData))
+        {
+            if (AActor* BoundSubwayActor = ResolveActorFromBinding(Bindings->SubwayStateActor))
+            {
+                if (ASubwayStateActor* SubwayStateActor = Cast<ASubwayStateActor>(BoundSubwayActor))
+                {
+                    for (AActor* ManagedDoorActor : SubwayStateActor->GetManagedDoorActors())
+                    {
+                        if (!ManagedDoorActor ||
+                            !ManagedDoorActor->GetClass()->ImplementsInterface(UOpeningDoorInterface::StaticClass()))
+                        {
+                            continue;
+                        }
+
+                        OutDoorActors.Add(ManagedDoorActor);
+                        ResolvedDoors.Add(ManagedDoorActor);
+                    }
+                }
+            }
+        }
+    }
+
+    if (OutDoorActors.Num() == 0)
+    {
+        UWorld* World = GetWorld();
+        if (!World)
+        {
+            return;
+        }
+
+        FVector ReferenceLocation = TaskData->TargetTransform;
+        if (ReferenceLocation.IsNearlyZero())
+        {
+            ReferenceLocation = TaskData->StartLocation;
+        }
+
+        if (ReferenceLocation.IsNearlyZero())
+        {
+            if (const FDelayedTaskBindings* Bindings = CapturedTaskBindings.Find(TaskData))
+            {
+                if (AActor* BoundSubwayActor = ResolveActorFromBinding(Bindings->SubwayStateActor))
+                {
+                    ReferenceLocation = BoundSubwayActor->GetActorLocation();
+                }
+            }
+        }
+
+        TArray<TPair<float, AActor*>> CandidateDoors;
+        for (TActorIterator<AActor> It(World); It; ++It)
+        {
+            AActor* Candidate = *It;
+            if (!Candidate || !Candidate->GetClass()->ImplementsInterface(UOpeningDoorInterface::StaticClass()))
+            {
+                continue;
+            }
+
+            CandidateDoors.Emplace(FVector::DistSquared(Candidate->GetActorLocation(), ReferenceLocation), Candidate);
+        }
+
+        CandidateDoors.Sort([](const TPair<float, AActor*>& A, const TPair<float, AActor*>& B)
+        {
+            return A.Key < B.Key;
+        });
+
+        const int32 NumDoorsToUse = FMath::Min(2, CandidateDoors.Num());
+        for (int32 Index = 0; Index < NumDoorsToUse; ++Index)
+        {
+            OutDoorActors.Add(CandidateDoors[Index].Value);
+            ResolvedDoors.Add(CandidateDoors[Index].Value);
+        }
+    }
+
+    if (ResolvedDoors.Num() > 0)
+    {
+        CachedDoorActors.Add(TaskData, ResolvedDoors);
+    }
+    else if (HasLoadedSubwayStateActors())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[SubLevelTaskManager] Could not resolve door actors for task '%s'"), *GetNameSafe(TaskData));
+    }
+}
+
+AActor* USubLevelTaskManager::ResolveActorFromBinding(const FTaskActorBinding& Binding) const
+{
+    if (!Binding.IsBound())
     {
         return nullptr;
     }
@@ -423,26 +804,62 @@ ASubwayStateActor* USubLevelTaskManager::ResolveAssignedSubwayStateActor(const U
         return nullptr;
     }
 
-    const FSoftObjectPath AssignedPath = TaskData->SubwayStateActor.ToSoftObjectPath();
-    if (AssignedPath.IsNull())
+    if (!Binding.ObjectPath.IsNull())
     {
-        return nullptr;
+        if (UObject* ResolvedObject = Binding.ObjectPath.ResolveObject())
+        {
+            if (AActor* ResolvedActor = Cast<AActor>(ResolvedObject))
+            {
+                return ResolvedActor;
+            }
+        }
     }
 
-    const FString AssignedPathString = AssignedPath.ToString();
-    const FString AssignedSubPath = AssignedPath.GetSubPathString();
-
-    for (TActorIterator<ASubwayStateActor> It(World); It; ++It)
+    for (TActorIterator<AActor> It(World); It; ++It)
     {
-        ASubwayStateActor* Candidate = *It;
+        AActor* Candidate = *It;
         if (!Candidate)
         {
             continue;
         }
 
         const FString CandidatePath = Candidate->GetPathName();
-        if (CandidatePath == AssignedPathString ||
-            (!AssignedSubPath.IsEmpty() && CandidatePath.EndsWith(AssignedSubPath)))
+        if (!Binding.FullPath.IsEmpty() && CandidatePath == Binding.FullPath)
+        {
+            return Candidate;
+        }
+
+        if (!Binding.ActorName.IsEmpty() && Candidate->GetName() != Binding.ActorName)
+        {
+            continue;
+        }
+
+        if (!Binding.AssetName.IsEmpty())
+        {
+            ULevel* CandidateLevel = Candidate->GetLevel();
+            if (!CandidateLevel)
+            {
+                continue;
+            }
+
+            const FString LevelOuterName = CandidateLevel->GetOuter() ? CandidateLevel->GetOuter()->GetName() : FString();
+            const FString LevelPackageName = CandidateLevel->GetOutermost() ? CandidateLevel->GetOutermost()->GetName() : FString();
+            const FString LevelOuterShortName = FPackageName::GetShortName(LevelOuterName);
+            const FString LevelPackageShortName = FPackageName::GetShortName(LevelPackageName);
+
+            const bool bMatchesLevel =
+                LevelOuterName.Contains(Binding.AssetName, ESearchCase::IgnoreCase) ||
+                LevelPackageName.Contains(Binding.AssetName, ESearchCase::IgnoreCase) ||
+                LevelOuterShortName.Equals(Binding.AssetName, ESearchCase::IgnoreCase) ||
+                LevelPackageShortName.Equals(Binding.AssetName, ESearchCase::IgnoreCase);
+
+            if (!bMatchesLevel)
+            {
+                continue;
+            }
+        }
+
+        if (!Binding.SubPath.IsEmpty() && CandidatePath.EndsWith(Binding.SubPath))
         {
             return Candidate;
         }
@@ -458,13 +875,14 @@ AActor* USubLevelTaskManager::ResolveReferenceActor(const UDelayedTaskData* Task
         return nullptr;
     }
 
-    AActor* ReferenceActor = TaskData->SubwayDoorActor.Get();
-    if (!ReferenceActor)
+    TArray<AActor*> DoorActors;
+    ResolveDoorActors(TaskData, DoorActors);
+    if (DoorActors.Num() > 0)
     {
-        ReferenceActor = TaskData->TargetActor.Get();
+        return DoorActors[0];
     }
 
-    return ReferenceActor;
+    return ResolveTargetActor(TaskData);
 }
 
 void USubLevelTaskManager::OpenDoor(AActor* Actor)

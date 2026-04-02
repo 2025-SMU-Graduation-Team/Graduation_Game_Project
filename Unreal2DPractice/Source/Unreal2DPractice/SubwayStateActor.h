@@ -34,6 +34,7 @@ public:
     void SetReservationActive(bool bActive);
     void SetState(ESubwayState NewState);
     void SetLevelChangeLockActive(bool bLocked);
+    const TArray<TObjectPtr<AActor>>& GetManagedDoorActors() const { return ManagedDoorActors; }
 
 protected:
     virtual void BeginPlay() override;
@@ -56,6 +57,7 @@ protected:
 private:
     const TCHAR* StateToString(ESubwayState State);
     void AutoAssignManagedLevelChangeActors();
+    void RefreshLocksAfterBeginPlay();
     void ShowInteractWidget(AMyPaperCharacter* Player);
     void HideInteractWidget();
     void UpdateWidgetPosition();

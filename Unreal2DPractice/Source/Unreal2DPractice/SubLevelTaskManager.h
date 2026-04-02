@@ -23,7 +23,8 @@ struct FMoveTask
     GENERATED_BODY()
 
     TWeakObjectPtr<AActor> Actor;
-    UDelayedTaskData* TaskData = nullptr;
+    UPROPERTY()
+    TObjectPtr<UDelayedTaskData> TaskData = nullptr;
 
     FVector TargetLocation = FVector::ZeroVector;
     FVector MoveDirection = FVector::ZeroVector;
@@ -33,6 +34,29 @@ struct FMoveTask
     float ForwardMoveRemaining = 0.f;
 
     EMovePhase Phase = EMovePhase::MovingToTarget;
+};
+
+struct FTaskActorBinding
+{
+    FSoftObjectPath ObjectPath;
+    FString FullPath;
+    FString SubPath;
+    FString AssetPath;
+    FString AssetName;
+    FString ActorName;
+
+    bool IsBound() const
+    {
+        return !ObjectPath.IsNull() || !FullPath.IsEmpty() || !SubPath.IsEmpty();
+    }
+};
+
+struct FDelayedTaskBindings
+{
+    FTaskActorBinding TargetActor;
+    FTaskActorBinding ScreenDoorActor;
+    FTaskActorBinding SubwayDoorActor;
+    FTaskActorBinding SubwayStateActor;
 };
 
 UCLASS()
@@ -49,8 +73,14 @@ public:
     void CloseDoor(AActor* Actor);
 
 private:
+    void CaptureTaskBindings(const UDelayedTaskData* TaskData);
+    bool HasLoadedSubwayStateActors() const;
+    void ProcessSubLevelEntered();
+    void SetReservationActiveForTask(UDelayedTaskData* TaskData, bool bActive);
     class ASubwayStateActor* ResolveSubwayStateActor(UDelayedTaskData* TaskData) const;
-    class ASubwayStateActor* ResolveAssignedSubwayStateActor(const UDelayedTaskData* TaskData) const;
+    AActor* ResolveTargetActor(const UDelayedTaskData* TaskData) const;
+    void ResolveDoorActors(const UDelayedTaskData* TaskData, TArray<AActor*>& OutDoorActors) const;
+    AActor* ResolveActorFromBinding(const FTaskActorBinding& Binding) const;
     AActor* ResolveReferenceActor(const UDelayedTaskData* TaskData) const;
     void NotifyWidgets(bool bRunning);
 
@@ -66,11 +96,19 @@ private:
     void OpenDoor(AActor* Actor);
 
 private:
-    TArray<UDelayedTaskData*> PendingTasks;
+    UPROPERTY(Transient)
+    TArray<TObjectPtr<UDelayedTaskData>> PendingTasks;
+
+    UPROPERTY(Transient)
     TArray<FMoveTask> ActiveMoveTasks;
+
+    TMap<const UDelayedTaskData*, FDelayedTaskBindings> CapturedTaskBindings;
     mutable TMap<const UDelayedTaskData*, TWeakObjectPtr<ASubwayStateActor>> CachedSubwayStateActors;
+    mutable TMap<const UDelayedTaskData*, TWeakObjectPtr<AActor>> CachedTargetActors;
+    mutable TMap<const UDelayedTaskData*, TArray<TWeakObjectPtr<AActor>>> CachedDoorActors;
 
     TArray<TScriptInterface<UTaskWidgetInterface>> RegisteredWidgets;
 
     FTimerHandle MoveTickTimerHandle;
+    bool bSubLevelEnteredProcessingQueued = false;
 };

@@ -11,6 +11,7 @@
 #include "AudioManager.h"
 #include "GameSFXData.h"
 #include "EngineUtils.h"
+#include "TimerManager.h"
 
 ASubwayStateActor::ASubwayStateActor()
 {
@@ -52,14 +53,25 @@ void ASubwayStateActor::BeginPlay()
 
     SetState(CurrentState);
 
-    if (USubLevelTaskManager* TaskManager = GetGameInstance() ? GetGameInstance()->GetSubsystem<USubLevelTaskManager>() : nullptr)
+    if (GetWorld())
     {
-        TaskManager->RefreshSubwayLockStates();
+        GetWorldTimerManager().SetTimerForNextTick(this, &ASubwayStateActor::RefreshLocksAfterBeginPlay);
     }
     else
     {
         UpdateManagedLevelChangeActors();
     }
+}
+
+void ASubwayStateActor::RefreshLocksAfterBeginPlay()
+{
+    if (USubLevelTaskManager* TaskManager = GetGameInstance() ? GetGameInstance()->GetSubsystem<USubLevelTaskManager>() : nullptr)
+    {
+        TaskManager->RefreshSubwayLockStates();
+        return;
+    }
+
+    UpdateManagedLevelChangeActors();
 }
 
 void ASubwayStateActor::AutoAssignManagedLevelChangeActors()
